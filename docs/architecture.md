@@ -11,7 +11,9 @@
 **Делает:**
 - держит профиль организации — `profile/README.md`. GitHub показывает его на странице github.com/altnovatrail (architecture 3.11 spec);
 - держит файлы сообщества по умолчанию — CONTRIBUTING, SECURITY и кодекс поведения. GitHub показывает их в каждом репозитории организации, у которого нет своих, если `.github` публичный; публичны и все репозитории организации (architecture 3.11 spec, architecture 8 spec; R18 spec; R22 spec);
-- до первого репозитория с кодом получает общие workflow CI (repositories 6 spec): Go, TypeScript, релиз с подписью, проверку лицензий; actions в них закреплены по SHA (architecture 3.11 spec);
+- получает общие workflow CI, с actions, закреплёнными по SHA (architecture 3.11 spec):
+  - общие проверки — их берут все репозитории, и `spec` тоже, ещё до своего кода (repositories 1, 2.1 spec; R30 spec); подключают их T17 и T16 `spec`;
+  - для кода — Go, TypeScript, релиз с подписью, проверку лицензий — до первого репозитория с кодом (repositories 6 spec);
 - общий workflow релиза подписывает и пакеты модулей, а проверяет подпись `module-kit` (architecture 3.7 spec; R17 spec).
 
 **Не делает:**
@@ -23,7 +25,7 @@
 **Данные и связи:**
 - данных учеников и секретов нет, как ни в одном репозитории (RULES.md, Hard rules);
 - при сборке ни от чего не зависит, кроме `spec`, как все (repositories 2.1 spec);
-- общие workflow будут брать все репозитории с кодом (repositories 2.1 spec, repositories 3 spec), а общие проверки — и `spec`, у которого кода нет: проверки CI одни на все репозитории, и `spec` подключает общие workflow первым (R30 spec; T17 `spec`);
+- общие проверки CI будут брать все репозитории, и `spec` тоже, ещё до кода (repositories 1, 2.1, 3 spec; R30 spec). В репозиторий из заготовки проверки языка, justfile и подписанные релизы приходят вместе с его кодом (repositories 1 spec). Первыми общие workflow подключат `spec` и `module-kit` (T17 `spec`);
 - его сервисы — GitHub и Sigstore: CI, релизы, подписи без ключей (architecture 3.12 spec);
 - этап 0, вместе со `spec` (repositories 2.1 spec).
 
