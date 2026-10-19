@@ -11,8 +11,18 @@ NovaTrail is a universal open platform for adaptive learning, interactive lesson
 | [spec](https://github.com/altnovatrail/spec) | the vocabulary, formats, contracts and platform documents | 0. Foundation |
 | [.github](https://github.com/altnovatrail/.github) | the organization's profile, community files and shared CI workflows | 0. Foundation |
 | [modules](https://github.com/altnovatrail/modules) | the official modules: olympiad maths for grades 1–6 and Spanish A1 | 1. Format and core |
+| [module-kit](https://github.com/altnovatrail/module-kit) | the module format in code — validation, packages, open views, check kinds — and the authors' CLI | 1. Format and core |
+| [learner-model](https://github.com/altnovatrail/learner-model) | the learner model: how well each skill is mastered, from the evidence of attempts | 1. Format and core |
+| [engine](https://github.com/altnovatrail/engine) | the engine: picks the next lesson or task, with a reason code | 1. Format and core |
+| [sim](https://github.com/altnovatrail/sim) | virtual learners that test the learner model and the engine | 1. Format and core |
+| [tutor](https://github.com/altnovatrail/tutor) | the AI side of the tutor: reading the work, the tutor's words, routes to AI and eval; a library inside api | 2. First slice with learners |
+| [api](https://github.com/altnovatrail/api) | the platform service: accounts, attempts, checks, the learner model and the engine | 2. First slice with learners |
+| [canvas](https://github.com/altnovatrail/canvas) | the canvases: the kinds, the layers, the learner's strokes, and the samples page for eval | 2. First slice with learners |
+| [skill-map](https://github.com/altnovatrail/skill-map) | the skill map | 2. First slice with learners |
+| [app](https://github.com/altnovatrail/app) | the web app for learners and the adults beside them | 2. First slice with learners |
+| [infra](https://github.com/altnovatrail/infra) | shared infrastructure: Terraform, domains, logs, deployment and self-hosting | 2. First slice with learners |
 
-The repositories of stage 1, Format and core, and of stage 2, First slice with learners, join this table as they are created. Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.1.0/docs/product.md).
+Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.1.0/docs/product.md).
 
 ## Documents
 
