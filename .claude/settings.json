@@ -1,0 +1,6 @@
+{
+  "claudeMdExcludes": [
+    "**/.github/spec/CLAUDE.md",
+    "**/.github/spec/**/CLAUDE.md"
+  ]
+}
