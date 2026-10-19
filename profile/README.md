@@ -10,6 +10,7 @@ NovaTrail is a universal open platform for adaptive learning, interactive lesson
 |---|---|---|
 | [spec](https://github.com/altnovatrail/spec) | the vocabulary, formats, contracts and platform documents | 0. Foundation |
 | [.github](https://github.com/altnovatrail/.github) | the organization's profile, community files and shared CI workflows | 0. Foundation |
+| [modules](https://github.com/altnovatrail/modules) | the official modules: olympiad maths for grades 1–6 and Spanish A1 | 1. Format and core |
 
 The repositories of stage 1, Format and core, and of stage 2, First slice with learners, join this table as they are created. Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.1.0/docs/product.md).
 
