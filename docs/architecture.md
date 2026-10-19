@@ -23,7 +23,7 @@
 **Данные и связи:**
 - данных учеников и секретов нет, как ни в одном репозитории (RULES.md, Hard rules);
 - при сборке ни от чего не зависит, кроме `spec`, как все (repositories 2.1 spec);
-- общие workflow будут брать все репозитории с кодом (repositories 2.1 spec, repositories 3 spec);
+- общие workflow будут брать все репозитории с кодом (repositories 2.1 spec, repositories 3 spec), а общие проверки — и `spec`, у которого кода нет: проверки CI одни на все репозитории, и `spec` подключает общие workflow первым (R30 spec; T17 `spec`);
 - его сервисы — GitHub и Sigstore: CI, релизы, подписи без ключей (architecture 3.12 spec);
 - этап 0, вместе со `spec` (repositories 2.1 spec).
 
@@ -33,14 +33,17 @@
 
 ### 2.1. Общие и свои workflow
 
-- **Суть:** какие workflow CI живут в `.github` и вызываются всеми репозиториями, а какие у каждого репозитория свои. Решается здесь: это пункт «Решить при детализации» карточки `.github` (architecture 3.11 spec). Строит ли T15 `spec` общие workflow по этому решению, автор решит при планировании T15 `spec`.
+- **Суть:** какие workflow CI живут в `.github` и вызываются всеми репозиториями, а какие у каждого репозитория свои. Решается здесь: это пункт «Решить при детализации» карточки `.github` (architecture 3.11 spec). Какие проверки станут общими workflow, какие у них входы и как обновляются их SHA, решает T01, а подключают их T17 и T16 `spec` — в `spec`, `module-kit` и остальных репозиториях (R30 spec).
 - **Что известно:**
   - карточка называет общими workflow Go, TypeScript, релиз с подписью и проверку лицензий, с actions, закреплёнными по SHA (architecture 3.11 spec);
-  - T15 `spec` планирует общими поиск секретов gitleaks, OpenSSF Scorecard, CodeQL и SonarCloud;
+  - проверки CI одни на все репозитории (R30 spec): свои проверки репозитория, поиск секретов бинарником gitleaks, CodeQL, OpenSSF Scorecard, проверка DCO, SonarCloud с автоматическим анализом и средства самого GitHub. Мерж держат все, кроме Scorecard. Чего документация GitHub не описывает — путь к общим workflow, CodeQL и Scorecard из reusable workflow, — T15 `spec` оставила T01;
   - GitHub Actions с подписанными релизами — часть технологической базы (R11 spec). Подписи — без ключей, через Sigstore, как R52 canvas-api (architecture 3.12 spec);
   - подпись пакетов модулей ставит общий workflow релиза (R17 spec);
-  - проверку лицензий из canvas-api (R48 canvas-api) надо переписать под список лицензий, совместимых с Apache-2.0 (R12 spec);
-  - у репозиториев есть и свои проверки: `just docs-check` у `spec` (repositories 5 spec), стенд `sim` в CI `learner-model` и `engine`, `module-kit`, `sim` и eval в CI `modules` (repositories 4 spec).
+  - у `spec` релиз свой — `release.yml`, без файлов, с аттестацией GitHub; общий «релиз с подписью» из `.github` для него отвергнут сейчас: у `spec` нет кода, а первый тег с R30 spec нужен самому `.github` (R31 spec);
+  - проверку лицензий из canvas-api (R48 canvas-api) надо переписать под список лицензий, совместимых с Apache-2.0 (R12 spec). Поправка к R12 spec называет его — категория A политики ASF, — а инструмент разработки или CI, который не поставляется, допускает только названным исключением. По этому списку уже работает своя проверка `spec`, `just licenses-check` в `spec/tools/licenses/` (repositories 5 spec);
+  - у репозиториев есть и свои проверки: `just docs-check` у `spec` (repositories 5 spec), стенд `sim` в CI `learner-model` и `engine`, `module-kit`, `sim` и eval в CI `modules` (repositories 4 spec), сборка страницы образцов в CI `canvas` — с CLI `module-kit` и релизом `modules` по тегу (R25 spec);
+  - документы репозитория компонента проверяет `just -f spec/justfile docs-check-repo`; общий это workflow или свой, решает T01 (R32 spec);
+  - где лежит ключ для eval и как eval идёт по pull request с форка — открытый пункт R24 spec. T15 `spec` передала его T01 и T17 `spec`, а R30 spec называет из него pull request с форка.
 - **Варианты:** пока пусто — их приносит задача.
 - **Задача:** T01.
 
