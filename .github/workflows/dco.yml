@@ -11,8 +11,11 @@
 # The sign-off has to name the author exactly, by name and address; the key itself is matched as
 # git matches trailers, whatever its case. One exception is named: Dependabot authors its commits
 # as dependabot[bot] at its noreply address but signs them off as dependabot[bot]
-# <support@github.com> — spec's commit c6b3cb5 shows both — so for that author, and that author
-# alone, this line is the one that counts.
+# <support@github.com>, and GitHub commits them — spec's commit c6b3cb5 shows all three. For
+# such a commit, in a pull request that dependabot[bot] opened, that line is the one that counts.
+# An author is only a string anyone can set, so the exception asks for all three, the pull
+# request's author among them, which nobody else can be. Commits made on github.com carry their
+# author's sign-off because the organization requires it for web-based commits (R22 in spec).
 #
 # Called from a job that runs on pull_request only: on any other event there are no commits of a
 # pull request to read, and the check fails rather than pass with nothing checked.
@@ -40,7 +43,9 @@ jobs:
 
       - name: Every commit is signed off by its author
         env:
+          PULL_REQUEST_AUTHOR: ${{ github.event.pull_request.user.login }}
           DEPENDABOT_AUTHOR: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+          DEPENDABOT_COMMITTER: GitHub <noreply@github.com>
           DEPENDABOT_SIGNOFF: dependabot[bot] <support@github.com>
         run: |
           if [ "$GITHUB_EVENT_NAME" != pull_request ] || ! git rev-parse --verify --quiet 'HEAD^2' > /dev/null; then
@@ -53,8 +58,9 @@ jobs:
           while read -r commit; do
               [ -n "$commit" ] || continue
               author="$(git log -1 --format='%an <%ae>' "$commit")"
+              committer="$(git log -1 --format='%cn <%ce>' "$commit")"
               expected="$author"
-              if [ "$author" = "$DEPENDABOT_AUTHOR" ]; then
+              if [ "$PULL_REQUEST_AUTHOR" = 'dependabot[bot]' ] && [ "$author" = "$DEPENDABOT_AUTHOR" ] && [ "$committer" = "$DEPENDABOT_COMMITTER" ]; then
                   expected="$DEPENDABOT_SIGNOFF"
               fi
               if git log -1 --format='%(trailers:key=Signed-off-by,valueonly,unfold)' "$commit" | grep -qxF "$expected"; then

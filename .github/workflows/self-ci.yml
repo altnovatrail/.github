@@ -5,7 +5,8 @@
 # The check names are what each repository's ruleset of main requires: "<job name> / <name of the
 # shared workflow's job>" — Secrets / gitleaks, DCO / sign-off, Documents / docs-check-repo — and
 # Workflows, which only .github runs: the code of the shared workflows lives here.
-# Renaming a job breaks those rules. self-release.yml follows this workflow by its name, CI.
+# Renaming a job breaks those rules, and the release of .github follows this workflow by its
+# name, CI (R04).
 
 name: CI
 
@@ -41,8 +42,8 @@ jobs:
   # Both come at exact versions, by the archive's SHA-256, as gitleaks does (R08): actionlint's from
   # actionlint_1.7.12_checksums.txt; shellcheck publishes no checksums, so its is the SHA-256 of the
   # archive as downloaded on 2026-10-20. actionlint is given that shellcheck by path, not whatever
-  # the runner image has, and no pyflakes: there is no Python here. Its waivers, each with its
-  # reason, go in .github/actionlint.yaml.
+  # the runner image has, and no pyflakes: there is no Python here. A waiver, when one is needed,
+  # goes in .github/actionlint.yaml, with its reason.
   workflows:
     name: Workflows
     runs-on: ubuntu-24.04
