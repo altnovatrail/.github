@@ -85,27 +85,61 @@
 **Сделанные эпики:**
 - E1. Детализация — T01–T05; сделан 2026-10-20. Архив — [docs/plan/E1.md](docs/plan/E1.md).
 
-## Таблица 1. Текущий эпик
+## Таблица 1. Текущий эпик — E2. Общие проверки
 
-Текущего эпика нет: E1 сделан и перенесён в архив, а следующий я выбираю из таблицы 2.
+**Результат:**
+- в `.github` — пять общих workflow: `secrets.yml`, `dco.yml` с исключением для подписи `dependabot[bot]`, `documents.yml`, `codeql.yml` и `scorecard.yml`. Они запускаются только через `on: workflow_call`, а actions в них закреплены по SHA (architecture 3.1);
+- свои workflow `.github`: `self-ci.yml` вызывает общие по локальному пути и запускает actionlint; `self-release.yml` выпускает релиз сам после зелёного CI на `main`, тег — вместе с неизменяемым релизом, как у `spec` (R04); `self-codeql.yml`, `self-scorecard.yml`, `dependabot.yml` и `.sonarcloud.properties` (architecture 3.4);
+- вышел первый релиз `.github`; теги `v*` и `main` под rulesets, релизы неизменяемые;
+- решены architecture 2.4–2.7 и 2.9, у 2.2 сделан первый шаг;
+- у `spec` есть всё, без чего не начнётся T17 `spec`:
+  - первый релиз `.github` — тег и SHA его коммита. Отчёт задачи, в которой он вышел, называет их отдельной строкой: это сигнал для T17 `spec`;
+  - по каждому общему workflow, в architecture 3.1: входы — у CodeQL языки; права, которые даёт вызывающий; что нужно от репозитория — стадия `toolchain`, подмодуль `spec/`; имена проверок, как их увидит ruleset;
+  - в architecture 3.3 — текст вызывающих файлов, готовый к копированию и одинаковый у репозиториев компонентов, и отдельно — чем отличается `spec`: у него нет `documents.yml`;
+  - риски, которые всплывут только при первом вызове из другого репозитория, — 2.2, Scorecard из общего workflow, и 2.8, вызов из репозитория с именем `.github`. Проверяет их T17 `spec`, а эпик называет, на что смотреть: принял ли сервер Scorecard результат, вызвался ли общий workflow по полному пути и поднял ли Dependabot ссылку на него.
+
+Код эпика — YAML workflow. actionlint и gitleaks workflow скачивают сами — бинарник по точной версии, со сверкой суммы sha256 (architecture 3.1, 3.5); devcontainer не меняется.
+
+**Решено автором (2026-10-20), при планировании:**
+- 2.4 — релиз получает только коммит `main`, который меняет общий workflow — файл в `.github/workflows/` без префикса `self-` — или то, что он читает; первый релиз выходит всегда;
+- 2.5 — номер считают функции `readLine`, `readTags` и `nextVersion` из `spec/tools/release/version.mjs`, а `RELEASE_LINE` они читают из `self-release.yml`. Линия — `0.1`, первый релиз — `v0.1.0`;
+- 2.6 — пауза `cooldown` для ссылок на `.github` у вызывающих — три дня, как для всего; вносят её T17 и T16 `spec`;
+- 2.7 — данные общего workflow — версия gitleaks и сумма sha256 его архива — в самом файле workflow;
+- 2.9 — ruleset `main` самого `.github` ставит этот эпик, моим шагом по правилу 4;
+- что проверки падают там, где должны, проверяет пробный pull request эпика, без мержа: коммит без `Signed-off-by` — DCO красный; поддельный ключ общего вида, не формата поставщика, — gitleaks красный;
+- задач пять, у каждой своя ветка; эта запись эпика — первым коммитом в ветке T06.
+
+**Выяснилось при планировании** (прочитано 2026-10-20):
+- `spec/tools/release/version.mjs` как команда читает `RELEASE_LINE` из `release.yml` самого `spec`, по пути относительно скрипта, и насчитал бы `.github` номер линии `spec`. Свои функции он экспортирует;
+- Releases API отказывает `GITHUB_TOKEN` в релизе коммита, чьи workflow отличаются от `main`, а вершину `main` выпустить можно: так пишет и так обходит отказ 404 `release.yml` `spec`. Для `.github`, где почти каждый релиз меняет workflow, это главное: выпускается вершина;
+- scorecard-action v2.5.0 при отказе сервера только предупреждает и возвращает успех (T17 `spec` на v0.2.6): принят ли результат, видно только на сервере Scorecard;
+- образцы rulesets — у `spec`. `main`: без удаления и force push, только через pull request без одобрений, обязательные «Documents and tools» и «SonarCloud Code Analysis», ветка перед мержем актуальна. `v-tags`: теги `v*` нельзя сдвинуть, удалить или переписать. У `.github` rulesets нет;
+- у `.github` default setup CodeQL не настроен (`not-configured`), так что advanced setup пройдёт; проект SonarCloud `altnovatrail_.github` есть и анализирует репозиторий;
+- actionlint 1.7.12 (2026-03-30) и gitleaks 8.30.1 (2026-03-21) — последние релизы. actionlint 1.7.12 не знает ключа `queue` — отказ в `.github/actionlint.yaml`, как у `spec`;
+- политику actions организации без права `admin:org` не прочитать: разрешены ли общие workflow и требуется ли закрепление по SHA, подтверждаю я;
+- `spec` выпустил v0.2.6 — в нём записаны В3–В6 `.github`; на него переходит T06.
 
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
+| [ ] | T06 | Переход на spec v0.2.6 | Claude, проверяю я | — | — |
+| [ ] | T07 | Общие проверки: секреты, DCO и документы | я + Claude | — | T06 |
+| [ ] | T08 | CodeQL и Scorecard | я + Claude | — | T07 |
+| [ ] | T09 | Релиз `.github` | я + Claude | — | T08 |
+| [ ] | T10 | Ruleset `main` и передача `spec` | я + Claude | — | T09 |
+
+**Почему такой порядок.**
+- T06 — первой: в `spec` v0.2.6 записаны В3–В6, и задачи эпика читают T17 и T16 `spec`, карточку 3.11 и вопросы о подписи и ключе eval уже на нём.
+- T07 и T08 — общие проверки по две-три на задачу: у каждой задачи свой pull request, на котором `self-ci.yml` прогоняет то, что она пишет.
+- T09 — после всех пяти общих: T17 `spec` закрепит их по SHA первого релиза, и релиз до них дал бы ей не всё. Неизменяемые релизы и ruleset тегов — до мержа T09, чтобы неизменяемым был уже первый релиз.
+- T10 — последней: ruleset `main` перечисляет имена проверок, которые появятся в T07 и T08, а тексты вызывающих файлов называют SHA первого релиза из T09.
 
 ## Таблица 2. Эпики на потом
 
-E2 и E3 предложила T02, последняя задача E1. E2 — первым: его общих проверок ждёт T17 `spec`, а E3 идёт с первым кодом `module-kit`, вместе с эпиком E2 `spec`.
+E3 предложила T02, последняя задача E1. Он идёт с первым кодом `module-kit`, вместе с эпиком E2 `spec`.
 
 | ID | Эпик | Результат | Основа |
 |---|---|---|---|
-| E2 | Общие проверки | Пять общих workflow — `secrets.yml`, `dco.yml` с исключением для подписи `dependabot[bot]`, `documents.yml`, `codeql.yml` и `scorecard.yml`: только `on: workflow_call`, actions закреплены по SHA (architecture 3.1). Свои — `self-ci.yml`, который вызывает общие по локальному пути и запускает actionlint; `self-release.yml`: релиз выходит сам после зелёного CI на `main`, тег — вместе с неизменяемым релизом, как у `spec` (R04); `self-codeql.yml`, `self-scorecard.yml`, `dependabot.yml` и `.sonarcloud.properties` (architecture 3.4). Настройки GitHub — ruleset тегов `v*`, неизменяемые релизы и ruleset `main` по 2.9 — только после моего подтверждения (правило 4). При планировании решаются architecture 2.4–2.7 — какие коммиты получают релиз, как считается номер, `cooldown`, где общий workflow держит данные gitleaks — и 2.9; у 2.2 — первый шаг, прогоном `self-scorecard.yml`. Код — YAML workflow. actionlint и gitleaks workflow скачивают сами — бинарник по точной версии, со сверкой суммы sha256 (architecture 3.1, 3.5); если они понадобятся и в devcontainer, это отличие от контейнера `spec` записывается решением (CLAUDE.md, Environment). Не входят `go.yml`, `typescript.yml` и `release.yml` для кода — это E3. На выходе — то, без чего не начнётся T17 `spec` (ниже) | R03–R05; architecture 2.2, 2.4–2.9, 3.1, 3.3–3.6; R30, R31 spec; T17 `spec`; В6 |
 | E3 | Общие workflow для кода | `go.yml`, `typescript.yml` и общий `release.yml` (architecture 3.1): точные входы, имена рецептов `just`, общий список лицензий — категория A ASF — и права релиза. Решены architecture 2.3 — с тем, что о ней запишет `spec`, — и 2.7 для списка лицензий. Идёт вместе с первым кодом `module-kit` и эпиком E2 `spec`: обёртки проверяются на настоящем коде, а релиз — на первом релизе `module-kit` | R03, R04; architecture 2.3, 2.7, 3.1; R12, R17 spec; architecture 3.7 spec; E2 `spec` |
-
-**Что нужно `spec` на выходе E2** — без этого T17 `spec` не начнётся:
-- первый релиз `.github` — тег и SHA его коммита. Отчёт эпика называет их отдельной строкой: это сигнал для T17 `spec`;
-- по каждому общему workflow, в architecture 3.1: входы — у CodeQL языки; права, которые даёт вызывающий; что нужно от репозитория — стадия `toolchain`, подмодуль `spec/`; имена проверок, как их увидит ruleset;
-- в architecture 3.3 — текст вызывающих файлов, готовый к копированию и одинаковый у репозиториев компонентов, и отдельно — чем отличается `spec`: у него нет `documents.yml`;
-- риски, которые всплывут только при первом вызове из другого репозитория, — 2.2, Scorecard из общего workflow, и 2.8, вызов из репозитория с именем `.github`. Проверяет их T17 `spec`, а эпик называет, на что смотреть: принял ли сервер Scorecard результат, вызвался ли общий workflow по полному пути и поднял ли Dependabot ссылку на него (В6).
 
 ## Таблица 3. Вопросы автору без ответа
 
@@ -124,3 +158,103 @@ E2 и E3 предложила T02, последняя задача E1. E2 — п
 
 | ID | Долг | Откуда | Чем грозит, пока не закрыт | Когда вернуться |
 |---|---|---|---|---|
+
+## Эпик E2. Общие проверки
+
+**Почему эпик такой.** Общих проверок ждёт T17 `spec`: она подключает их в `spec` и `module-kit`, а T16 `spec` — в остальных репозиториях (R30 spec). Что общее и как оно устроено, решили R03–R05, а этот эпик пишет файлы и выпускает первый релиз.
+
+**Не входит:** `go.yml`, `typescript.yml` и `release.yml` для кода — это эпик E3, с первым кодом `module-kit`.
+
+#### T06. Переход на spec v0.2.6
+
+- **Цель:** подмодуль `spec/` стоит на теге v0.2.6, файлы `.github` приведены к нему, переход записан решением, а строки В3–В6 ушли из таблицы 3.
+- **Почему:** в v0.2.6 `spec` записал В3–В6 `.github`: поправки к R24 и R30 spec, новую карточку 3.11, вопросы о подписи общего релиза и о ключе eval, T17 и T16 `spec`. Задачи эпика опираются на них, а на новый тег репозиторий переходит своей задачей (RULES.md, Across repositories).
+- **Сделать:**
+  - перевести подмодуль: `git -C spec fetch --tags && git -C spec checkout v0.2.6`; прочитать `git -C spec diff v0.2.5 v0.2.6`;
+  - тег v0.2.5 → v0.2.6 в ссылках README.md и `profile/README.md`, в CLAUDE.md и в начале этого файла;
+  - Environment в CLAUDE.md, «Как пользоваться» и `.devcontainer/` — сверить с заготовкой и рецептом v0.2.6;
+  - таблица 3: строки В3–В6 уходят — каждая записана в `spec`. Номера, которые им дал `spec`, назвать в architecture там, где стоит вопрос: 2.3 — подпись общего релиза; 3.6 — ключ eval и поправка к R24 spec; 2.2 — что T17 `spec` выяснила о Scorecard;
+  - architecture 1: карточка 3.11 spec теперь называет общие проверки, и пометка «в реестр spec, В4» уходит;
+  - запись в журнале о переходе, к R06 — поправка; начало журнала называет следующий номер.
+- **Как проверить:**
+  - `git submodule status` — `spec` на v0.2.6; `gh release verify v0.2.6 -R altnovatrail/spec`;
+  - `just -f spec/justfile docs-check-repo` — зелёный;
+  - `grep -rn 'v0\.2\.5' --exclude-dir=spec --exclude-dir=.git .` находит только историю;
+  - в таблице 3 нет В3–В6, а «следующий — В7» прежний;
+  - `/code-review high`, не больше двух кругов.
+- **Разделы:** R24 spec, R30 spec; architecture 3.11 spec; T16, T17 `spec`; R06; architecture 1, 2.2, 2.3, 3.6.
+
+#### T07. Общие проверки: секреты, DCO и документы
+
+- **Цель:** в `.github` — общие `secrets.yml`, `dco.yml` и `documents.yml` и свой `self-ci.yml`. На каждом pull request и на `main` они проходят, а на пробном pull request падают там, где должны.
+- **Сделать:**
+  - `secrets.yml` — `on: workflow_call`, job `gitleaks`: checkout всей истории без сохранения токена; gitleaks 8.30.1 — архив по точной версии, сверенный с суммой sha256 в самом файле (2.7); `gitleaks git` по всей истории, с `--redact`. Исключения — `.gitleaks.toml` вызывающего, если он есть;
+  - `dco.yml` — job `sign-off`: коммиты pull request — `git log --no-merges` между базой и вершиной из события pull request, без API. У каждого — `Signed-off-by` с именем и адресом автора; подпись `dependabot[bot] <support@github.com>` у автора `dependabot[bot]` — названным исключением (architecture 3.1);
+  - `documents.yml` — job `docs-check-repo`: checkout с подмодулем, стадия `toolchain` из `.devcontainer/Dockerfile` вызывающего, в ней — `just -f spec/justfile docs-check-repo`, как CI `spec`;
+  - `self-ci.yml` с `name: CI` — на pull request и push в `main`. Job «Secrets», «DCO» (только на pull request) и «Documents» вызывают три общих по `./.github/workflows/…`; job «Workflows» — actionlint 1.7.12 по всем workflow, бинарник по точной версии и сумме sha256. Отказы actionlint — в `.github/actionlint.yaml`, каждый со своей причиной;
+  - `.sonarcloud.properties` — без `spec/**` (Д7 в RUN.md `spec`);
+  - права сверху — только `contents: read`; actions — по SHA с комментарием версии. Версии и суммы — из первоисточника, с датой;
+  - имена проверок — «Secrets / gitleaks», «DCO / sign-off», «Documents / docs-check-repo», «Workflows»;
+  - запись в журнале — устройство трёх проверок и то, что actionlint и gitleaks живут только в CI, без devcontainer; architecture: 2.7 для gitleaks — в раздел 3, а 3.1 и 3.4 — по файлам.
+- **Мой шаг:** pull request задачи; пробный pull request — коммит без `Signed-off-by` и поддельный ключ общего вида — закрыть без мержа; мерж.
+- **Как проверить:**
+  - на pull request задачи «Secrets / gitleaks», «DCO / sign-off», «Documents / docs-check-repo» и «Workflows» зелёные, а после мержа на `main` — все, кроме DCO, которая идёт только на pull request (`gh run view`);
+  - на пробном pull request «DCO / sign-off» и «Secrets / gitleaks» красные, и каждая называет коммит и причину;
+  - `just -f spec/justfile docs-check-repo` — зелёный; `/code-review high`, не больше двух кругов.
+- **Стоимость:** $0 (R30 spec).
+- **Риски:** gitleaks может найти ложное в истории `.github`. Исключение тогда узкое — в `.gitleaks.toml`, с причиной.
+- **Разделы:** R03–R05; R22, R30, R32 spec; architecture 2.7, 3.1, 3.4; T17 `spec`.
+
+#### T08. CodeQL и Scorecard
+
+- **Цель:** общие `codeql.yml` и `scorecard.yml` и свои `self-codeql.yml` и `self-scorecard.yml`. CodeQL анализирует `actions` на pull request и на `main`, а сервер Scorecard принимает результат `self-scorecard.yml` — первый шаг 2.2.
+- **Сделать:**
+  - `codeql.yml` — вход `languages`: языки репозитория сверх `actions`, по умолчанию пусто. Матрица по языкам вместе с `actions`, `build-mode: none`, `category` — `/language:<язык>`. Вызывающий даёт `security-events: write` и `contents: read`;
+  - `scorecard.yml` — job `scorecard`, в нём только одобренные actions: checkout, scorecard-action v2.5.0 с `publish_results: true`, upload-artifact, upload-sarif. Вызывающий даёт на job `security-events: write`, `id-token: write` и `contents: read`;
+  - `self-codeql.yml` — на pull request, push в `main` и раз в неделю; `self-scorecard.yml` — на push в `main` и раз в неделю. Без `env` и `defaults`, права сверху — только на чтение;
+  - имена проверок — «CodeQL / analyze (actions)» и «Scorecard / scorecard»; Scorecard мерж не держит (R30 spec);
+  - запись в журнале — устройство CodeQL и Scorecard и итог первого шага 2.2; architecture 2.2, 3.1, 3.4.
+- **Мой шаг:** pull request задачи; мерж.
+- **Как проверить:**
+  - анализ CodeQL языка `actions` — во вкладке Security, на pull request и на `main`;
+  - после мержа `self-scorecard.yml` прошёл на `main`, а API Scorecard отдаёт результат для коммита `main`: сервер его принял. Зелёный job этого не доказывает;
+  - `just -f spec/justfile docs-check-repo` — зелёный; `/code-review high`, не больше двух кругов.
+- **Стоимость:** $0 (R30 spec).
+- **Риски:** сервер Scorecard отклонит результат общего workflow. Тогда — запасной путь R03, копия `scorecard.yml` в каждом репозитории, и строка «в реестр spec» для T17 и T16 `spec`.
+- **Разделы:** R03, R05; R30 spec; architecture 2.2, 3.1, 3.4; T17 `spec`.
+
+#### T09. Релиз `.github`
+
+- **Цель:** `self-release.yml` выпускает релиз сам; вышел первый релиз `.github` `v0.1.0` — неизменяемый, тег под ruleset; `dependabot.yml` поднимает actions и базовый образ.
+- **Сделать:**
+  - `self-release.yml` — по образцу `release.yml` `spec`:
+    - после зелёного CI на `main`, только от push из самого репозитория; кнопка — только на `main` и только после зелёного CI этого коммита; прогоны идут очередью, `queue: max`;
+    - checkout всей истории с подмодулем; номер — функции `version.mjs` из подмодуля, линия `0.1` в самом `self-release.yml` (2.5);
+    - релиза нет, если с прошлого релиза ни один общий workflow не менялся (2.4); отказ 404 для коммита, который уже не вершина, пропускается; релиз проверяет `gh release verify`;
+  - отказ actionlint о ключе `queue` — в `.github/actionlint.yaml`, только для `self-release.yml`;
+  - `dependabot.yml` — `github-actions` в `/` и `docker` в `/.devcontainer`, раз в неделю, пауза `cooldown` 3 дня; та же пауза — для вызывающих (2.6);
+  - запись в журнале — 2.4–2.6; architecture 2.4–2.6 — в раздел 3.5.
+- **Мой шаг (правило 4), до мержа:** включить неизменяемые релизы `.github`; ruleset `v-tags`, как у `spec`: теги `v*` нельзя сдвинуть, удалить или переписать, обхода нет. Затем мерж.
+- **Как проверить:**
+  - после мержа CI на `main` зелёный, и вышел `v0.1.0`: неизменяемый, Latest; `gh release verify v0.1.0 -R altnovatrail/.github` его подтверждает;
+  - ruleset `v-tags` активен (`gh api repos/altnovatrail/.github/rulesets`);
+  - `just -f spec/justfile docs-check-repo` — зелёный; `/code-review high`, не больше двух кругов;
+  - отчёт называет отдельной строкой: «первый релиз `.github` — v0.1.0, коммит <SHA>». Это сигнал для T17 `spec`.
+- **Стоимость:** $0 (R30 spec).
+- **Разделы:** R04; R31 spec; architecture 2.4–2.6, 3.4, 3.5; T17 `spec`.
+
+#### T10. Ruleset `main` и передача `spec`
+
+- **Цель:** `main` `.github` под ruleset, как у `spec` (2.9), и у `spec` есть всё, без чего не начнётся T17 `spec`.
+- **Сделать:**
+  - ruleset `main`: без удаления и force push, только через pull request без одобрений, ветка перед мержем актуальна, обхода нет. Обязательные — «Secrets / gitleaks», «DCO / sign-off», «Documents / docs-check-repo», «Workflows», «CodeQL / analyze (actions)» и «SonarCloud Code Analysis» (R30 spec);
+  - architecture 3.3 — тексты вызывающих файлов, готовые к копированию: `ci.yml`, `codeql.yml`, `scorecard.yml`, добавки к `dependabot.yml` с паузой `cooldown` и `.sonarcloud.properties`. Ссылки — `@<SHA> # v0.1.0`, файлы одинаковые у репозиториев компонентов. Отдельно — чем отличается `spec`: нет `documents.yml`, у CodeQL — `javascript-typescript`, нет исключения `spec/**`;
+  - architecture 3.1 — имена проверок, как их увидит ruleset у вызывающих;
+  - на что смотреть в T17 `spec`: 2.2 — результат на сервере Scorecard, а не зелёный job; 2.8 — общий workflow вызвался по полному пути, а Dependabot поднял ссылку на следующий релиз;
+  - запись в журнале — 2.9; итог эпика.
+- **Мой шаг (правило 4):** подтвердить и поставить ruleset `main`; мерж.
+- **Как проверить:**
+  - ruleset `main` активен и перечисляет шесть проверок (`gh api repos/altnovatrail/.github/rulesets`);
+  - мерж T10 — только документы — релиза не даёт (2.4);
+  - `just -f spec/justfile docs-check-repo` — зелёный; `/code-review high`, не больше двух кругов.
+- **Разделы:** R03, R04; R30 spec; architecture 2.2, 2.8, 2.9, 3.1, 3.3; T16, T17 `spec`.
