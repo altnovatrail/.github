@@ -6,7 +6,7 @@ A component of [NovaTrail](https://github.com/altnovatrail/spec/tree/v0.2.6), a 
 
 ## Status
 
-Detailing done. The first epic of [RUN.md](RUN.md) decided what the component's card left open: which CI workflows are shared and which are each repository's own, how they are versioned, and how they keep secrets ([docs/decisions.md](docs/decisions.md), R03–R05). The second epic, E2, is under way: it writes the shared checks and publishes the first release of `.github`. No workflow is written yet; the workflows for code follow with module-kit's first code, in the order RUN.md sets.
+Detailing done. The first epic of [RUN.md](RUN.md) decided what the component's card left open: which CI workflows are shared and which are each repository's own, how they are versioned, and how they keep secrets ([docs/decisions.md](docs/decisions.md), R03–R05). The second epic, E2, is under way: it writes the shared checks and publishes the first release of `.github`. The checks for secrets, DCO, documents, CodeQL and Scorecard are written; the release comes next. The workflows for code follow with module-kit's first code, in the order RUN.md sets.
 
 ## Documents
 
