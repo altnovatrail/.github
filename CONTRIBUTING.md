@@ -28,7 +28,7 @@ Sign off every commit. The sign-off certifies the [Developer Certificate of Orig
 git commit -s
 ```
 
-This adds a line `Signed-off-by: Your Name <you@example.com>` to the commit. The line and the email in it stay public in the history for good: point (d) of the certificate says that the record of a contribution, sign-off included, is maintained indefinitely. You may sign off with your GitHub noreply address.
+This adds a line `Signed-off-by: Your Name <you@example.com>` to the commit, with the same name and email as the commit's author: the DCO check of every pull request compares the two, and a sign-off with another address fails it. The line and the email in it stay public in the history for good: point (d) of the certificate says that the record of a contribution, sign-off included, is maintained indefinitely. To keep your address private, make your GitHub noreply address the email you commit with; `git commit -s` then signs off with it too.
 
 ## Coding agents
 

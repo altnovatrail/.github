@@ -1,0 +1,40 @@
+# Shared check (R03): the documents of the repository that calls it, with the docs-check of the
+# spec it pins as its submodule — `just -f spec/justfile docs-check-repo` (R32 in spec). spec
+# itself does not call it: its own CI runs `just docs-check`.
+#
+# It runs in the toolchain stage of the caller's .devcontainer/Dockerfile, with the Node and just
+# of the caller's devcontainer, as spec's CI runs its checks: a check that is green locally is
+# green here. Both the stage and the submodule come with every repository from spec's template.
+# Called from a job that gives it `contents: read`.
+
+name: Documents (shared)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-check-repo:
+    name: docs-check-repo
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # With the spec submodule: the check reads spec's documents at the tag the caller pins.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+          persist-credentials: false
+
+      # The Dockerfile copies nothing from the repository, so it is built without a context. The
+      # container runs as the runner's user: what it writes in the checkout is the runner's, and git
+      # finds the repository owned by the user it runs as.
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      - name: Documents
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain just -f spec/justfile docs-check-repo

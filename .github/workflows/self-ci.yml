@@ -1,0 +1,80 @@
+# The CI of .github itself (R03). Its own workflows start with self-; the ones without the prefix
+# are the shared workflows, which other repositories call by SHA (R04) and this one calls by local
+# path, so that a pull request checks the very version it changes.
+#
+# The check names are what each repository's ruleset of main requires: "<job name> / <name of the
+# shared workflow's job>" — Secrets / gitleaks, DCO / sign-off, Documents / docs-check-repo — and
+# Workflows, which only .github runs: the code of the shared workflows lives here.
+# Renaming a job breaks those rules. self-release.yml follows this workflow by its name, CI.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its older run; every commit to main is checked.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  secrets:
+    name: Secrets
+    uses: ./.github/workflows/secrets.yml
+
+  # A pull request's commits are what it checks; a push to main has been checked as one.
+  dco:
+    name: DCO
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/dco.yml
+
+  documents:
+    name: Documents
+    uses: ./.github/workflows/documents.yml
+
+  # actionlint over every workflow of the repository, with shellcheck over the scripts inside them.
+  # Both come at exact versions, by the archive's SHA-256, as gitleaks does (R08): actionlint's from
+  # actionlint_1.7.12_checksums.txt; shellcheck publishes no checksums, so its is the SHA-256 of the
+  # archive as downloaded on 2026-10-20. actionlint is given that shellcheck by path, not whatever
+  # the runner image has, and no pyflakes: there is no Python here. Its waivers, each with its
+  # reason, go in .github/actionlint.yaml.
+  workflows:
+    name: Workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="$RUNNER_TEMP/actionlint.tar.gz"
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors \
+              -o "$archive" \
+              "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "${ACTIONLINT_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -C "$RUNNER_TEMP" -xzf "$archive" actionlint
+
+      - name: Install shellcheck
+        env:
+          SHELLCHECK_VERSION: "0.11.0"
+          SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+        run: |
+          archive="$RUNNER_TEMP/shellcheck.tar.xz"
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors \
+              -o "$archive" \
+              "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          echo "${SHELLCHECK_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -C "$RUNNER_TEMP" --strip-components=1 -xJf "$archive" "shellcheck-v${SHELLCHECK_VERSION}/shellcheck"
+
+      - name: Lint the workflows
+        run: '"$RUNNER_TEMP/actionlint" -color -shellcheck="$RUNNER_TEMP/shellcheck" -pyflakes='

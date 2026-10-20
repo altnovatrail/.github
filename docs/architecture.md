@@ -83,6 +83,7 @@
 - **Варианты:** держать данные прямо в файле общего workflow — список в десяток идентификаторов SPDX, версию и сумму; держать их отдельными файлами `.github` и брать вторым checkout по `job.workflow_repository` и `job.workflow_sha`.
 - **Рекомендация:** в самом файле, пока данные так малы. Тогда правка данных — правка общего workflow, она и даёт релиз (2.4), а вызывающий получает данные той версии, на которой закреплён. Отдельный файл — когда данных станет больше, с checkout по `job.workflow_sha`.
 - **Задача:** эпик E2 — для gitleaks, эпик E3 — для списка лицензий.
+- **Решено для gitleaks:** R08, устройство — раздел 3.1. Для списка лицензий пункт открыт до E3.
 
 ### 2.8. Общие workflow из репозитория с именем `.github`
 
@@ -108,13 +109,13 @@
 
 **До кода — у всех репозиториев, и у `spec`:**
 
-| Workflow | Что делает | Кто вызывает | Входы | Права от вызывающего | Что нужно от репозитория | Держит мерж |
+| Workflow | Что делает | Кто вызывает | Входы | Права от вызывающего | Что нужно от репозитория | Проверка в ruleset |
 |---|---|---|---|---|---|---|
-| `secrets.yml` | поиск секретов gitleaks по всей истории, как R49 canvas-api; бинарник по точной версии, архив сверяется с закреплённой суммой sha256 | все | нет | `contents: read` | `.gitleaks.toml` со своими исключениями — по желанию | да |
-| `dco.yml` | у каждого коммита pull request, кроме merge-коммитов, есть `Signed-off-by` его автора (R30 spec); коммиты берёт `git log` диапазона pull request из checkout с полной историей, без API | все, на pull request | нет | `contents: read` | — | да |
-| `documents.yml` | собирает стадию `toolchain` из `.devcontainer/Dockerfile` вызывающего, берёт checkout с подмодулем и запускает `just -f spec/justfile docs-check-repo` (R32 spec) | все, кроме `spec`: у него свой `just docs-check` | нет | `contents: read` | `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` — оба из заготовки | да |
-| `codeql.yml` | CodeQL advanced setup: язык `actions` всегда, языки репозитория — входом, `category` по языку явно | все | языки репозитория сверх `actions`; до кода — пусто, у `spec` — `javascript-typescript` для `tools/` (T17 spec) | `contents: read`, `security-events: write` | для компилируемого языка — сборка, с кодом | да |
-| `scorecard.yml` | OpenSSF Scorecard с публикацией результатов | все, на push в `main` и по расписанию | нет | на job — `security-events: write` и `id-token: write`; на уровне workflow — только чтение | вызывающий — отдельный маленький файл без `env` и `defaults` (2.2) | нет (R30 spec) |
+| `secrets.yml` | job `gitleaks`: поиск секретов gitleaks 8.30.1 по всей истории проверяемого коммита (`--log-opts=HEAD`), как R49 canvas-api, с `--redact`; архив сверяется с суммой sha256 в самом файле (R08) | все | нет | `contents: read` | `.gitleaks.toml` со своими исключениями — по желанию: gitleaks читает его из сканируемой папки (раздел 4). В нём — `[extend]` с `useDefault = true`, иначе он заменил бы правила gitleaks, и проверка на таком файле падает | «Secrets / gitleaks», держит мерж |
+| `dco.yml` | job `sign-off`: у каждого коммита pull request, кроме merge-коммитов, есть `Signed-off-by` его автора, по имени и адресу (R30 spec); коммиты — `git rev-list` между родителями merge-коммита pull request, `HEAD^1..HEAD^2`, из checkout с полной историей, без API; на другом событии падает | все, job вызывающего — только на pull request | нет | `contents: read` | — | «DCO / sign-off», держит мерж |
+| `documents.yml` | job `docs-check-repo`: собирает стадию `toolchain` из `.devcontainer/Dockerfile` вызывающего, берёт checkout с подмодулем и запускает в ней `just -f spec/justfile docs-check-repo` (R32 spec) | все, кроме `spec`: у него свой `just docs-check` | нет | `contents: read` | `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` — оба из заготовки | «Documents / docs-check-repo», держит мерж |
+| `codeql.yml` | CodeQL advanced setup: язык `actions` всегда, языки репозитория — входом, `category` по языку явно | все | языки репозитория сверх `actions`; до кода — пусто, у `spec` — `javascript-typescript` для `tools/` (T17 spec) | `contents: read`, `security-events: write` | для компилируемого языка — сборка, с кодом | держит мерж; имя — T08 |
+| `scorecard.yml` | OpenSSF Scorecard с публикацией результатов | все, на push в `main` и по расписанию | нет | на job — `security-events: write` и `id-token: write`; на уровне workflow — только чтение | вызывающий — отдельный маленький файл без `env` и `defaults` (2.2) | мерж не держит (R30 spec) |
 
 Dependabot подписывает коммит не тем адресом, каким назван автор. У `spec` в коммите c6b3cb5 автор — `dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>`, а подпись — `Signed-off-by: dependabot[bot] <support@github.com>`. Поэтому `dco.yml` сверяет подпись с автором по имени и адресу, а для `dependabot[bot]` принимает эту подпись названным исключением. Иначе каждый pull request Dependabot был бы красным, а T17 `spec` ждёт обратного.
 
@@ -128,7 +129,7 @@ Dependabot подписывает коммит не тем адресом, ка�
 
 Список лицензий для `go.yml` и `typescript.yml` один на всех — категория A политики ASF, как у проверки `spec` (поправка к R12 spec). Где он лежит — 2.7. Точные входы и имена рецептов — с первым кодом `module-kit`. Идентичность подписи — 2.3.
 
-Имена job в общих workflow и в вызывающих файлах одни на все репозитории: обязательная проверка называется «`<job name> / <reusable job name>`» (раздел 4), и ruleset `main` у всех репозиториев перечисляет одни и те же имена (R30 spec). Сами имена задают файлы.
+Имена job в общих workflow и в вызывающих файлах одни на все репозитории: обязательная проверка называется «`<job name> / <reusable job name>`» (раздел 4), и ruleset `main` у всех репозиториев перечисляет одни и те же имена (R30 spec). Job вызывающего называется по проверке — «Secrets», «DCO», «Documents», — а job общего workflow — по тому, что он запускает (R08).
 
 ### 3.2. Свои workflow репозиториев
 
@@ -164,7 +165,7 @@ SonarCloud — не workflow: анализ автоматический, а ег
 ### 3.4. Свой CI `.github`
 
 Свои workflow `.github` лежат рядом с общими и начинаются с `self-`; у общих префикса нет, и запускаются они только через `workflow_call`:
-- `self-ci.yml` вызывает общие workflow по локальному пути `./.github/workflows/<файл>`, так что pull request проверяет ту версию, которую сам и меняет. Кроме них — actionlint по всем workflow: их код живёт здесь;
+- `self-ci.yml`, `name: CI`, — на pull request и push в `main`. Job «Secrets», «DCO» (только на pull request) и «Documents» вызывают общие workflow по локальному пути `./.github/workflows/<файл>`, так что pull request проверяет ту версию, которую сам и меняет. Job «Workflows» — actionlint 1.7.12 по всем workflow, с shellcheck 0.11.0 по скриптам в них: их код живёт здесь. actionlint и shellcheck, как и gitleaks, скачиваются по точной версии и сверяются с суммой sha256 в самом файле, а в devcontainer их нет (R08); shellcheck раннера actionlint не берёт. Отказы actionlint, каждый с причиной, — в `.github/actionlint.yaml`;
 - `self-release.yml` — свой релиз, как у `spec` (R31 spec): после зелёного `self-ci.yml` на `main` — следующий патч линии, неизменяемый релиз с аттестацией, теги `v*` под ruleset (R04);
 - `self-codeql.yml` и `self-scorecard.yml` вызывают общие CodeQL и Scorecard, тоже по локальному пути; `dependabot.yml` и `.sonarcloud.properties` — как в 3.3.
 
@@ -227,6 +228,13 @@ SonarCloud — не workflow: анализ автоматический, а ег
 - [GitHub Docs, Dependabot on GitHub Actions](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-on-actions), раздел Restrictions when Dependabot triggers events: «Secrets are populated from Dependabot secrets. GitHub Actions secrets are not available».
 
 **gitleaks** (R03): API GitHub — `repos/gitleaks/gitleaks/releases/latest`: v8.30.1, 2026-03-21, файлы — архивы под платформы и `gitleaks_8.30.1_checksums.txt`, подписи и аттестации нет; `repos/gitleaks/gitleaks/license`: MIT.
+
+**Инструменты общих проверок** (R08; прочитано 2026-10-20):
+- **gitleaks** — [README v8.30.1](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md), раздел Load Configuration: «The order of precedence is:», и четвёртым — «A `.gitleaks.toml` file within the target path». Сумма архива `gitleaks_8.30.1_linux_x64.tar.gz` — из `gitleaks_8.30.1_checksums.txt` того же релиза: `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`;
+- **actionlint** 1.7.12 — последний релиз (API GitHub, `repos/rhysd/actionlint/releases/latest`, 2026-03-30); сумма архива `actionlint_1.7.12_linux_amd64.tar.gz` — из `actionlint_1.7.12_checksums.txt`: `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`;
+- **shellcheck** 0.11.0 — последний релиз (2025-08-04); файлов сумм в нём нет, поэтому сумма `shellcheck-v0.11.0.linux.x86_64.tar.xz` посчитана по скачанному архиву: `8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198`;
+- **gitleaks без `--log-opts`** читает все ветки, а не только историю проверяемого коммита: локальная проба 2026-10-20 — ключ в другой ветке нашёлся без `--log-opts` и не нашёлся с `--log-opts=HEAD`;
+- **actions/checkout** v7.0.1 — последний релиз (2026-07-20); тег стоит на коммите `3d3c42e5aac5ba805825da76410c181273ba90b1` (API GitHub, `repos/actions/checkout/git/refs/tags/v7.0.1`).
 
 **Подпись без ключей из reusable workflow** (раздел 2.3):
 - [Fulcio, OIDC usage](https://github.com/sigstore/fulcio/blob/main/docs/oidc.md), раздел Case study: GitHub Actions: «GitHub Actions uses the `job_workflow_ref` as its SAN»;

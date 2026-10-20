@@ -1,0 +1,67 @@
+# Shared check (R03): every commit of a pull request, merge commits aside, carries a
+# Signed-off-by line of its author — the Developer Certificate of Origin that every contribution
+# certifies (R22 and R30 in spec). The commits come from git, so the check needs no API and
+# nothing beyond `contents: read`.
+#
+# On pull_request, the checkout is the merge of the pull request into its base, and its two
+# parents bound the range: HEAD^1 is the base as GitHub merged it, HEAD^2 the head of the pull
+# request. The range does not depend on the event's payload, so a run again after the base moved
+# still reads only the pull request's own commits.
+#
+# The sign-off has to name the author exactly, by name and address; the key itself is matched as
+# git matches trailers, whatever its case. One exception is named: Dependabot authors its commits
+# as dependabot[bot] at its noreply address but signs them off as dependabot[bot]
+# <support@github.com> — spec's commit c6b3cb5 shows both — so for that author, and that author
+# alone, this line is the one that counts.
+#
+# Called from a job that runs on pull_request only: on any other event there are no commits of a
+# pull request to read, and the check fails rather than pass with nothing checked.
+
+name: DCO (shared)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  sign-off:
+    name: sign-off
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # The whole history, so that both parents of the merge and every commit between them are
+      # there.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Every commit is signed off by its author
+        env:
+          DEPENDABOT_AUTHOR: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+          DEPENDABOT_SIGNOFF: dependabot[bot] <support@github.com>
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != pull_request ] || ! git rev-parse --verify --quiet 'HEAD^2' > /dev/null; then
+              echo "::error::The DCO check reads the commits of a pull request, and this run (${GITHUB_EVENT_NAME}) has none."
+              exit 1
+          fi
+          # Listed first, on its own: a git that fails here stops the step.
+          commits="$(git rev-list --no-merges 'HEAD^1..HEAD^2')"
+          failed=0
+          while read -r commit; do
+              [ -n "$commit" ] || continue
+              author="$(git log -1 --format='%an <%ae>' "$commit")"
+              expected="$author"
+              if [ "$author" = "$DEPENDABOT_AUTHOR" ]; then
+                  expected="$DEPENDABOT_SIGNOFF"
+              fi
+              if git log -1 --format='%(trailers:key=Signed-off-by,valueonly,unfold)' "$commit" | grep -qxF "$expected"; then
+                  echo "signed off: ${commit}"
+              else
+                  echo "::error::${commit} ($(git log -1 --format=%s "$commit")) has no line 'Signed-off-by: ${expected}'. Sign it off with git commit -s, as CONTRIBUTING.md says."
+                  failed=1
+              fi
+          done <<< "$commits"
+          exit "$failed"
