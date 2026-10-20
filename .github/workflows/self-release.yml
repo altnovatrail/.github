@@ -1,4 +1,4 @@
-# .github's own release (R04, R10), as spec's (R31 in spec): what a green main produces when a
+# .github's own release (R04, R10, R12), as spec's (R31 in spec): what a green main produces when a
 # shared workflow has changed. Nobody tags by hand: the version is the next patch of the line
 # the releases are numbered in, and the tag is created with the release. The callers pin a
 # shared workflow by the SHA of a release, with its version beside it (R04).
@@ -15,9 +15,10 @@
 # releases the tip when the tip has no release yet and a shared workflow has changed since the
 # last one. It works on main alone, and only once CI has passed on that commit.
 #
-# The version is worked out on every green commit of main, released or not, so a change that
-# breaks the step — a new tag of spec whose version.mjs no longer exports what it imports, say —
-# turns this run red on the commit that brought it.
+# The version is worked out on every green commit of main, released or not, with the toolchain,
+# spec and RELEASE_LINE of the tip the run checks out. A change that breaks the step — a new tag
+# of spec whose version.mjs no longer exports what it imports, say — turns red the first run
+# that checks it out: that of the commit that brought it, or of an older one whose CI ended later.
 
 name: Release
 
@@ -62,6 +63,11 @@ jobs:
     defaults:
       run:
         shell: bash
+    # The commit the checks ran on, which this run releases: the commit of the CI run, or the tip
+    # of main for the button. Set once for every step, so that the commit the version step checks
+    # is the commit the release is created at.
+    env:
+      TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
     permissions:
       # Creating the release, and its tag with it.
       contents: write
@@ -87,11 +93,15 @@ jobs:
               exit 1
           fi
 
-      # The commit the checks ran on, with every tag, and spec as its submodule: the next version
-      # is counted from the tags, by spec's own functions.
+      # The tip of main the event saw, GITHUB_SHA, with every tag, and spec as its submodule. This
+      # file was read from that commit too, so the step below, the toolchain stage, spec's
+      # functions and RELEASE_LINE all come from one commit. The commit the checks ran on, TARGET,
+      # is in its history, which main's ruleset keeps from being rewritten, and is named by its SHA
+      # alone: the release needs no checkout of it — git diff reads its tree from the history —
+      # and a checkout by a ref of the workflow_run event is what Scorecard's Dangerous-Workflow
+      # flags (R12).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
           submodules: true
           persist-credentials: false
@@ -100,17 +110,22 @@ jobs:
       # with this file's RELEASE_LINE: as a command, version.mjs would read spec's own line. The
       # tags are counted in the toolchain stage, as CI runs its checks, with the Node and git of
       # the devcontainer; the git diff against the release before runs with the runner's git, as
-      # the shared checks do (R08). The step's outputs: version — empty when there is nothing to
-      # release — previous, the release before, where the notes and the diff start, and
-      # released, the release this commit has already. behind, the newest release when this
-      # commit is older than it, is only checked here. A tag with no release behind it was
-      # pushed by hand: on this commit, as the release before, or as the newest "release" off
-      # main's history, it would stop releases quietly, so the run stops on it instead.
+      # the shared checks do (R08). Both count from TARGET, which has to be in the history of the
+      # checkout. The step's outputs: version — empty when there is nothing to release —
+      # previous, the release before, where the notes and the diff start, and released, the
+      # release TARGET has already. behind, the newest release when TARGET is older than it, is
+      # only checked here. A tag with no release behind it was pushed by hand: on TARGET, as the
+      # release before, or as the newest "release" off main's history, it would stop releases
+      # quietly, so the run stops on it instead.
       - id: version
         name: Work out the version
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if ! [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::The commit to release is not a full SHA: \"${TARGET}\"."
+              exit 1
+          fi
           cat > "$RUNNER_TEMP/release-version.mjs" <<'SCRIPT'
           import fs from "node:fs";
           import { readLine, readTags, nextVersion } from "/work/spec/tools/release/version.mjs";
@@ -122,7 +137,9 @@ jobs:
           console.log(`behind=${result.behind ?? ""}`);
           SCRIPT
           docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+          # Of this step's environment only TARGET goes in, never GH_TOKEN. The script is in single
+          # quotes, so no apostrophe may appear in it, not even in a message.
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env TARGET \
               --volume "$PWD:/work" --volume "$RUNNER_TEMP/release-version.mjs:/release-version.mjs:ro" \
               --workdir /work toolchain bash -c '
                   set -euo pipefail
@@ -130,10 +147,14 @@ jobs:
                       echo "a shallow clone has no tags to count from" >&2
                       exit 1
                   fi
+                  if ! git merge-base --is-ancestor "$TARGET" HEAD; then
+                      echo "${TARGET} is not in the history of the checkout, $(git rev-parse HEAD)" >&2
+                      exit 1
+                  fi
                   {
                       git tag --list "v*"; echo --
-                      git tag --merged HEAD --list "v*"; echo --
-                      git tag --points-at HEAD --list "v*"
+                      git tag --merged "$TARGET" --list "v*"; echo --
+                      git tag --points-at "$TARGET" --list "v*"
                   } | node /release-version.mjs' > "$RUNNER_TEMP/release-version"
           cat "$RUNNER_TEMP/release-version"
           version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
@@ -151,19 +172,19 @@ jobs:
           # --quiet exits 1 on a change and 0 on none; anything else is its own failure.
           if [ -n "$version" ] && [ -n "$previous" ]; then
               changed=0
-              git diff --quiet "$previous" HEAD -- .github/workflows/ ':(exclude).github/workflows/self-*' || changed=$?
+              git diff --quiet "$previous" "$TARGET" -- .github/workflows/ ':(exclude).github/workflows/self-*' || changed=$?
               if [ "$changed" = 0 ]; then
                   echo "::notice::No shared workflow has changed since ${previous}: nothing to release."
                   version=""
               elif [ "$changed" != 1 ]; then
-                  echo "::error::git diff could not compare ${previous} with this commit."
+                  echo "::error::git diff could not compare ${previous} with ${TARGET}."
                   exit 1
               fi
           fi
           if [ -n "$version" ]; then
-              echo "releasing $version"
+              echo "releasing $version at $TARGET"
           elif [ -n "$released" ] || [ -n "$behind" ]; then
-              echo "::notice::Nothing to publish: this commit is released already, or is older than the newest release."
+              echo "::notice::Nothing to publish: ${TARGET} is released already, or is older than the newest release."
           fi
           {
               echo "version=${version}"
@@ -186,7 +207,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
-          TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           start=()
           if [ -n "$PREVIOUS" ]; then start=(--notes-start-tag "$PREVIOUS"); fi
