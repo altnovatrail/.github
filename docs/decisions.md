@@ -188,22 +188,26 @@
 — *Следствие:* CodeQL и Scorecard — T08; ruleset `main` перечислит эти имена проверок — T10. — architecture 2.7, 3.1, 3.4, 4; CONTRIBUTING.md; RUN.md, T07.
 
 **R09. CodeQL и Scorecard — общие `codeql.yml` и `scorecard.yml`, а `.github` вызывает их своими `self-codeql.yml` и `self-scorecard.yml` по локальному пути.** Что делает каждый, кто вызывает, права и имена проверок — architecture 3.1 и 3.4.
-- **`codeql.yml`** — advanced setup: язык `actions` всегда, а языки репозитория — входом `languages`, через пробел, запятую или строку. Пока вход берёт только языки без сборки — `javascript-typescript`, — а другой язык останавливает проверку с причиной: сборка придёт с E3. Список собирает job `languages`, на bash, и в нём каждый язык один раз; анализ — job на язык, `build-mode: none`, набор `security-extended`, `category` — `/language:<язык>`. Проверки — «CodeQL / languages» и «CodeQL / analyze (<язык>)», и обе держат мерж.
-- **Находки CodeQL** держат мерж не проверкой job, а правилом ruleset о результатах code scanning, как R50 canvas-api. Правила ruleset у всех репозиториев задаёт R30 spec — это строка В7 RUN.md «в реестр spec».
+- **`codeql.yml`** — advanced setup: язык `actions` всегда, а языки репозитория — входом `languages`, через пробел, запятую или строку. Пока вход берёт только `javascript-typescript`, а другой язык останавливает проверку с причиной. Список собирает job `languages`, на bash, и в нём каждый язык один раз. Анализ — job на язык: `build-mode: none`, `tools: linked`, набор `security-extended`, `category` — `/language:<язык>`. Проверки — «CodeQL / languages» и «CodeQL / analyze (<язык>)»; мерж держат анализы.
+- **Находки CodeQL** проверка анализа не держит: она зелёная, если CodeQL прошёл, даже когда он нашёл уязвимость. Держат их правило ruleset `code_scanning`, как R50 canvas-api, или обязательная проверка «CodeQL» от GitHub Advanced Security, которую code scanning ставит на pull request сам (architecture 4). Правила ruleset у всех репозиториев задаёт R30 spec — это строка В7 RUN.md «в реестр spec».
 - **`scorecard.yml`** — Scorecard с публикацией результатов и SARIF в code scanning; в job — только одобренные actions, без своих скриптов. Проверка «Scorecard / scorecard» мерж не держит (R30 spec).
-- **Вызывающие** — `self-codeql.yml` на pull request, push в `main` и раз в неделю; `self-scorecard.yml` на push в `main` и раз в неделю, без `env` и `defaults`, сверху — только чтение.
+- **Вызывающие** — `self-codeql.yml` на pull request и push в `main`; `self-scorecard.yml` на push в `main` и раз в неделю, без `env` и `defaults`, сверху — только чтение.
 
-— *Почему:* R03 и решения автора при планировании E2. Устройство файлов — предложение плана эпика, утверждённого автором 2026-10-20.
-- `actions` идёт всегда: workflow есть у каждого репозитория, а вызывающему достаточно назвать свои языки. Список собирает job, а не вызывающий, — так `actions` не пропадёт, что бы тот ни передал.
-- `category` — явно: у общего workflow одно имя файла на всех вызывающих, а категорию по умолчанию CodeQL строит из него (architecture 4).
+— *Почему:* R03 и решения автора при планировании E2. Устройство файлов — предложение плана эпика, утверждённого автором 2026-10-20; что в нём поменяло ревью T08 — ниже.
+- `actions` идёт всегда: workflow есть у каждого репозитория, а вызывающему достаточно назвать свои языки. Список собирает job, а не вызывающий, — так `actions` не пропадёт, что бы тот ни передал. jq раннера не нужен: список собирает bash.
+- Только `javascript-typescript`: код платформы — на Go и TypeScript (R03), а Go без сборки CodeQL не разбирает (architecture 4). У canvas-api он идёт с `build-mode: manual` и `go build` (R50 canvas-api, `codeql.yml`), а сборка придёт с workflow для кода, в E3.
+- «CodeQL / languages» обязательной быть не должна. Пробный pull request #9 передал `go`: job `languages` упал с причиной, а за анализы GitHub прислал одну пропущенную проверку «CodeQL / analyze (${{ matrix.language }})». «CodeQL / analyze (actions)» не пришла вовсе, так что обязательный анализ держит мерж и так, а причину называет «CodeQL / languages».
+- `tools: linked` — бандл CodeQL, с которым выпущен закреплённый коммит action, у v4.39.0 — 2.27.2. Без этого входа бандл выбирают флаги GitHub во время прогона (architecture 4), и тот же коммит `.github` анализировал бы другой версией, а версии — только точные (RULES.md, Hard rules). Поэтому у `self-codeql.yml` и нет прогона раз в неделю: на неизменном коде он повторил бы прошлый анализ. Новые запросы приходят с pull request, который поднимает action, и CodeQL идёт на нём.
+- `category` — явно: категорию по умолчанию CodeQL строит из имени файла workflow и значений матрицы (architecture 4), а явная не меняется, если вызывающий файл или job переименуют или заменят своей копией. У языка остаётся один анализ, и брошенного старого не будет.
 - `security-extended` — как у canvas-api (R50 canvas-api).
-- «CodeQL / languages» — обязательная: если она упадёт, анализ пропустится, а пропущенный job засчитывается успехом (architecture 4). Без сборки CodeQL разбирает `actions` и `javascript-typescript`, а Go — нет (architecture 4): у canvas-api он идёт с `build-mode: manual` и `go build` (R50 canvas-api, `codeql.yml`). jq раннера не нужен: список собирает bash. Это ревью T08, круг 1.
 - Ограничения Scorecard для публикации — на сам job и workflow (architecture 4), поэтому в `scorecard.yml` нет ни одного своего шага.
 
 — *Отвергнуто:*
 - вход с полным списком языков вместе с `actions` — вызывающий мог бы забыть `actions`;
 - `build-mode: none` для любого языка — Go так не разбирается, и вызывающий узнал бы это по чужой ошибке;
+- CodeQL без входа `tools` — бандл менялся бы без правки в `.github`; прогон CodeQL раз в неделю — с `tools: linked` он повторял бы прошлый анализ;
+- «CodeQL / languages» в обязательных — мерж держит и без неё, а ruleset каждого репозитория получил бы лишнее имя;
 - default setup code scanning — он выключает свой workflow CodeQL (T15 spec);
-- Scorecard на pull request — action поддерживает только push и расписание на основной ветке (architecture 4).
+- Scorecard на pull request — action поддерживает push и расписание на основной ветке, а `pull_request` у него экспериментальный (R30 spec).
 
-— *Следствие:* принят ли сервером результат `self-scorecard.yml` — первый шаг architecture 2.2 — видно после мержа на `main`. — architecture 2.2, 3.1, 3.4, 4; RUN.md, T08.
+— *Следствие:* принят ли сервером результат `self-scorecard.yml` — первый шаг architecture 2.2 — видно после мержа на `main`. — architecture 2.2, 3.1, 3.3, 3.4, 4; RUN.md, T08.

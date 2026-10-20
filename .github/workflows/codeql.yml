@@ -5,9 +5,9 @@
 # The caller's job gives it `contents: read` and `security-events: write`, which it needs to
 # upload what it finds; a called workflow cannot raise what its caller gave. The check names are
 # "<caller's job> / languages" and "<caller's job> / analyze (<language>)", one per language —
-# CodeQL / languages and CodeQL / analyze (actions) — and all of them hold the merge. Each
-# language's results go up under a category of their own, /language:<language>, which stays the
-# same whatever the caller's file or job is called.
+# CodeQL / languages and CodeQL / analyze (actions); the analyses hold the merge. Each language's
+# results go up under a category of their own, /language:<language>, which stays the same
+# whatever the caller's file or job is called.
 
 name: CodeQL (shared)
 
@@ -30,8 +30,10 @@ jobs:
   # actions and the languages the caller names, each once. Besides actions only
   # javascript-typescript is taken: the platform's code is Go and TypeScript (R03), and Go needs a
   # build, which comes with the workflows for code (E3). Any other name stops the check with its
-  # reason. This job is a check of its own, CodeQL / languages, required with the analyses: when
-  # it fails, no analysis runs, and this is the check that says why.
+  # reason. This job is a check of its own, CodeQL / languages, and need not be required: when it
+  # fails, the matrix never expands, the one check GitHub reports for it is a skipped
+  # "analyze (${{ matrix.language }})", and the required analyses never come, so the merge waits.
+  # This check says why.
   languages:
     name: languages
     runs-on: ubuntu-24.04
