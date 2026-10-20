@@ -1,6 +1,6 @@
 # .github — архитектура
 
-> Статус: 2026-10-20, эпик E1 закончен (T01–T05), идёт эпик E2. Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: 2.4–2.6 решены (R10), 2.7 — для gitleaks (R08), а список лицензий по 2.7 положит E3; 2.9 автор решил при планировании E2, и в раздел 3 его переносит T10. У 2.2 пройден первый шаг (R09), второй шаг и 2.8 проверит T17 `spec`; 2.3 — Т-27 `spec`, вместе с эпиком E3. Общие проверки эпика E2 — секреты, DCO и документы (T07), CodeQL и Scorecard (T08) — и релиз `.github` (T09) уже есть, ruleset `main` — T10; workflow для кода — эпик E3.
+> Статус: 2026-10-20, эпики E1 (T01–T05) и E2 (T06–T10) закончены. Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: список лицензий по 2.7 положит E3; у 2.2 пройден первый шаг (R09), а второй шаг, 2.8 и то, держит ли пауза ссылки на `.github` (2.6), проверит T17 `spec`; 2.3 — Т-27 `spec`, вместе с эпиком E3. Общие проверки — секреты, DCO, документы, CodeQL и Scorecard — и релиз `.github` есть, первый релиз — `v0.1.0` (R10), а `main` под ruleset (R11); тексты вызывающих файлов — раздел 3.3. Workflow для кода — эпик E3.
 >
 > Что делает компонент, чего не делает и что о нём ещё предстоит решить. Это подробности его карточки — architecture 3.11 spec. Карточка остаётся сводкой: если подробности меняют то, что в ней сказано, она правится в `spec` тем же путём, что и вопросы в его реестры (RULES.md, Across repositories).
 >
@@ -68,7 +68,7 @@
 ### 2.6. Пауза `cooldown` для ссылок на `.github`
 
 - **Суть:** Dependabot ждёт три дня после выхода версии, прежде чем её предложить, — так записано в `dependabot.yml` `spec` для каждой экосистемы (R30 spec). Ссылки на общие workflow он поднимает в той же экосистеме `github-actions`; что пауза действует и на них, документация отдельно не говорит.
-- **Решено:** R10, задача T09: три дня, как для всего. Устройство — разделы 3.3 и 3.5. Держит ли пауза ссылки на `.github`, проверит первый подъём ссылки в T17 `spec`, вместе с 2.8.
+- **Решено:** R10, задача T09: три дня, как для всего. Устройство — разделы 3.3 и 3.5. Держит ли пауза ссылки на `.github`, проверит T17 `spec`, вместе с 2.8; как — раздел 3.3.
 
 ### 2.7. Как общий workflow читает файлы `.github` своей версии
 
@@ -89,9 +89,7 @@
 ### 2.9. Кто ставит ruleset `main` самого `.github`
 
 - **Суть:** у каждого репозитория — свой ruleset `main` по R30 spec: только через pull request, обязательны все проверки, кроме Scorecard. T16 `spec` ставит его в остальных репозиториях этапов 0–2, а `.github` — один из них. Но свои workflow `.github` пишет он сам (R03), и имена его проверок появятся в эпике E2.
-- **Варианты:** в эпике E2 — вместе с ruleset тегов `v*` (R04), шагом автора по правилу 4; в T16 `spec`, как у остальных.
-- **Рекомендация:** в эпике E2: обязательные проверки называются по job, а job `.github` пишет E2. Тогда T16 `spec` `.github` пропускает: что решено, она читает в журнале `.github`, а если ruleset не поставлен, ставит его сама (T16 `spec`). Автор принял рекомендацию при планировании E2 (RUN.md, «Решено автором» эпика), а запись в журнале и сам ruleset делает T10.
-- **Задача:** эпик E2.
+- **Решено:** R11, задача T10: ruleset 25477399, как у `spec`, с шестью обязательными проверками. Устройство — разделы 3.3 и 3.4.
 
 ## 3. Устройство
 
@@ -107,7 +105,7 @@
 |---|---|---|---|---|---|---|
 | `secrets.yml` | job `gitleaks`: поиск секретов gitleaks 8.30.1 по всей истории проверяемого коммита (`--log-opts=HEAD`), как R49 canvas-api, с `--redact`; архив сверяется с суммой sha256 в самом файле (R08) | все | нет | `contents: read` | `.gitleaks.toml` со своими исключениями — по желанию: gitleaks читает его из сканируемой папки (раздел 4). В нём — `[extend]` с `useDefault = true`, иначе он заменил бы правила gitleaks, и проверка на таком файле падает. На pull request и он, и `.gitleaksignore` берутся из базы, а комментарии `gitleaks:allow` не действуют: pull request не ослабит скан своих коммитов | «Secrets / gitleaks», держит мерж |
 | `dco.yml` | job `sign-off`: у каждого коммита pull request, кроме merge-коммитов, есть `Signed-off-by` его автора, по имени и адресу (R30 spec); коммиты — `git rev-list` между родителями merge-коммита pull request, `HEAD^1..HEAD^2`, из checkout с полной историей, без API; на другом событии падает | все, job вызывающего — только на pull request | нет | `contents: read` | обязательная подпись веб-коммитов: коммит, сделанный на github.com, получает её только так. У организации она включена (R22 spec) | «DCO / sign-off», держит мерж |
-| `documents.yml` | job `docs-check-repo`: собирает стадию `toolchain` из `.devcontainer/Dockerfile` вызывающего, берёт checkout с подмодулем и запускает в ней `just -f spec/justfile docs-check-repo` (R32 spec) | все, кроме `spec`: у него свой `just docs-check` | нет | `contents: read` | `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` — оба из заготовки | «Documents / docs-check-repo», держит мерж |
+| `documents.yml` | job `docs-check-repo`: собирает стадию `toolchain` из `.devcontainer/Dockerfile` вызывающего, берёт checkout с подмодулем и запускает в ней `just -f spec/justfile docs-check-repo` (R32 spec) | все, кроме `spec`: у него свой `just docs-check` | нет | `contents: read` | `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` — оба из заготовки; подмодуль — на теге v0.2.3 или новее, где есть рецепт `docs-check-repo` (R32 spec) | «Documents / docs-check-repo», держит мерж |
 | `codeql.yml` | CodeQL advanced setup (R09): job `languages` собирает список — `actions` всегда и языки вызывающего, каждый один раз; другой язык останавливает проверку с причиной. Job `analyze` на язык — `build-mode: none`, `tools: linked`, набор `security-extended`, `category` — `/language:<язык>`. Зелёный анализ значит, что CodeQL прошёл, а не что он ничего не нашёл: находки держит правило ruleset `code_scanning` или обязательная проверка «CodeQL» от GitHub Advanced Security, и что из них — решит `spec` (В7) | все | `languages` — языки репозитория сверх `actions`, через пробел, запятую или строку; пока только `javascript-typescript`. До кода — пусто, у `spec` — `javascript-typescript` для `tools/` (T17 spec) | `contents: read`, `security-events: write` | для компилируемого языка — сборка, с кодом (E3); default setup code scanning выключен | «CodeQL / analyze (<язык>)», держит мерж. «CodeQL / languages» не обязательна: если она упадёт, анализов не будет вовсе, и мерж ждёт их, а она называет причину |
 | `scorecard.yml` | job `scorecard`: OpenSSF Scorecard с публикацией результатов, SARIF — в code scanning; в job только одобренные actions и ни одного своего скрипта (R09) | все, на push в `main` и по расписанию | нет | на job — `contents: read`, `security-events: write` и `id-token: write`; на уровне workflow — только чтение | вызывающий — отдельный маленький файл без `env` и `defaults` (2.2) | «Scorecard / scorecard», мерж не держит (R30 spec) |
 
@@ -143,16 +141,137 @@ SonarCloud — не workflow: анализ автоматический, а ег
 
 ### 3.3. Вызывающие файлы
 
-В каждом репозитории компонента — одни и те же файлы; различаются они только входом CodeQL и своими job. У `spec` и `.github` — отличия ниже.
-- `.github/workflows/ci.yml` — на pull request и push в `main`: вызывает `secrets.yml`, `dco.yml` (на pull request) и `documents.yml` (кроме `spec`), а рядом — свои job;
-- `.github/workflows/codeql.yml` — на pull request и push в `main`: вызывает `codeql.yml` со своими языками. Раз в неделю его не запускают: бандл CodeQL закреплён вместе с action (R09);
-- `.github/workflows/scorecard.yml` — на push в `main` и раз в неделю: вызывает `scorecard.yml`;
-- `.github/dependabot.yml` — раз в неделю, как у `spec`: `github-actions` в `/`, он поднимает и ссылки на общие workflow, и `docker` в `/.devcontainer`; экосистемы языков — с кодом (repositories 2.2 spec, шаг 5). У каждой экосистемы — пауза `cooldown` в три дня, в том числе у `github-actions`, которая поднимает и ссылки на `.github` (R10); базовый образ она не держит, а держит ли ссылки — раздел 3.5;
-- `.sonarcloud.properties` — без `spec/**` (Д7 в RUN.md `spec`).
+В каждом репозитории компонента — одни и те же файлы; различаются они только входом CodeQL и своими job. Общие workflow закреплены по SHA первого релиза `.github`, `v0.1.0` — коммит `ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed`, — с комментарием версии на той же строке, а поднимает их Dependabot (R04). Копируя, берут последний релиз `.github`: его тег называет `gh release view -R altnovatrail/.github`, а коммит — `git ls-remote https://github.com/altnovatrail/.github refs/tags/<тег>`; `v0.1.0` ниже — первый из них. Тексты ниже готовы к копированию; отличия `spec` и `.github` — после них. actionlint 1.7.12 с shellcheck 0.11.0 замечаний к трём workflow ниже не нашёл, а все пять общих workflow на этом коммите есть; `dependabot.yml` никакая проверка здесь не читает.
+
+`.github/workflows/ci.yml` — на pull request и push в `main`; рядом с тремя общими — свои job репозитория. Job `documents` требует `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` на теге с рецептом `docs-check-repo` — v0.2.3 или новее (R32 spec; раздел 3.1). Репозиторий на старом теге сначала переходит на новый, своей задачей (RULES.md, Across repositories), иначе «Documents / docs-check-repo» красная: module-kit, например, стоит на v0.1.0 — его подмодуль `spec` указывает на коммит ec6c48e (API GitHub, 2026-10-20):
+
+```yaml
+# NovaTrail's shared checks (R03 .github), pinned to a release of .github by SHA with its version
+# beside it; Dependabot moves both. The repository's own jobs go beside them.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its older run; every commit to main is checked.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  secrets:
+    name: Secrets
+    uses: altnovatrail/.github/.github/workflows/secrets.yml@ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed # v0.1.0
+
+  # A pull request's commits are what it checks; a push to main has been checked as one.
+  dco:
+    name: DCO
+    if: github.event_name == 'pull_request'
+    uses: altnovatrail/.github/.github/workflows/dco.yml@ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed # v0.1.0
+
+  documents:
+    name: Documents
+    uses: altnovatrail/.github/.github/workflows/documents.yml@ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed # v0.1.0
+```
+
+`.github/workflows/codeql.yml` — на pull request и push в `main`. Раз в неделю его не запускают: бандл CodeQL закреплён вместе с action (R09). Языки репозитория сверх `actions` — входом `languages`, пока только `javascript-typescript` (раздел 3.1):
+
+```yaml
+# CodeQL over the repository's workflows and its languages (R09 .github), pinned to a release of
+# .github. The job gives the shared workflow what it needs to upload its results.
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  codeql:
+    name: CodeQL
+    permissions:
+      contents: read
+      security-events: write
+    uses: altnovatrail/.github/.github/workflows/codeql.yml@ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed # v0.1.0
+```
+
+`.github/workflows/scorecard.yml` — на push в `main` и раз в неделю:
+
+```yaml
+# OpenSSF Scorecard (R09 .github), pinned to a release of .github. Like the shared file, it has no
+# env or defaults and only read permission at the top, as the Scorecard server asks of a workflow
+# that publishes.
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "41 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  scorecard:
+    name: Scorecard
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    uses: altnovatrail/.github/.github/workflows/scorecard.yml@ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed # v0.1.0
+```
+
+`.github/dependabot.yml` — раз в неделю, как у `spec`: `github-actions` в `/`, он поднимает и ссылки на общие workflow, и `docker` в `/.devcontainer`; экосистемы языков — с кодом (repositories 2.2 spec, шаг 5). У каждой экосистемы — пауза `cooldown` в три дня (R10). Базовый образ она не держит, а держит ли ссылки на `.github` — раздел 3.5:
+
+```yaml
+version: 2
+
+updates:
+  # The actions of the workflows, and the references to .github's shared workflows with them.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+```
+
+`.sonarcloud.properties` — без `spec/**` (Д7 в RUN.md `spec`):
+
+```properties
+sonar.exclusions=spec/**
+```
+
+Мерж в ruleset `main` держат проверки из колонки «Проверка в ruleset» раздела 3.1 и свои job репозитория (R30 spec), с `integration_id` 15368 для проверок GitHub Actions и 12526 для SonarCloud, как у `spec` и `.github` (R11): без него обязательную проверку закроет статус с тем же именем от любого, у кого есть право записи (раздел 4). Держат ли мерж находки CodeQL — вопрос В7 RUN.md.
 
 Отличия:
-- у `spec` в `ci.yml` нет `documents.yml` — рядом его свой job «Documents and tools», — а в `.sonarcloud.properties` нет исключения `spec/**`: подмодуля у него нет;
-- у `.github` вызывающие файлы свои, с префиксом `self-` (раздел 3.4): имена `codeql.yml` и `scorecard.yml` здесь заняты самими общими workflow.
+- у `spec` в `ci.yml` нет job `documents` — рядом его свой job «Documents and tools», — у `codeql.yml` — `with: languages: javascript-typescript` для `tools/`, и в его ruleset вместо «Documents / docs-check-repo» — «Documents and tools», а ещё «CodeQL / analyze (javascript-typescript)». `.sonarcloud.properties` и `dependabot.yml` у `spec` уже есть, свои — исключения тестов и черновиков, npm в `/tools` (R30 spec), — и их не заменяют: исключение `spec/**` ему не нужно, подмодуля у него нет;
+- у `.github` вызывающие файлы свои, с префиксом `self-` (раздел 3.4): имена `codeql.yml` и `scorecard.yml` здесь заняты самими общими workflow. Его ruleset требует ещё «Workflows» — свой job с actionlint (R11).
+
+На первом вызове, в T17 `spec`, — сверх её «Как проверить», где уже названы результат на сервере Scorecard и подъём ссылки Dependabot:
+- вызов по полному пути — 2.8. Политика actions его не запрещает: у `.github`, `spec` и module-kit — `allowed_actions: all` и `sha_pinning_required: true` (раздел 4), и ссылки по SHA её держат;
+- держит ли ссылки на `.github` пауза (2.6), видно только по прогону Dependabot в первые три дня после релиза `.github`; прогон позже ничего не показывает. Предложит он в этот срок новую ссылку — пауза её не держит, и это вопрос «в реестр spec». Варианты: принять — или поднимать ссылки на `.github` руками, без Dependabot. Рекомендация — принять: pull request Dependabot у вызывающего проходит его CI, и сломанный общий workflow окрасит их до мержа;
+- Scorecard отметит Dangerous-Workflow у `release.yml` `spec`, как отметил у `self-release.yml` `.github`, — вопрос В10 RUN.md.
 
 Файлы репозиториев компонентов и `spec` пишет сессия `spec` — через `.repos/<имя>`, как при заведении репозитория (R30 spec).
 
@@ -163,13 +282,15 @@ SonarCloud — не workflow: анализ автоматический, а ег
 - `self-release.yml`, `name: Release`, — свой релиз, как у `spec` (R31 spec; R10): после зелёного `self-ci.yml` на `main`, только от push из самого репозитория, и кнопкой — на `main`, после зелёного CI. Прогоны идут очередью, `queue: max`. Checkout — коммит, на котором прошёл CI, со всей историей и подмодулем; номер считается в стадии `toolchain`, релиз выходит, если изменился общий workflow, а проверяет его `gh release verify`. Отказ 404 или 403 «Resource not accessible by integration» для коммита, который уже не вершина `main`, пропускается: его правку покроет релиз вершины (раздел 4);
 - `self-codeql.yml`, `name: CodeQL`, — на pull request и push в `main`; `self-scorecard.yml`, `name: Scorecard`, — на push в `main` и раз в неделю. Оба вызывают общие по локальному пути, `.github` не называет языков сверх `actions` (R09); `dependabot.yml` и `.sonarcloud.properties` — как в 3.3.
 
+Ruleset `main` пускает в `main` только pull request с зелёными обязательными проверками — их список в R11, — а ruleset `v-tags` держит теги релизов (R10).
+
 ### 3.5. Версии и обновления
 
 По R04 и R10:
 - **релиз `.github`** выходит сам после зелёного CI на `main`, как R31 spec, но только у коммита, который с прошлого релиза меняет общий workflow — файл `.github/workflows/` без префикса `self-`; первый релиз выходит всегда. Номер — следующий патч линии `RELEASE_LINE` из `self-release.yml`, сейчас `0.1`. Его считают функции `readLine`, `readTags` и `nextVersion` из `spec/tools/release/version.mjs` подмодуля по тегам `.github`. Каждый релиз — Latest, неизменяемый, с аттестацией, а теги `v*` — под ruleset `v-tags`;
 - **вызывающие** закрепляют общий workflow по SHA с комментарием версии на той же строке. Их Dependabot поднимает и SHA, и комментарий, если на коммите есть тег (раздел 4);
 - **actions внутри общих workflow** закреплены так же, и их поднимает Dependabot самого `.github`. Слитое обновление выходит релизом, а за ним Dependabot вызывающих поднимает ссылку;
-- **пауза `cooldown`** — три дня у каждой экосистемы Dependabot, у `.github` и у вызывающих, в том числе у `github-actions`, которая поднимает ссылки на `.github`: ошибка релиза должна успеть обнаружиться раньше, чем её разнесут двенадцать pull request. Базовый образ devcontainer пауза не держит: реестр Microsoft не сообщает дату релиза, и Dependabot предложил новый образ сразу — у `spec` и у canvas-api (T15 spec). Держит ли она ссылки на reusable workflow, документация не говорит (2.6), и это не проверено: видно будет на первом подъёме ссылки в T17 `spec`;
+- **пауза `cooldown`** — три дня у каждой экосистемы Dependabot, у `.github` и у вызывающих, в том числе у `github-actions`, которая поднимает ссылки на `.github`: ошибка релиза должна успеть обнаружиться раньше, чем её разнесут двенадцать pull request. Базовый образ devcontainer пауза не держит: реестр Microsoft не сообщает дату релиза, и Dependabot предложил новый образ сразу — у `spec` и у canvas-api (T15 spec). Держит ли она ссылки на reusable workflow, документация не говорит (2.6), и это не проверено: как это увидеть в T17 `spec`, — раздел 3.3;
 - **инструменты, которых Dependabot не видит**, — gitleaks, actionlint и shellcheck с суммами sha256 их архивов — поднимаются руками, как `ARG` в Dockerfile `spec` (R30 spec);
 - **закрепление по SHA** держит правило Exact versions: требование организации закреплять по SHA к ссылке на reusable workflow не относится (раздел 4).
 
@@ -235,6 +356,11 @@ SonarCloud — не workflow: анализ автоматический, а ег
 - **Dangerous-Workflow у Scorecard** — [`checks/raw/dangerous_workflow.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/dangerous_workflow.go) на коммите 61e8474, той версии Scorecard, v5.6.0, которой сервер посчитал `.github` (поле `scorecard` в ответе API Scorecard). В workflow с триггером `pull_request_target` или `workflow_run` функция `checkJobForUntrustedCodeCheckout` отмечает checkout, у которого `ref` содержит `github.event.pull_request` или `github.event.workflow_run`; условие `if` job она не читает;
 - **неизменяемые релизы** — API GitHub: `PUT repos/altnovatrail/.github/immutable-releases` ответил 204, а `GET` того же пути — `{"enabled":true,"enforced_by_owner":false}`, как у `spec`. Ruleset `v-tags` — `POST repos/altnovatrail/.github/rulesets` с правилами `update`, `deletion` и `non_fast_forward` на `refs/tags/v*`, без обхода; образец — ruleset `spec` 25426896;
 - **отказ Releases API** коммиту, который уже не вершина `main`, — [GitHub Docs, REST API endpoints for releases](https://docs.github.com/en/rest/releases/releases), Create a release: «If the commit identified by target_commitish … adds or modifies any file under .github/workflows/ relative to the repository's default branch, the authenticating token must be authorized to modify workflows. Otherwise, this endpoint returns 404 Not Found; some authentication paths surface 403 Resource not accessible by integration instead», и «The GITHUB_TOKEN available to GitHub Actions cannot be authorized for this». У `release.yml` `spec` на v0.2.6 пропускается только 404;
+- **контекст `workflow_run`** — [GitHub Docs, Events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows), раздел `workflow_run`: `GITHUB_SHA` — «Last commit on default branch», `GITHUB_REF` — «Default branch»;
+- **источник обязательной проверки** — [GitHub Docs, Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), раздел Require status checks to pass: «Any person or integration with write permissions to a repository can set the state of any status check in the repository», и потому «you can select an app as the expected source of status updates»;
+- **политика actions** — API GitHub, `repos/altnovatrail/<репозиторий>/actions/permissions`, у `.github`, `spec` и `module-kit`: `enabled: true`, `allowed_actions: all`, `sha_pinning_required: true`;
+- **риск Dangerous-Workflow** — [`docs/checks.md`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md) Scorecard на том же коммите: «Risk: `Critical` (vulnerable to repository compromise)»;
+- **сообщение squash-мержа** — [GitHub Docs, About pull request merges](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/about-pull-request-merges), раздел Merge message for a squash merge: «GitHub generates a default commit message that you can edit. The default message can include the pull request title, pull request description, or commit information, depending on repository settings»;
 - **оболочка шага** — без `shell` шаг на Linux идёт как `bash -e {0}`, а с `shell: bash` — как `bash --noprofile --norc -eo pipefail {0}`: [GitHub Docs, Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), раздел `defaults.run.shell`.
 
 **Инструменты общих проверок** (R08; прочитано 2026-10-20):
