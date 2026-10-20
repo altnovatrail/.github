@@ -1,7 +1,7 @@
 # CodeQL over .github itself (R03): the shared codeql.yml, called by local path, so that a pull
 # request checks the version it changes. .github has no code of its own beyond its workflows, so
 # it names no language besides actions. The check CodeQL / analyze (actions) holds the merge into
-# main once main has its ruleset (architecture 2.9).
+# main through main's ruleset (R11).
 #
 # No weekly run: the CodeQL bundle comes with the pinned action (tools: linked), so a run on
 # unchanged code would find what the last one found. New queries come with the pull request
