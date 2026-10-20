@@ -28,3 +28,7 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/codeql.yml
+    with:
+      languages: javascript-typescript
+      paths-ignore: |
+        trial/**
