@@ -1,0 +1,96 @@
+# Shared check (R03): CodeQL, as advanced setup, over the workflows of the repository that calls
+# it — language actions, always — and over the languages it names (R30 in spec). The default
+# setup of code scanning stays off: with it on, GitHub disables a workflow like this one.
+#
+# The caller's job gives it `contents: read` and `security-events: write`, which it needs to
+# upload what it finds; a called workflow cannot raise what its caller gave. The check names are
+# "<caller's job> / languages" and "<caller's job> / analyze (<language>)", one per language —
+# CodeQL / languages and CodeQL / analyze (actions) — and all of them hold the merge. Each
+# language's results go up under a category of their own, /language:<language>, which stays the
+# same whatever the caller's file or job is called.
+
+name: CodeQL (shared)
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: >-
+          The languages of the repository besides actions, which is always analysed, as CodeQL
+          names them, divided by spaces, commas or lines. Only javascript-typescript is taken for
+          now. Empty before there is code.
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  # actions and the languages the caller names, each once. Besides actions only
+  # javascript-typescript is taken: the platform's code is Go and TypeScript (R03), and Go needs a
+  # build, which comes with the workflows for code (E3). Any other name stops the check with its
+  # reason. This job is a check of its own, CodeQL / languages, required with the analyses: when
+  # it fails, no analysis runs, and this is the check that says why.
+  languages:
+    name: languages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.list.outputs.matrix }}
+    steps:
+      - id: list
+        env:
+          LANGUAGES: ${{ inputs.languages }}
+        run: |
+          IFS=$' \t\n,' read -r -d '' -a requested <<< "$LANGUAGES" || true
+          list=(actions)
+          for language in "${requested[@]}"; do
+              case "$language" in
+                  "" | actions) ;;
+                  javascript-typescript)
+                      [[ " ${list[*]} " == *" ${language} "* ]] || list+=("$language")
+                      ;;
+                  *)
+                      echo "::error::CodeQL here takes, besides actions, only javascript-typescript, not ${language}. Go, which needs a build, comes with the workflows for code (E3)."
+                      exit 1
+                      ;;
+              esac
+          done
+          matrix="$(printf '"%s",' "${list[@]}")"
+          matrix="[${matrix%,}]"
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          echo "languages: ${matrix}"
+
+  # build-mode none is what actions and javascript-typescript take. The queries are
+  # security-extended, as canvas-api's (R50 canvas-api). tools: linked takes the CodeQL bundle
+  # that this commit of the action ships with; without it, GitHub's flags choose the bundle at
+  # run time. A green analysis says that CodeQL ran, not that it found nothing: what it found
+  # holds a merge through the ruleset (architecture 3.1).
+  analyze:
+    name: analyze (${{ matrix.language }})
+    needs: languages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ${{ fromJSON(needs.languages.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: ${{ matrix.language }}
+          tools: linked
+          build-mode: none
+          queries: security-extended
+
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          category: /language:${{ matrix.language }}

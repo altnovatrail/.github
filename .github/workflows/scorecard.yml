@@ -1,0 +1,54 @@
+# Shared check (R03): OpenSSF Scorecard over the repository that calls it, its results published
+# to the Scorecard server and uploaded to code scanning. It holds no merge (R30 in spec): it runs
+# on main and on a schedule, as the action supports, and a pull request has no result of it.
+#
+# Publishing holds this workflow to the Scorecard server's rules (architecture 4): no `env` or
+# `defaults` at the top or on the job, no write permission at the top, `id-token: write` on this
+# job alone, an Ubuntu runner, no container, and in the job only the approved actions —
+# checkout, scorecard-action, upload-artifact and upload-sarif, with no script of its own.
+# Whether the server also checks the caller's file is open (architecture 2.2), and a green job does
+# not tell: v2.5.0 only warns when the server rejects a result. What it accepted is read on the
+# server.
+#
+# The caller's job gives it `contents: read`, `security-events: write` and `id-token: write`;
+# its file has no `env` or `defaults` either, and only read permission at the top.
+
+name: Scorecard (shared)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  scorecard:
+    name: scorecard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # v2.5.0 at least: the releases before it pull their image from gcr.io, which is retired
+      # (canvas-api's scorecard.yml, commit 0901af0).
+      - uses: ossf/scorecard-action@fa7117db83c52d787ae5a89f350999701505d78e # v2.5.0
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: scorecard
+          path: results.sarif
+          retention-days: 5
+
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: results.sarif

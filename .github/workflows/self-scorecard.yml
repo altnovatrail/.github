@@ -1,0 +1,27 @@
+# OpenSSF Scorecard over .github itself (R03): the shared scorecard.yml, called by local path. It
+# runs on main and once a week, as the action supports, and holds no merge (R30 in spec).
+#
+# This file keeps to the Scorecard server's rules for the workflow that publishes: nothing at the
+# top but read permission, no `env` or `defaults`. Its job has to give the shared workflow
+# `id-token: write`, and whether the server accepts that from the caller is what this run shows
+# first (architecture 2.2): read the result on the Scorecard server, not the job's colour.
+
+name: Scorecard
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "41 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  scorecard:
+    name: Scorecard
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    uses: ./.github/workflows/scorecard.yml
