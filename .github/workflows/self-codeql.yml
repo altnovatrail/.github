@@ -30,5 +30,3 @@ jobs:
     uses: ./.github/workflows/codeql.yml
     with:
       languages: javascript-typescript
-      paths-ignore: |
-        trial/**
