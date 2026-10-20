@@ -1,0 +1,8 @@
+# actionlint does not know concurrency's queue key yet, which GitHub documents: "max: Up to 100
+# jobs or workflow runs can be pending in the concurrency group" (GitHub Docs, Workflow syntax,
+# read 2026-10-19, as spec's .github/actionlint.yaml cites it). Only that one complaint, only in
+# the workflow that uses the key, is waived.
+paths:
+  .github/workflows/self-release.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'

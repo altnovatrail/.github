@@ -1,6 +1,6 @@
 # .github — архитектура
 
-> Статус: 2026-10-20, эпик E1 закончен (T01–T05), идёт эпик E2. Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: 2.4–2.6, 2.9 и 2.7 — где общий workflow держит данные — автор решил при планировании E2, и в раздел 3 их переносят задачи E2, а список лицензий по 2.7 положит E3; 2.2 и 2.8 проверят E2 и T17 `spec`; 2.3 — Т-27 `spec`, вместе с эпиком E3. Общие проверки пишет эпик E2: секреты, DCO и документы (T07), CodeQL и Scorecard (T08) уже есть, релиз — T09; workflow для кода — эпик E3.
+> Статус: 2026-10-20, эпик E1 закончен (T01–T05), идёт эпик E2. Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: 2.4–2.6 решены (R10), 2.7 — для gitleaks (R08), а список лицензий по 2.7 положит E3; 2.9 автор решил при планировании E2, и в раздел 3 его переносит T10. У 2.2 пройден первый шаг (R09), второй шаг и 2.8 проверит T17 `spec`; 2.3 — Т-27 `spec`, вместе с эпиком E3. Общие проверки эпика E2 — секреты, DCO и документы (T07), CodeQL и Scorecard (T08) — и релиз `.github` (T09) уже есть, ruleset `main` — T10; workflow для кода — эпик E3.
 >
 > Что делает компонент, чего не делает и что о нём ещё предстоит решить. Это подробности его карточки — architecture 3.11 spec. Карточка остаётся сводкой: если подробности меняют то, что в ней сказано, она правится в `spec` тем же путём, что и вопросы в его реестры (RULES.md, Across repositories).
 >
@@ -45,7 +45,8 @@
   - проверку ветки сервер ведёт по вызывающему репозиторию (scorecard-webapp, PR #778), и Scorecard в reusable workflow он поддерживает — это говорит за то, что ограничения он сверяет по общему файлу. Прямо это не сказано;
   - общий `scorecard.yml` ограничения держит. Вызывающий файл держать их не может: у его job — `uses:` общего workflow вместо шагов и `id-token: write`, а «Only the job with `ossf/scorecard-action` can use `id-token: write` permissions» (раздел 4). Если сервер сверяет вызывающий файл, он отклонит результат, и нужен запасной путь.
 - **Как решится:** в два шага. Первый — прогон `self-scorecard.yml` в эпике E2: у его job тоже `uses:` и `id-token: write`, так что, если сервер сверяет вызывающий файл, он отклонит уже этот результат — принят ли он, проверяет сам эпик. Второй — первый вызов из другого репозитория по полному пути, как и 2.8: проверка ветки по вызывающему (PR #778) касается именно такого вызова. Зелёный job ничего не доказывает: при отказе сервера scorecard-action v2.5.0 только предупреждает и возвращает успех, а входа `fail_on_publish_error`, который валит шаг, в v2.5.0 ещё нет (раздел 4; так же записала T17 `spec`). Принят ли результат, видно только на сервере Scorecard; с релизом, где вход есть, его стоит включить. Отклонит — запасной путь R03: одинаковая копия `scorecard.yml` в каждом репозитории.
-- **Задача:** эпик E2 — общий `scorecard.yml` и первый шаг; второй — первый вызов в T17 `spec`.
+- **Первый шаг пройден** 2026-10-20 (поправка к R09): API Scorecard отдаёт результат `self-scorecard.yml` для коммита `main` 53b829f, оценка 5.4, а журнал прогона не предупреждает об отказе. Вызывающий файл с `uses:` и `id-token: write` сервер принял.
+- **Задача:** первый шаг — T08, сделан; второй — первый вызов в T17 `spec`.
 
 ### 2.3. Подпись общего релиза: чья идентичность
 
@@ -57,24 +58,17 @@
 ### 2.4. Какие коммиты `main` получают релиз
 
 - **Суть:** R04 выпускает общие workflow релизами, как R31 spec. Но `spec` выпускает каждый зелёный коммит `main`, а у `.github` есть коммиты, которые общих workflow не трогают: профиль, файлы сообщества, свои `self-` workflow, документы.
-- **Что известно:** Dependabot вызывающих поднимает ссылку до нового тега (R04). Релиз без изменений в общих workflow дал бы по pull request в каждом из двенадцати вызывающих репозиториев — `.github` вызывает свои общие workflow по локальному пути, и Dependabot их не трогает (раздел 4), — на workflow, который не менялся. Расписание Dependabot у вызывающих — раз в неделю (раздел 3.3), так что в неделю таких pull request не больше одного на репозиторий.
-- **Варианты:** каждый зелёный коммит, как у `spec`; только коммит, который меняет общий workflow — файл в `.github/workflows/` без префикса `self-` или файл, который общий workflow читает из `.github` (2.7).
-- **Рекомендация:** только коммит, который меняет общий workflow или то, что он читает. Номер версии тогда значит «изменились общие workflow», и pull request Dependabot у вызывающих приходит только с правкой, которая их касается.
-- **Задача:** эпик E2, вместе с `self-release.yml`.
+- **Решено:** R10, задача T09: релиз получает коммит, который с прошлого релиза меняет общий workflow, а первый релиз выходит всегда. Устройство — раздел 3.5.
 
 ### 2.5. Как `.github` считает номер релиза
 
 - **Суть:** у `spec` номер считает `tools/release/version.mjs` с тестами, а рецепт `release-version` подаёт ему три списка тегов `v*`: все теги, теги из истории `HEAD` и теги на самом `HEAD` (justfile `spec`; R31 spec). Своего кода у `.github` нет.
-- **Варианты:** тот же `spec/tools/release/version.mjs` из подмодуля, а на вход — списки тегов самого `.github`; своя копия рецепта и скрипта.
-- **Рекомендация:** скрипт из подмодуля: те же правила номера, что у `spec`, и те же тесты, без второй копии. Рецепт `release-version` из `spec/justfile` как есть не годится: он перечисляет теги того репозитория, где запущен, — проверить, где запускает рецепты just, в задаче, которая пишет `self-release.yml`.
-- **Задача:** эпик E2.
+- **Решено:** R10, задача T09: функции `version.mjs` из подмодуля, а линия `0.1` — в самом `self-release.yml`. Устройство — раздел 3.5.
 
 ### 2.6. Пауза `cooldown` для ссылок на `.github`
 
 - **Суть:** Dependabot ждёт три дня после выхода версии, прежде чем её предложить, — так записано в `dependabot.yml` `spec` для каждой экосистемы (R30 spec). Ссылки на общие workflow он поднимает в той же экосистеме `github-actions`; что пауза действует и на них, документация отдельно не говорит.
-- **Варианты:** оставить три дня, как для всего; ссылки на `altnovatrail/.github` поднимать без паузы — если `cooldown` позволяет исключить зависимость, это сверить с документацией Dependabot.
-- **Рекомендация:** оставить три дня. Релиз `.github` уже прошёл свой CI, где общие workflow вызваны по локальному пути (раздел 3.4), но три дня дают заметить ошибку до того, как её разнесут двенадцать pull request. Срочную правку можно поднять в репозиториях и руками.
-- **Задача:** эпик E2 решает и записывает в разделе 3.3; в `dependabot.yml` вызывающих это переносят T17 и T16 `spec`, которые пишут их файлы.
+- **Решено:** R10, задача T09: три дня, как для всего. Устройство — разделы 3.3 и 3.5. Держит ли пауза ссылки на `.github`, проверит первый подъём ссылки в T17 `spec`, вместе с 2.8.
 
 ### 2.7. Как общий workflow читает файлы `.github` своей версии
 
@@ -153,7 +147,7 @@ SonarCloud — не workflow: анализ автоматический, а ег
 - `.github/workflows/ci.yml` — на pull request и push в `main`: вызывает `secrets.yml`, `dco.yml` (на pull request) и `documents.yml` (кроме `spec`), а рядом — свои job;
 - `.github/workflows/codeql.yml` — на pull request и push в `main`: вызывает `codeql.yml` со своими языками. Раз в неделю его не запускают: бандл CodeQL закреплён вместе с action (R09);
 - `.github/workflows/scorecard.yml` — на push в `main` и раз в неделю: вызывает `scorecard.yml`;
-- `.github/dependabot.yml` — раз в неделю, как у `spec`: `github-actions` в `/`, он поднимает и ссылки на общие workflow, и `docker` в `/.devcontainer`; экосистемы языков — с кодом (repositories 2.2 spec, шаг 5);
+- `.github/dependabot.yml` — раз в неделю, как у `spec`: `github-actions` в `/`, он поднимает и ссылки на общие workflow, и `docker` в `/.devcontainer`; экосистемы языков — с кодом (repositories 2.2 spec, шаг 5). У каждой экосистемы — пауза `cooldown` в три дня, в том числе у `github-actions`, которая поднимает и ссылки на `.github` (R10); базовый образ она не держит, а держит ли ссылки — раздел 3.5;
 - `.sonarcloud.properties` — без `spec/**` (Д7 в RUN.md `spec`).
 
 Отличия:
@@ -166,19 +160,18 @@ SonarCloud — не workflow: анализ автоматический, а ег
 
 Свои workflow `.github` лежат рядом с общими и начинаются с `self-`; у общих префикса нет, и запускаются они только через `workflow_call`:
 - `self-ci.yml`, `name: CI`, — на pull request и push в `main`. Job «Secrets», «DCO» (только на pull request) и «Documents» вызывают общие workflow по локальному пути `./.github/workflows/<файл>`, так что pull request проверяет ту версию, которую сам и меняет. Job «Workflows» — actionlint 1.7.12 по всем workflow, с shellcheck 0.11.0 по скриптам в них: их код живёт здесь. actionlint и shellcheck, как и gitleaks, скачиваются по точной версии и сверяются с суммой sha256 в самом файле, а в devcontainer их нет (R08); shellcheck раннера actionlint не берёт. Отказы actionlint, каждый с причиной, — в `.github/actionlint.yaml`;
-- `self-release.yml` — свой релиз, как у `spec` (R31 spec): после зелёного `self-ci.yml` на `main` — следующий патч линии, неизменяемый релиз с аттестацией, теги `v*` под ruleset (R04);
+- `self-release.yml`, `name: Release`, — свой релиз, как у `spec` (R31 spec; R10): после зелёного `self-ci.yml` на `main`, только от push из самого репозитория, и кнопкой — на `main`, после зелёного CI. Прогоны идут очередью, `queue: max`. Checkout — коммит, на котором прошёл CI, со всей историей и подмодулем; номер считается в стадии `toolchain`, релиз выходит, если изменился общий workflow, а проверяет его `gh release verify`. Отказ 404 или 403 «Resource not accessible by integration» для коммита, который уже не вершина `main`, пропускается: его правку покроет релиз вершины (раздел 4);
 - `self-codeql.yml`, `name: CodeQL`, — на pull request и push в `main`; `self-scorecard.yml`, `name: Scorecard`, — на push в `main` и раз в неделю. Оба вызывают общие по локальному пути, `.github` не называет языков сверх `actions` (R09); `dependabot.yml` и `.sonarcloud.properties` — как в 3.3.
 
 ### 3.5. Версии и обновления
 
-По R04:
-- **релиз `.github`** выходит сам после зелёного CI на `main` — следующий патч `vX.Y.Z`, — как R31 spec; какие коммиты его получают — 2.4;
+По R04 и R10:
+- **релиз `.github`** выходит сам после зелёного CI на `main`, как R31 spec, но только у коммита, который с прошлого релиза меняет общий workflow — файл `.github/workflows/` без префикса `self-`; первый релиз выходит всегда. Номер — следующий патч линии `RELEASE_LINE` из `self-release.yml`, сейчас `0.1`. Его считают функции `readLine`, `readTags` и `nextVersion` из `spec/tools/release/version.mjs` подмодуля по тегам `.github`. Каждый релиз — Latest, неизменяемый, с аттестацией, а теги `v*` — под ruleset `v-tags`;
 - **вызывающие** закрепляют общий workflow по SHA с комментарием версии на той же строке. Их Dependabot поднимает и SHA, и комментарий, если на коммите есть тег (раздел 4);
 - **actions внутри общих workflow** закреплены так же, и их поднимает Dependabot самого `.github`. Слитое обновление выходит релизом, а за ним Dependabot вызывающих поднимает ссылку;
+- **пауза `cooldown`** — три дня у каждой экосистемы Dependabot, у `.github` и у вызывающих, в том числе у `github-actions`, которая поднимает ссылки на `.github`: ошибка релиза должна успеть обнаружиться раньше, чем её разнесут двенадцать pull request. Базовый образ devcontainer пауза не держит: реестр Microsoft не сообщает дату релиза, и Dependabot предложил новый образ сразу — у `spec` и у canvas-api (T15 spec). Держит ли она ссылки на reusable workflow, документация не говорит (2.6), и это не проверено: видно будет на первом подъёме ссылки в T17 `spec`;
 - **инструменты, которых Dependabot не видит**, — gitleaks, actionlint и shellcheck с суммами sha256 их архивов — поднимаются руками, как `ARG` в Dockerfile `spec` (R30 spec);
 - **закрепление по SHA** держит правило Exact versions: требование организации закреплять по SHA к ссылке на reusable workflow не относится (раздел 4).
-
-Какие коммиты получают релиз, как считается номер и нужна ли ссылкам на `.github` пауза `cooldown` — открытые пункты 2.4–2.6.
 
 ### 3.6. Секреты и форки
 
@@ -237,6 +230,12 @@ SonarCloud — не workflow: анализ автоматический, а ег
 - **проверки пропущенной матрицы** — пробный pull request #9: `self-codeql.yml` передал `go`, «CodeQL / languages» упала, а за анализы пришла одна проверка, «CodeQL / analyze (${{ matrix.language }})», пропущенная; проверки «CodeQL / analyze (actions)» не было;
 - **сборка для CodeQL** — [GitHub Docs, CodeQL build options and steps for compiled languages](https://docs.github.com/en/code-security/reference/code-scanning/codeql/build-options-for-compiled-languages), раздел Building Go: «CodeQL supports build modes `autobuild` or `manual` for Go code» — без сборки, `none`, Go не разбирается;
 - **API Scorecard** — `https://api.scorecard.dev/projects/github.com/<владелец>/<репозиторий>`: принятый результат приходит с датой, коммитом репозитория и оценкой — поля `date`, `repo.commit`, `score` в ответе для `ossf/scorecard`; у репозитория без опубликованного результата — 404, как у `spec`.
+
+**Релиз `.github`** (R10; прочитано 2026-10-20):
+- **Dangerous-Workflow у Scorecard** — [`checks/raw/dangerous_workflow.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/dangerous_workflow.go) на коммите 61e8474, той версии Scorecard, v5.6.0, которой сервер посчитал `.github` (поле `scorecard` в ответе API Scorecard). В workflow с триггером `pull_request_target` или `workflow_run` функция `checkJobForUntrustedCodeCheckout` отмечает checkout, у которого `ref` содержит `github.event.pull_request` или `github.event.workflow_run`; условие `if` job она не читает;
+- **неизменяемые релизы** — API GitHub: `PUT repos/altnovatrail/.github/immutable-releases` ответил 204, а `GET` того же пути — `{"enabled":true,"enforced_by_owner":false}`, как у `spec`. Ruleset `v-tags` — `POST repos/altnovatrail/.github/rulesets` с правилами `update`, `deletion` и `non_fast_forward` на `refs/tags/v*`, без обхода; образец — ruleset `spec` 25426896;
+- **отказ Releases API** коммиту, который уже не вершина `main`, — [GitHub Docs, REST API endpoints for releases](https://docs.github.com/en/rest/releases/releases), Create a release: «If the commit identified by target_commitish … adds or modifies any file under .github/workflows/ relative to the repository's default branch, the authenticating token must be authorized to modify workflows. Otherwise, this endpoint returns 404 Not Found; some authentication paths surface 403 Resource not accessible by integration instead», и «The GITHUB_TOKEN available to GitHub Actions cannot be authorized for this». У `release.yml` `spec` на v0.2.6 пропускается только 404;
+- **оболочка шага** — без `shell` шаг на Linux идёт как `bash -e {0}`, а с `shell: bash` — как `bash --noprofile --norc -eo pipefail {0}`: [GitHub Docs, Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), раздел `defaults.run.shell`.
 
 **Инструменты общих проверок** (R08; прочитано 2026-10-20):
 - **gitleaks** — [README v8.30.1](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md), раздел Load Configuration: «The order of precedence is:», и четвёртым — «A `.gitleaks.toml` file within the target path». Сумма архива `gitleaks_8.30.1_linux_x64.tar.gz` — из `gitleaks_8.30.1_checksums.txt` того же релиза: `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`;

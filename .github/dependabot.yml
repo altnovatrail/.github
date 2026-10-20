@@ -1,0 +1,29 @@
+# Dependabot proposes new versions of what it can see (R10): the actions of the workflows, shared
+# and self- alike, with the version comment beside each SHA, and the base image of the
+# devcontainer, tag and digest. An action it moves in a shared workflow comes out in the next
+# release of .github, and the callers' Dependabot moves their reference to it (R04).
+#
+# Raised by hand, because no ecosystem here reads them: gitleaks, actionlint and shellcheck, each
+# with the sha256 of its archive in the workflow that downloads it (R08), and the ARGs of
+# .devcontainer/Dockerfile, which come with a new tag of spec.
+#
+# Every ecosystem waits three days after a release before proposing it, as in spec: a bad
+# release gets time to be noticed (architecture 3.5). The base image is the exception in effect:
+# the Microsoft registry gives no release date, and Dependabot proposed a new image at once in
+# spec and in canvas-api (T15 in spec's RUN.md).
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
