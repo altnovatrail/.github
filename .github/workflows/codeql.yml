@@ -7,7 +7,9 @@
 # "<caller's job> / languages" and "<caller's job> / analyze (<language>)", one per language —
 # CodeQL / languages and CodeQL / analyze (actions); the analyses hold the merge. Each language's
 # results go up under a category of their own, /language:<language>, which stays the same
-# whatever the caller's file or job is called.
+# whatever the caller's file or job is called. Paths the caller names are left out of the
+# analysis of its languages — spec's draft/, a prototype a design tool built, say — while the
+# analysis of actions reads every workflow, whatever the caller passes.
 
 name: CodeQL (shared)
 
@@ -22,6 +24,15 @@ on:
         type: string
         required: false
         default: ""
+      paths-ignore:
+        description: >-
+          Paths CodeQL leaves out of the analysis of the languages above — draft/**, say — as
+          the paths-ignore of a CodeQL configuration: bare paths, one per line, unquoted. The
+          analysis of actions never takes them and reads every workflow. A line that starts
+          with # is a comment. Empty by default.
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -33,13 +44,15 @@ jobs:
   # reason. This job is a check of its own, CodeQL / languages, and need not be required: when it
   # fails, the matrix never expands, the one check GitHub reports for it is a skipped
   # "analyze (${{ matrix.language }})", and the required analyses never come, so the merge waits.
-  # This check says why.
+  # This check says why. It also turns paths-ignore into the configuration that the analyses of
+  # the caller's languages take.
   languages:
     name: languages
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.list.outputs.matrix }}
+      config: ${{ steps.config.outputs.config }}
     steps:
       - id: list
         env:
@@ -64,11 +77,51 @@ jobs:
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
           echo "languages: ${matrix}"
 
+      # One line of YAML, `paths-ignore: [...]`, with every path as a JSON string: YAML reads
+      # those as double-quoted scalars, so a path that starts with * or holds a colon stays a
+      # string. Blank lines, comment lines and the spaces around a path are dropped. A comma
+      # anywhere, a # after a space or a tab, a leading "- " and a quote at either end stop the
+      # check: in a block of lines each would end up inside one pattern, as a list, a comment
+      # or quotes never meant as a path, and the path would match nothing. A control character
+      # stops it too: it would break the YAML init parses. Without paths there is no
+      # configuration, and init takes none.
+      - id: config
+        env:
+          PATHS_IGNORE: ${{ inputs.paths-ignore }}
+        run: |
+          paths=()
+          while IFS= read -r path; do
+              path="${path#"${path%%[![:space:]]*}"}"
+              path="${path%"${path##*[![:space:]]}"}"
+              [ -n "$path" ] || continue
+              [[ "$path" == "#"* ]] && continue
+              if [[ "$path" == *,* || "$path" == *[[:space:]]"#"* || "$path" == "- "* \
+                  || "$path" == [\"\']* || "$path" == *[\"\'] ]]; then
+                  echo "::error::paths-ignore takes bare paths, one per line, without commas, quotes, list marks or comments: ${path}"
+                  exit 1
+              fi
+              if [[ "$path" == *[[:cntrl:]]* ]]; then
+                  echo "::error::A path of paths-ignore holds a control character."
+                  exit 1
+              fi
+              path="${path//\\/\\\\}"
+              path="${path//\"/\\\"}"
+              paths+=("\"${path}\"")
+          done <<< "$PATHS_IGNORE"
+          config=""
+          if [ "${#paths[@]}" -gt 0 ]; then
+              list="$(printf '%s, ' "${paths[@]}")"
+              config="paths-ignore: [${list%, }]"
+          fi
+          echo "config=${config}" >> "$GITHUB_OUTPUT"
+          echo "configuration: ${config:-none}"
+
   # build-mode none is what actions and javascript-typescript take. The queries are
   # security-extended, as canvas-api's (R50 canvas-api). tools: linked takes the CodeQL bundle
   # that this commit of the action ships with; without it, GitHub's flags choose the bundle at
-  # run time. A green analysis says that CodeQL ran, not that it found nothing: what it found
-  # holds a merge through the ruleset (architecture 3.1).
+  # run time. Only the analyses of the caller's languages take its paths-ignore: the analysis
+  # of actions reads every workflow, as R09 keeps it. A green analysis says that CodeQL ran, not
+  # that it found nothing: what it found holds a merge through the ruleset (architecture 3.1).
   analyze:
     name: analyze (${{ matrix.language }})
     needs: languages
@@ -92,6 +145,7 @@ jobs:
           tools: linked
           build-mode: none
           queries: security-extended
+          config: ${{ matrix.language != 'actions' && needs.languages.outputs.config || '' }}
 
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
