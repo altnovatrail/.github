@@ -140,6 +140,7 @@ T12–T14 можно делать сейчас. T15 и T16 ждут первог
 | [x] | T12 | Переход на spec v0.2.8 | Claude, проверяю я | — | — |
 | [x] | T13 | Релиз `.github` по рецепту `spec` | Claude | — | T12 |
 | [x] | T14 | Исключения в общем CodeQL и `v0.1.1` | я + Claude | — | T13 |
+| [ ] | T17 | Переход на spec v0.2.11 | Claude, проверяю я | — | T14 |
 | [ ] | T15 | Обёртка Go: `go.yml` | я + Claude | да | T14; первый код `module-kit` |
 | [ ] | T16 | Общий релиз с подписью: `release.yml` | я + Claude | да | T15; первый релиз `module-kit` |
 
@@ -397,6 +398,38 @@ E5 вынесен из E3 при его планировании, 2026-10-20: у
   - Release 39505504408 — первый релиз через рецепт `spec` (T13): «releasing v0.1.1 at e4bdb9b…». `v0.1.1` неизменяемый и Latest, тег — на e4bdb9b, а `gh release verify v0.1.1 -R altnovatrail/.github` отвечает «Release v0.1.1 verified!». В самом workflow аттестация подтвердилась со второй попытки.
   - Dependabot у `spec`, `module-kit` и `tutor` последний раз шёл до релиза: в 16:20, 16:20 и 17:50 UTC. Дальше он идёт раз в неделю. Пауза считается с даты коммита, с точностью до дня (2.10), так что предложить `v0.1.1` он может с 2026-10-23. Что он сделает и как пройдёт «DCO / sign-off», ещё не видно — это по-прежнему в «Открыто».
   - По правилу 12: SonarCloud разобрал e4bdb9b — 0 находок и 0 мест безопасности на проверку; в code scanning — те же семь находок Scorecard (R13); Scorecard — 6.8.
+
+#### T17. Переход на spec v0.2.11
+
+- **Решено автором (2026-10-20):** задача заведена после T14, чтобы закрыть Д12 `spec`. Её выполняют автономно: ветку, коммиты, push и pull request делает исполнитель, а мерж — автор.
+- **Цель:** подмодуль `spec/` стоит на теге v0.2.11, файлы `.github` приведены к нему, переход записан решением, строки В12, В14, В15 и В16 ушли из таблицы 3, а `self-release.yml` зовёт рецепты релиза `spec` без своих обвязок.
+- **Почему:** в v0.2.10 и v0.2.11 `spec` ответил на В12, В14, В15 и В16 `.github`:
+  - новое решение `spec` о суммах — каждый архив Dockerfile заготовки сверяется с суммой sha256, а правило об этом вошло в RULES.md;
+  - карточка 3.11 spec и repositories 6 spec — обёртка TypeScript приходит с первым кодом на TypeScript, а Scorecard общий без запасного пути;
+  - поправка к R31 spec — интерфейс релиза для других репозиториев. `release-version <коммит> <workflow>` читает линию из названного workflow на выпускаемом коммите, а `release-refusal <коммит> <вершина> <файл ошибки>` решает, можно ли пропустить отказ Releases API.
+
+  Д12 в RUN.md `spec` просит каждый репозиторий своей задачей перейти на этот тег и закрыть свои строки (RULES.md, Across repositories).
+- **Сделать:**
+  - перевести подмодуль: `git -C spec fetch --tags && git -C spec checkout v0.2.11`; прочитать `git -C spec diff v0.2.9 v0.2.11`;
+  - тег v0.2.9 → v0.2.11 в ссылках README.md и `profile/README.md`, в CLAUDE.md и в начале этого файла;
+  - Environment в CLAUDE.md, «Как пользоваться» и `.devcontainer/` сверить с заготовкой и рецептом v0.2.11. Dockerfile — с суммами по решению `spec` о них;
+  - таблица 3: В12, В14, В15 и В16 уходят;
+  - `self-release.yml`:
+    - номер — `just -f spec/justfile release-version "$TARGET" .github/workflows/self-release.yml`, так что линия берётся из файла выпускаемого коммита, как решил R31 spec. Обвязка с `line.mjs` уходит;
+    - отказ — `just -f spec/justfile release-refusal`; своя копия правила уходит;
+    - проверки полного SHA, мелкого клона и предка, правило 2.4 и проверка тегов без релиза остаются;
+  - запись о переходе в журнале; поправки к R10, R12 и R13; architecture — статус, 2.5, 3.4, 3.5, 4;
+  - в таблицу 4 — долг, если образ devcontainer с новым Dockerfile здесь ещё не собирался.
+- **Мой шаг:** мерж; затем Rebuild Container и проверка `claude --version`, `gh --version`, `just --version` и `just-lsp --version`.
+- **Как проверить:**
+  - `git submodule status` — `spec` на v0.2.11; `gh release verify v0.2.11 -R altnovatrail/spec`;
+  - `just -f spec/justfile docs-check-repo` — зелёный, а старый тег вне `spec/` — только в истории;
+  - actionlint с закреплённым shellcheck — зелёный;
+  - локальная проба шагов version и публикации, как в T13;
+  - в pull request зелёная «Documents / docs-check-repo»: она собирает стадию `toolchain` нового Dockerfile, а значит, суммы Node и just для amd64 верны;
+  - `/code-review high`, не больше двух кругов.
+- **Разделы:** R31 spec и решение `spec` о суммах архивов; architecture 3.11 spec; repositories 6 spec; Д12 в RUN.md `spec`; R10, R12, R13; architecture 2.5, 3.4, 3.5, 4.
+- **Стоимость:** $0.
 
 #### T15. Обёртка Go: `go.yml`
 
