@@ -252,3 +252,11 @@ E3 предложила T02, последняя задача E1. Он идёт �
     - находки о самом репозитории — без действий: Code-Review и Branch-Protection (автор один, R30 spec), Maintained, Fuzzing, CII-Best-Practices, CI-Tests;
   - второй шаг 2.2 и 2.8 — первый вызов из другого репозитория, T17 `spec`;
   - эпик E4 закончен: его задача уходит в архив `docs/plan/E4.md`.
+- **Итог после мержа (2026-10-20):**
+  - PR #14 слит merge-коммитом 13cd10e — первым под новыми правилами. В rule-suite мержа 4624437003 все пять правил — `pass`: `code_scanning`, `pull_request`, `required_status_checks`, `non_fast_forward` и `deletion`.
+  - CI, CodeQL и Release на 13cd10e зелёные:
+    - Release 39461916712, где `TARGET` — сам 13cd10e: `v0.1.1` посчитан, но релиза нет — «No shared workflow has changed since v0.1.0: nothing to release»;
+    - повторный CI 795b054 дал Release 39462200392. Там `TARGET` — 795b054, а checkout — вершина 13cd10e; проверка предка прошла, итог тот же;
+    - Latest — по-прежнему `v0.1.0`.
+  - Scorecard на 13cd10e, прогон 39461812886. Первая попытка посчитала результат, но упала на подписи — OIDC-токен не получен: «fetching ambient OIDC credentials: invalid character 'u' looking for beginning of value». Повтор упавшего job прошёл, и предупреждения «Unable to POST» в нём нет.
+  - API Scorecard: коммит 13cd10e, оценка 6.6 вместо 5.5, Dangerous-Workflow — 10, а находка #9 закрыта как `fixed`. Открытыми остаются #2 — npm, В12 — и находки о самом репозитории.
