@@ -1,0 +1,60 @@
+# Shared check (R03, R16): the Go code of the repository that calls it, by four recipes of that
+# repository's own — ci-lint, ci-test, ci-vuln and ci-licenses — one job each, in the toolchain
+# stage of the caller's .devcontainer/Dockerfile, where the caller pins its Go; the recipes pin
+# the versions of the tools they run. What the checks do is the repository's; how they are run is
+# the same everywhere (R30 in spec). Each job is a check of the caller's ruleset of main:
+# "Go / lint", "Go / test", "Go / vuln" and "Go / licenses", when the calling job is named Go.
+#
+# ci-licenses is handed the licenses a NovaTrail repository may build from: the ASF's Category A
+# as SPDX identifiers, the list spec checks its own tools against (R12 in spec). It lives here,
+# where a change to it is a change to this workflow and so a release (architecture 2.7), and
+# self-ci.yml holds it to spec's own list at the tag .github is on. A repository's exceptions are
+# its recipe's, each with its decision.
+#
+# There is no Go code in .github, so a change here is tried from a Go repository's pull request
+# that calls this file by the SHA of the branch, before the release (R16).
+# Called from a job that gives it `contents: read`.
+
+name: Go (shared)
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # Named after the check, so that each reads "<calling job> / <check>": "Go / lint" for ci-lint.
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      # Every check reports on its own, rather than the first one to fail cancelling the rest.
+      fail-fast: false
+      matrix:
+        check: [lint, test, vuln, licenses]
+    steps:
+      # Without the spec submodule: code takes spec's files from spec's releases, not from the
+      # submodule (R21 in spec), so a check that reads spec/ fails here as it would for a user.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The Dockerfile copies nothing from the repository, so it is built without a context, as
+      # documents.yml builds it.
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      # As in documents.yml, the container runs as the runner's user: what it writes in the
+      # checkout is the runner's, and git finds the repository owned by the user it runs as. Its
+      # home is /tmp, where Go keeps its module and build caches for this job alone. Of the
+      # step's environment only ALLOWED_LICENSES goes in.
+      - name: ci-${{ matrix.check }}
+        env:
+          RECIPE: ci-${{ matrix.check }}
+          ALLOWED_LICENSES: 0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env ALLOWED_LICENSES \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain just "$RECIPE"

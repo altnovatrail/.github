@@ -1,6 +1,6 @@
 # .github — архитектура
 
-> Статус: 2026-10-21, эпики E1 (T01–T05), E2 (T06–T10) и E4 (T11) закончены, идёт E3 (T12–T18). Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: список лицензий по 2.7 положит E3; 2.2 решён, оба шага пройдены (R09, R13); у 2.8 вызов работает, а подъём ссылки Dependabot покажет `v0.1.1` (T14); 2.3 — Т-27 `spec`, вместе с эпиком E3; 2.10 ждёт ответа автора; 2.11 — T36 `spec`. Общие проверки — секреты, DCO, документы, CodeQL и Scorecard — и релиз `.github` есть, первый релиз — `v0.1.0` (R10). `main` — под ruleset (R11): находки CodeQL держат мерж, а pull request вливается в `main` только merge-коммитом (R12). Тексты вызывающих файлов — раздел 3.3. Workflow для кода — эпик E3.
+> Статус: 2026-10-21, эпики E1 (T01–T05), E2 (T06–T10) и E4 (T11) закончены, идёт E3 (T12–T19). Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: 2.7 решён и для списка лицензий (R16); 2.2 решён, оба шага пройдены (R09, R13); у 2.8 вызов работает, а подъём ссылки Dependabot покажет `v0.1.1` (T14); 2.3 — Т-27 `spec`, вместе с эпиком E3; 2.10 ждёт ответа автора; 2.11 — T36 `spec`. Общие проверки — секреты, DCO, документы, CodeQL и Scorecard — и релиз `.github` есть, первый релиз — `v0.1.0` (R10). `main` — под ruleset (R11): находки CodeQL держат мерж, а pull request вливается в `main` только merge-коммитом (R12). Тексты вызывающих файлов — раздел 3.3. Обёртка Go — `go.yml` (R16), остальные workflow для кода — эпики E3 и E5.
 >
 > Что делает компонент, чего не делает и что о нём ещё предстоит решить. Это подробности его карточки — architecture 3.11 spec. Карточка остаётся сводкой: если подробности меняют то, что в ней сказано, она правится в `spec` тем же путём, что и вопросы в его реестры (RULES.md, Across repositories).
 >
@@ -78,7 +78,8 @@
 - **Варианты:** держать данные прямо в файле общего workflow — список в десяток идентификаторов SPDX, версию и сумму; держать их отдельными файлами `.github` и брать вторым checkout по `job.workflow_repository` и `job.workflow_sha`.
 - **Рекомендация:** в самом файле, пока данные так малы. Тогда правка данных — правка общего workflow, она и даёт релиз (2.4), а вызывающий получает данные той версии, на которой закреплён. Отдельный файл — когда данных станет больше, с checkout по `job.workflow_sha`.
 - **Задача:** эпик E2 — для gitleaks, эпик E3 — для списка лицензий.
-- **Решено для gitleaks:** R08, устройство — раздел 3.1. Для списка лицензий пункт открыт до E3.
+- **Решено для gitleaks:** R08, устройство — раздел 3.1.
+- **Решено для списка лицензий:** R16, задача T15. Список лежит в самом `go.yml`, а `self-ci.yml` сверяет его со списком `spec`. Устройство — разделы 3.1 и 3.4.
 
 ### 2.8. Общие workflow из репозитория с именем `.github`
 
@@ -132,15 +133,15 @@
 
 Dependabot подписывает коммит не тем адресом, каким назван автор. У `spec` в коммите c6b3cb5 автор — `dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>`, а подпись — `Signed-off-by: dependabot[bot] <support@github.com>`. Поэтому `dco.yml` сверяет подпись с автором по имени и адресу, а для `dependabot[bot]` принимает эту подпись названным исключением. Иначе каждый pull request Dependabot был бы красным, а T17 `spec` ждёт обратного. Исключение действует, только если pull request открыл `dependabot[bot]`, а коммиттер — `GitHub <noreply@github.com>`: автора коммита задаёт кто угодно, а автора pull request — нет.
 
-**С первым кодом — у репозиториев с кодом** (эпик E3 — `go.yml` и `release.yml`, вместе с эпиком E2 `spec` и первым кодом `module-kit`; эпик E5 — `typescript.yml`, с первым кодом на TypeScript, у `canvas`):
+**С первым кодом — у репозиториев с кодом** (эпик E3 — `go.yml`, с заготовки CLI `module-kit` (R16), и `release.yml`, с его первым релизом; эпик E5 — `typescript.yml`, с первым кодом на TypeScript, у `canvas`):
 
 | Workflow | Что делает | Кто вызывает | Входы | Права от вызывающего | Что нужно от репозитория | Держит мерж |
 |---|---|---|---|---|---|---|
-| `go.yml` | собирает стадию `toolchain` вызывающего и запускает его рецепты `just` с условленными именами — проверки языка, тесты, уязвимости, лицензии | репозитории вида go | с первым кодом `module-kit` | `contents: read` | рецепты с этими именами; исключения проверки лицензий — свои, каждое с решением, как R48 canvas-api | да |
+| `go.yml` | по job на каждый из четырёх рецептов `just` вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его `.devcontainer/Dockerfile`, от пользователя раннера. `ci-licenses` получает в окружении `ALLOWED_LICENSES` — категорию A ASF, идентификаторами SPDX (R16) | репозитории вида go; первым — `module-kit`, с заготовки CLI (T10 module-kit) | нет | `contents: read` | Go в стадии `toolchain` по точной версии и с `GOTOOLCHAIN=local`; рецепты с этими именами, а `ci-licenses` — по списку из `ALLOWED_LICENSES`. Код и тесты не читают `spec/`: job берёт checkout без подмодуля (R21 spec). Инструменты проверок и их версии — свои, исключения проверки лицензий — тоже, каждое с решением, как R48 canvas-api | да: «Go / lint», «Go / test», «Go / vuln» и «Go / licenses», когда job вызывающего называется «Go» |
 | `typescript.yml` | то же для TypeScript | репозитории вида typescript | с первым кодом на TypeScript, у `canvas` | `contents: read` | то же | да |
 | `release.yml` | релиз с подписью без ключей: подписывает каждый файл, как R52 canvas-api, и пакеты модулей (R17 spec) | `module-kit` первым, затем `modules` и остальные репозитории с релизами | с первым релизом `module-kit` | `contents: write` и `id-token: write` — для релиза и подписи без ключей, как у релиза canvas-api (R52 canvas-api); остальное — с первым релизом | рецепт, который собирает файлы релиза | нет: это не проверка pull request |
 
-Список лицензий для `go.yml` и `typescript.yml` один на всех — категория A политики ASF, как у проверки `spec` (поправка к R12 spec). Где он лежит — 2.7. Точные входы и имена рецептов — с первым кодом `module-kit`, а у `typescript.yml` — по образцу `go.yml`, в эпике E5. Идентичность подписи — 2.3.
+Список лицензий для `go.yml` и `typescript.yml` один на всех — категория A политики ASF, как у проверки `spec` (поправка к R12 spec). Лежит он в самом `go.yml`, `ALLOWED_LICENSES`, а `self-ci.yml` сверяет его со списком `spec` (2.7; R16). Входов у `go.yml` нет, а имена рецептов — выше (R16); у `typescript.yml` они будут по образцу `go.yml`, в эпике E5. Идентичность подписи — 2.3.
 
 Имена job в общих workflow и в вызывающих файлах одни на все репозитории: обязательная проверка называется «`<job name> / <reusable job name>`» (раздел 4), и ruleset `main` у всех репозиториев перечисляет одни и те же имена (R30 spec) — кроме CodeQL, у которого по проверке на язык репозитория. Job вызывающего называется по проверке — «Secrets», «DCO», «Documents», — а job общего workflow — по тому, что он запускает (R08).
 
@@ -162,7 +163,7 @@ SonarCloud — не workflow: анализ автоматический, а ег
 
 ### 3.3. Вызывающие файлы
 
-В каждом репозитории компонента — одни и те же файлы; различаются они только входами CodeQL — `languages` и `paths-ignore` — и своими job. Общие workflow закреплены по SHA первого релиза `.github`, `v0.1.0` — коммит `ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed`, — с комментарием версии на той же строке, а поднимает их Dependabot (R04). Копируя, берут последний релиз `.github`: его тег называет `gh release view -R altnovatrail/.github`, а коммит — `git ls-remote https://github.com/altnovatrail/.github refs/tags/<тег>`; `v0.1.0` ниже — первый из них. Тексты ниже готовы к копированию; отличия `spec` и `.github` — после них. actionlint 1.7.12 с shellcheck 0.11.0 замечаний к трём workflow ниже не нашёл, а все пять общих workflow на этом коммите есть; `dependabot.yml` никакая проверка здесь не читает.
+В каждом репозитории компонента — одни и те же файлы; различаются они только входами CodeQL — `languages` и `paths-ignore`, — тем, что добавляет вид репозитория: у вида go — job «Go» и экосистема `gomod` (R16), — и своими job. Общие workflow закреплены по SHA первого релиза `.github`, `v0.1.0` — коммит `ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed`, — с комментарием версии на той же строке, а поднимает их Dependabot (R04). Копируя, берут последний релиз `.github`: его тег называет `gh release view -R altnovatrail/.github`, а коммит — `git ls-remote https://github.com/altnovatrail/.github refs/tags/<тег>`; `v0.1.0` ниже — первый из них. Тексты ниже готовы к копированию; отличия `spec` и `.github` — после них. actionlint 1.7.12 с shellcheck 0.11.0 замечаний к трём workflow ниже не нашёл, а все пять общих workflow на этом коммите есть; `dependabot.yml` никакая проверка здесь не читает.
 
 `.github/workflows/ci.yml` — на pull request и push в `main`; рядом с тремя общими — свои job репозитория. Job `documents` требует `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` на теге с рецептом `docs-check-repo` — v0.2.3 или новее (R32 spec; раздел 3.1). Репозиторий на старом теге сначала переходит на новый, своей задачей (RULES.md, Across repositories), иначе «Documents / docs-check-repo» красная. До T21 `spec` так стоял, например, engine — на v0.1.0, коммит ec6c48e. Теперь все одиннадцать репозиториев компонентов стоят на v0.2.9 или новее (поправка к R32 spec): подмодуль engine — коммит 5eafb1a, v0.2.9 (API GitHub, 2026-10-21):
 
@@ -283,7 +284,28 @@ updates:
 sonar.exclusions=spec/**
 ```
 
-Мерж в ruleset `main` держат проверки из колонки «Проверка в ruleset» раздела 3.1 и свои job репозитория (R30 spec), с `integration_id` 15368 для проверок GitHub Actions и 12526 для SonarCloud, как у `spec` и `.github` (R11): без него обязательную проверку закроет статус с тем же именем от любого, у кого есть право записи (раздел 4). Мерж держат ещё и находки CodeQL — правилом `code_scanning`, — а pull request вливается в `main` только merge-коммитом. Так обязано быть у всех по поправке к R30 spec. Стоит это у `.github` с R12, у `spec`, `module-kit` и `tutor` — с T17 и T16 `spec`, а у девяти остальных — с T21 `spec`.
+Репозиторий на Go добавляет в `ci.yml` job «Go», который зовёт общий `go.yml` (R16). `go.yml` есть в релизах `.github` с первого после T15: его тег и коммит называют `gh release view` и `git ls-remote`, как выше:
+
+```yaml
+  # The repository's Go code, by its own ci- recipes in its toolchain stage (R16 .github).
+  go:
+    name: Go
+    uses: altnovatrail/.github/.github/workflows/go.yml@<SHA релиза> # <версия>
+```
+
+А в `dependabot.yml` — экосистему `gomod`, с той же паузой. Go в Dockerfile и инструменты, которые рецепты запускают через `go run` по точной версии, Dependabot не видит, и их поднимают руками (R04 module-kit):
+
+```yaml
+  # The Go modules the code is built from.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+```
+
+Мерж в ruleset `main` держат проверки из колонки «Проверка в ruleset» раздела 3.1 — у репозитория на Go и четыре проверки «Go / …» (R16), — и свои job репозитория (R30 spec), с `integration_id` 15368 для проверок GitHub Actions и 12526 для SonarCloud, как у `spec` и `.github` (R11): без него обязательную проверку закроет статус с тем же именем от любого, у кого есть право записи (раздел 4). Мерж держат ещё и находки CodeQL — правилом `code_scanning`, — а pull request вливается в `main` только merge-коммитом. Так обязано быть у всех по поправке к R30 spec. Стоит это у `.github` с R12, у `spec`, `module-kit` и `tutor` — с T17 и T16 `spec`, а у девяти остальных — с T21 `spec`.
 - Правило ставят после первого анализа CodeQL на `main`: ему нужны результаты и на ветке, которую меняет pull request (раздел 4).
 - Настройку репозитория `allow_merge_commit` не выключают: если в репозитории выключен метод, которого требует ruleset, мерж не проходит вовсе (раздел 4).
 
@@ -296,12 +318,12 @@ sonar.exclusions=spec/**
 - Dangerous-Workflow у `release.yml` `spec` после поправки к R31 spec — 10;
 - поднимает ли Dependabot ссылку на `.github`, держит ли её пауза и как DCO примет подпись его коммита, покажут его первые pull request после `v0.1.1` (T14; Д10 в RUN.md `spec`).
 
-Файлы репозиториев компонентов и `spec` пишет сессия `spec` — через `.repos/<имя>`, как при заведении репозитория (R30 spec).
+Файлы репозиториев компонентов и `spec` пишет сессия `spec` — через `.repos/<имя>`, как при заведении репозитория (R30 spec). Исключение — T10 `module-kit`: по поручению автора её сделала сессия `.github` (поправка к R03).
 
 ### 3.4. Свой CI `.github`
 
 Свои workflow `.github` лежат рядом с общими и начинаются с `self-`; у общих префикса нет, и запускаются они только через `workflow_call`:
-- `self-ci.yml`, `name: CI`, — на pull request и push в `main`. Job «Secrets», «DCO» (только на pull request) и «Documents» вызывают общие workflow по локальному пути `./.github/workflows/<файл>`, так что pull request проверяет ту версию, которую сам и меняет. Job «Workflows» — actionlint 1.7.12 по всем workflow, с shellcheck 0.11.0 по скриптам в них: их код живёт здесь. actionlint и shellcheck, как и gitleaks, скачиваются по точной версии и сверяются с суммой sha256 в самом файле, а в devcontainer их нет (R08); shellcheck раннера actionlint не берёт. Отказы actionlint, каждый с причиной, — в `.github/actionlint.yaml`;
+- `self-ci.yml`, `name: CI`, — на pull request и push в `main`. Job «Secrets», «DCO» (только на pull request) и «Documents» вызывают общие workflow по локальному пути `./.github/workflows/<файл>`, так что pull request проверяет ту версию, которую сам и меняет. Job «Workflows» — actionlint 1.7.12 по всем workflow, с shellcheck 0.11.0 по скриптам в них: их код живёт здесь. actionlint и shellcheck, как и gitleaks, скачиваются по точной версии и сверяются с суммой sha256 в самом файле, а в devcontainer их нет (R08); shellcheck раннера actionlint не берёт. Отказы actionlint, каждый с причиной, — в `.github/actionlint.yaml`. Тот же job сверяет `ALLOWED_LICENSES` в `go.yml` со списком `spec/tools/licenses/config.mjs` на теге `.github`, поэтому берёт checkout с подмодулем (R16);
 - `self-release.yml`, `name: Release`, — свой релиз, как у `spec` (R31 spec; R10): после зелёного `self-ci.yml` на `main`, только от push из самого репозитория, и кнопкой — на `main`, после зелёного CI. Прогоны идут очередью, `queue: max`. Checkout — вершина `main`, которую видело событие, со всей историей и подмодулем, а коммит, на котором прошёл CI, называется только по SHA (R12). Номер считает рецепт `release-version` `spec` в стадии `toolchain`: `just -f spec/justfile release-version <коммит> .github/workflows/self-release.yml`. Линию он читает из этого файла на выпускаемом коммите, а у коммита старше файла — из копии в checkout (T17; поправка к R31 spec). Релиз выходит, если изменился общий workflow, а проверяет его `gh release verify`. Отказ 404 или 403 «Resource not accessible by integration» пропускается, только если коммит уже не вершина `main`, лежит в её истории и добавляет или меняет файлы `.github/workflows/` относительно неё: его правку покроет релиз вершины (раздел 4). Решает это рецепт `release-refusal` `spec` — одна копия правила на оба релиза (T17). Рецепт идёт только после отказа, поэтому шаг номера на каждом прогоне пробует его вызов без запуска, `just --dry-run`: тег `spec`, который переименует рецепт или поменяет число его параметров, иначе всплыл бы лишь на редком отказе и сделал бы красным именно тот прогон, который отказ должен пропустить (T17; раздел 4). От `release.yml` `spec` после поправки к R31 spec его намеренно отличает вот что. Релиз выходит, только если изменился общий workflow, и Latest у каждого релиза (R10). Тег без релиза проверяется и у прошлого релиза (R10). Коммит CI должен быть полным SHA и предком checkout (R12) — у `spec` таких проверок нет. Нет у него и пробы вызова: там рецепт и его вызов меняет одна правка;
 - `self-codeql.yml`, `name: CodeQL`, — на pull request и push в `main`; `self-scorecard.yml`, `name: Scorecard`, — на push в `main` и раз в неделю. Оба вызывают общие по локальному пути, `.github` не называет языков сверх `actions` (R09); `dependabot.yml` и `.sonarcloud.properties` — как в 3.3.
 
@@ -421,6 +443,11 @@ Ruleset `main` пускает в `main` только pull request с зелён�
 - **`release-refusal <коммит> <вершина> <файл ошибки>`** там же «Exits 0 when the refusal is that one, and 1 with the reason when it is not or when anything cannot be read». `release.yml` `spec` v0.2.11 зовёт оба рецепта через скрипт запуска `$RUNNER_TEMP/toolchain`: он запускает команду в стадии `toolchain`, смонтировав рабочую папку и `$RUNNER_TEMP`, второй — только для чтения;
 - **`just --dry-run`** — справка just 1.58.0, `just --help`: «Print what just would do without doing it». Проба 2026-10-20 на `spec/justfile` v0.2.11: вызов `release-refusal` с тремя аргументами выходит с 0 и ничего не запускает. Тот же вызов к копии justfile, где рецепт назван иначе или ждёт четыре параметра, выходит с 1: «justfile does not contain recipe `release-refusal`» и «recipe `release-refusal` got 3 positional arguments but takes 4». Так же отвечает шаг номера `self-release.yml`, вынутый дословно и запущенный с этими копиями;
 - **суммы архивов** — `.devcontainer/Dockerfile` из рецепта v0.2.11 (R34 spec). Все восемь сумм — Node 24.21.0, just 1.58.0, gh 2.101.0 и just-lsp 0.10.0, каждая для amd64 и arm64 — сошлись с архивами, которые 2026-10-20 скачаны с адресов этого Dockerfile и сверены `sha256sum`.
+
+**Обёртка Go** (R16; прочитано 2026-10-21):
+- **имена рецептов** — `justfile` canvas-api на коммите 0901af0: `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`; govulncheck и go-licenses там идут через `go run` по точной версии модуля, а CI зовёт те же рецепты в образе тулчейна (R49 canvas-api);
+- **`--allowed_licenses`** — [README go-licenses v2.0.1](https://github.com/google/go-licenses/blob/v2.0.1/README.md), раздел Usages, Check: «Allow only specific license names» — `go-licenses check <package> [package...] --allowed_licenses=<comma separated license names>`. Локальная проба 2026-10-21, рецептом `ci-licenses` заготовки `module-kit` с go-licenses v2.0.1: со списком `ALLOWED_LICENSES` — зелёный, со списком из одной MIT — «Not allowed license 'Apache-2.0' found for library 'github.com/altnovatrail/module-kit/cmd/module-kit'», без списка рецепт останавливается сам;
+- **список `spec`** — `spec/tools/licenses/config.mjs` на v0.2.12: `allowed` — 0BSD, Apache-2.0, BlueOak-1.0.0, BSD-2-Clause, BSD-3-Clause, CC0-1.0, ISC, MIT, MIT-0 и Unlicense, по одному в строке. Проба шага «The license list of go.yml» 2026-10-21: с этим списком — зелёный, без Unlicense и с лишней MPL-2.0 — красный, с разницей.
 
 **Инструменты общих проверок** (R08; прочитано 2026-10-20):
 - **gitleaks** — [README v8.30.1](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md), раздел Load Configuration: «The order of precedence is:», и четвёртым — «A `.gitleaks.toml` file within the target path». Сумма архива `gitleaks_8.30.1_linux_x64.tar.gz` — из `gitleaks_8.30.1_checksums.txt` того же релиза: `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`;

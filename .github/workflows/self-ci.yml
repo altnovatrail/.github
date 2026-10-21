@@ -43,7 +43,8 @@ jobs:
   # actionlint_1.7.12_checksums.txt; shellcheck publishes no checksums, so its is the SHA-256 of the
   # archive as downloaded on 2026-10-20. actionlint is given that shellcheck by path, not whatever
   # the runner image has, and no pyflakes: there is no Python here. A waiver, when one is needed,
-  # goes in .github/actionlint.yaml, with its reason.
+  # goes in .github/actionlint.yaml, with its reason. The job also holds the license list of go.yml
+  # to spec's, which is why spec comes along as the submodule.
   workflows:
     name: Workflows
     runs-on: ubuntu-24.04
@@ -51,6 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          submodules: true
           persist-credentials: false
 
       - name: Install actionlint
@@ -79,3 +81,26 @@ jobs:
 
       - name: Lint the workflows
         run: '"$RUNNER_TEMP/actionlint" -color -shellcheck="$RUNNER_TEMP/shellcheck" -pyflakes='
+
+      # go.yml hands the license check of every Go repository a copy of spec's list (R16): the
+      # ASF's Category A in spec/tools/licenses/config.mjs, at the tag .github is on. A move to a
+      # tag that changes the list turns this red until go.yml follows. spec has no interface for
+      # the list yet (В19 in RUN.md), so the file is read as text: every line between
+      # "export const allowed = [" and "];" has to be one quoted identifier, and any other line —
+      # a comment, a second identifier, another quote or indent — stops the step rather than
+      # being skipped.
+      - name: The license list of go.yml
+        run: |
+          body=$(sed -n '/^export const allowed = \[$/,/^\];$/p' spec/tools/licenses/config.mjs | sed '1d;$d')
+          if [ -z "$body" ] || printf '%s\n' "$body" | grep -qvE '^  "[A-Za-z0-9.+-]+",?$'; then
+              echo "::error::spec/tools/licenses/config.mjs no longer lists one quoted identifier a line between \"export const allowed = [\" and \"];\": read it again."
+              exit 1
+          fi
+          spec_list=$(printf '%s\n' "$body" | sed 's/^  "\(.*\)",\{0,1\}$/\1/' | sort)
+          go_list=$(sed -n 's/^ *ALLOWED_LICENSES: //p' .github/workflows/go.yml | tr ',' '\n' | sort)
+          if [ "$spec_list" != "$go_list" ]; then
+              echo "::error::ALLOWED_LICENSES in go.yml is not the list of spec/tools/licenses/config.mjs."
+              diff <(echo "$spec_list") <(echo "$go_list") || true
+              exit 1
+          fi
+          echo "go.yml allows the $(echo "$spec_list" | wc -l) licenses spec allows."
