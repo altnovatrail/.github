@@ -284,13 +284,13 @@ updates:
 sonar.exclusions=spec/**
 ```
 
-Репозиторий на Go добавляет в `ci.yml` job «Go», который зовёт общий `go.yml` (R16). `go.yml` есть в релизах `.github` с первого после T15: его тег и коммит называют `gh release view` и `git ls-remote`, как выше:
+Репозиторий на Go добавляет в `ci.yml` job «Go», который зовёт общий `go.yml` (R16). `go.yml` есть в релизах `.github` с `v0.1.2`, коммит `d01dd881d6b4efb6013dd72f40a713b8d2dd3bad`; последний релиз называют `gh release view` и `git ls-remote`, как выше:
 
 ```yaml
   # The repository's Go code, by its own ci- recipes in its toolchain stage (R16 .github).
   go:
     name: Go
-    uses: altnovatrail/.github/.github/workflows/go.yml@<SHA релиза> # <версия>
+    uses: altnovatrail/.github/.github/workflows/go.yml@d01dd881d6b4efb6013dd72f40a713b8d2dd3bad # v0.1.2
 ```
 
 А в `dependabot.yml` — экосистему `gomod`, с той же паузой. Go в Dockerfile и инструменты, которые рецепты запускают через `go run` по точной версии, Dependabot не видит, и их поднимают руками (R04 module-kit):
