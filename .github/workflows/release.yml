@@ -1,0 +1,342 @@
+# Shared release (R03, R18): what a green main of a repository with code produces — the files its
+# own recipe builds, each signed without a key, and the tag created with the release, as spec's
+# release creates its own (R31 in spec). Nobody tags by hand: the version is the next patch of the
+# line the caller's release workflow sets, RELEASE_LINE, worked out by spec's own recipe, as
+# .github's release works out its own (R14). Module packages are files like any other and are
+# signed the same way (R17 in spec).
+#
+# A commit gets a release only when a path the caller names in paths has changed since the
+# release before it; the first release comes out always. A library would otherwise bring every
+# repository that imports it a new tag for a change of its documents alone.
+#
+# The signature is cosign's, keyless. Its certificate names this workflow, at the ref the caller
+# pins, as what signed, and the caller's repository and workflow as the run that signed
+# (architecture 2.3). What a consumer checks of it is Т-27, which T37 in spec decides.
+#
+# The caller's release workflow runs on the workflow_run of its CI and on the button, gives this
+# job contents: write, id-token: write and actions: read, and sets RELEASE_LINE in its own env.
+# Its repository keeps its releases immutable and its tags v* under a ruleset (architecture 3.3).
+# With publish: false a run builds, signs and checks the signatures and publishes nothing, which
+# lets a pull request try a change here.
+
+name: Release (shared)
+
+on:
+  workflow_call:
+    inputs:
+      paths:
+        description: >-
+          What the release is built from, as git pathspecs, one per line: cmd/**, go.mod, say.
+          A commit that changes none of them since the release before it gets no release.
+        type: string
+        required: true
+      publish:
+        description: >-
+          false builds the files, signs them and checks the signatures, and publishes nothing.
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: release
+    # Releases queue rather than overlap: each has to see the version the one before it
+    # published before it can work out the next. queue: max keeps up to 100 runs pending
+    # (GitHub Docs, Workflow syntax, concurrency, read 2026-10-20); actionlint does not know the
+    # key yet: .github/actionlint.yaml. A trial queues apart, by its ref, and does not hold up a
+    # release; the calling job sets no concurrency of its own, or the two would wait on each other.
+    concurrency:
+      group: ${{ inputs.publish && 'release' || format('release-trial-{0}', github.ref) }}
+      cancel-in-progress: false
+      queue: max
+    # Only from a commit the checks have passed on, and only when that commit is the caller's
+    # own: the branch filter of a workflow_run matches the name of a fork's branch as well. A run
+    # that publishes nothing may run anywhere: a pull request tries a change that way.
+    if: >-
+      inputs.publish == false ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # bash with pipefail, as in .github's own release.
+    defaults:
+      run:
+        shell: bash
+    # The commit the checks ran on, which this run releases: the commit of the CI run, or the
+    # commit of the event otherwise. The checkout below is the tip, and TARGET is named by its SHA
+    # alone (R12).
+    env:
+      TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
+    permissions:
+      # Creating the release and uploading what it holds.
+      contents: write
+      # The short-lived identity the signature is made with: no key is kept anywhere.
+      id-token: write
+      # Reading whether CI passed on the commit the button would release.
+      actions: read
+    steps:
+      # Asked before anything of the repository is fetched: a run on another branch publishes
+      # nothing, and neither does a commit whose CI on main has not finished green. The caller's
+      # CI is ci.yml, as architecture 3.3 has it.
+      - name: Whether this commit may be released by hand
+        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+              echo "::error::A release is published from main alone, and this run is on ${GITHUB_REF}."
+              exit 1
+          fi
+          passed=$(gh api --method GET "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs" \
+              -f head_sha="$GITHUB_SHA" -f event=push -f branch=main -f status=success \
+              --jq '.total_count')
+          if [ "$passed" = 0 ]; then
+              echo "::error::CI has not passed on ${GITHUB_SHA}. A release waits for its checks, and follows them by itself once they pass."
+              exit 1
+          fi
+
+      # The tip the event saw, with every tag, and spec as its submodule: the toolchain stage of
+      # the tip and spec's recipes work out the number. TARGET, the commit the checks ran on, is
+      # in its history and is named by its SHA alone; what is built is TARGET's own tree (below).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+
+      # As .github's own release works it out (R14): spec's release-version, run in the toolchain
+      # stage, handed TARGET and the caller's release workflow — the file github.workflow_ref
+      # names, since the github context of a called workflow is the caller's — whose RELEASE_LINE
+      # at TARGET is the line. release-refusal runs only after a refusal, so just's dry run asks
+      # here whether the publish step's call of it still parses. A commit whose change touches
+      # none of the caller's paths since the release before it gets no release; a tag with no
+      # release behind it was pushed by hand and stops the run.
+      - id: version
+        name: Work out the version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          PATHS: ${{ inputs.paths }}
+        run: |
+          if ! [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::The commit to release is not a full SHA: \"${TARGET}\"."
+              exit 1
+          fi
+          if [ "$(git rev-parse --is-shallow-repository)" = true ]; then
+              echo "::error::A shallow clone has no tags to count from: fetch the whole history."
+              exit 1
+          fi
+          if ! git merge-base --is-ancestor "$TARGET" HEAD; then
+              echo "::error::${TARGET} is not in the history of the checkout, $(git rev-parse HEAD)."
+              exit 1
+          fi
+          # The certificate names the commit of the run, GITHUB_SHA, as its source, so only that
+          # commit is signed: a release whose signature names another commit than its tag would
+          # not check. A commit whose CI ended after a newer one's gets none; the newer one's
+          # release covers it.
+          if [ "$TARGET" != "$GITHUB_SHA" ]; then
+              echo "::notice::${TARGET} is older than the tip this run signs as, ${GITHUB_SHA}: the tip's release covers it."
+              {
+                  echo "version="
+                  echo "previous="
+                  echo "released="
+              } >> "$GITHUB_OUTPUT"
+              exit 0
+          fi
+          workflow="${CALLER_WORKFLOW_REF#"${GITHUB_REPOSITORY}/"}"
+          workflow="${workflow%@*}"
+          if [[ "$workflow" != .github/workflows/* ]]; then
+              echo "::error::The caller's workflow is not a file of .github/workflows/: ${CALLER_WORKFLOW_REF}."
+              exit 1
+          fi
+          paths=()
+          while IFS= read -r path; do
+              path="${path#"${path%%[![:space:]]*}"}"
+              path="${path%"${path##*[![:space:]]}"}"
+              [ -n "$path" ] && paths+=("$path")
+          done <<< "$PATHS"
+          if [ "${#paths[@]}" = 0 ]; then
+              echo "::error::paths names nothing the release is built from."
+              exit 1
+          fi
+          docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+          printf '#!/bin/sh\nexec docker run --rm --user "%s" --env HOME=/tmp --volume "%s:/work" --volume "%s:%s:ro" --workdir /work toolchain "$@"\n' \
+              "$(id -u):$(id -g)" "$PWD" "$RUNNER_TEMP" "$RUNNER_TEMP" > "$RUNNER_TEMP/toolchain"
+          chmod +x "$RUNNER_TEMP/toolchain"
+          if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile --dry-run release-refusal \
+              "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
+              cat "$RUNNER_TEMP/release-refusal" >&2
+              echo "::error::spec's release-refusal is gone or takes another number of arguments than the publish step gives it: the commit, the tip and the error file."
+              exit 1
+          fi
+          "$RUNNER_TEMP/toolchain" just -f spec/justfile release-version "$TARGET" "$workflow" \
+              > "$RUNNER_TEMP/release-version"
+          cat "$RUNNER_TEMP/release-version"
+          version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
+          previous=$(sed -n 's/^previous=//p' "$RUNNER_TEMP/release-version")
+          released=$(sed -n 's/^released=//p' "$RUNNER_TEMP/release-version")
+          behind=$(sed -n 's/^behind=//p' "$RUNNER_TEMP/release-version")
+          for tag in $released $behind $previous; do
+              if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null; then
+                  echo "::error::${tag} has no release behind it: a tag pushed by hand. Tags come from the release workflow alone."
+                  exit 1
+              fi
+          done
+          # git diff --quiet exits 1 on a change and 0 on none; anything else is its own failure.
+          if [ -n "$version" ] && [ -n "$previous" ]; then
+              changed=0
+              git diff --quiet "$previous" "$TARGET" -- "${paths[@]}" || changed=$?
+              if [ "$changed" = 0 ]; then
+                  echo "::notice::Nothing the release is built from has changed since ${previous}: nothing to release."
+                  version=""
+              elif [ "$changed" != 1 ]; then
+                  echo "::error::git diff could not compare ${previous} with ${TARGET}."
+                  exit 1
+              fi
+          fi
+          if [ -n "$version" ]; then
+              echo "releasing $version at $TARGET"
+          elif [ -n "$released" ] || [ -n "$behind" ]; then
+              echo "::notice::Nothing to publish: ${TARGET} is released already, or is older than the newest release."
+          fi
+          {
+              echo "version=${version}"
+              echo "previous=${previous}"
+              echo "released=${released}"
+          } >> "$GITHUB_OUTPUT"
+
+      # TARGET's own tree, without its history, its submodules or what .gitattributes keeps out of
+      # an archive, and its own toolchain stage: what is built is the commit the checks passed on,
+      # with the Go and tools it pins. The caller's release-files recipe gets the version, has no
+      # git to ask, and writes the files into dist/: plain files, named with letters, digits, dots,
+      # dashes, pluses and underscores, none a bundle of its own. Nothing of the step's
+      # environment, no token among it, goes into the container.
+      - name: Build the files
+        if: steps.version.outputs.version != ''
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tree="$RUNNER_TEMP/tree"
+          mkdir "$tree"
+          git archive "$TARGET" | tar -x -C "$tree"
+          docker build --target toolchain --tag release-toolchain - < "$tree/.devcontainer/Dockerfile"
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$tree:/work" \
+              --workdir /work release-toolchain just release-files "$VERSION"
+          if [ -L "$tree/dist" ] || [ ! -d "$tree/dist" ] || [ -z "$(ls -A "$tree/dist")" ]; then
+              echo "::error::release-files wrote nothing into dist/, or dist/ is a link."
+              exit 1
+          fi
+          if find "$tree/dist" -mindepth 1 ! -type f | grep -q .; then
+              echo "::error::dist/ holds something besides files: a release takes files alone."
+              exit 1
+          fi
+          for path in "$tree"/dist/*; do
+              name="${path##*/}"
+              if ! [[ "$name" =~ ^[A-Za-z0-9_+][A-Za-z0-9._+-]*$ ]] || [[ "$name" == *.sigstore.json ]]; then
+                  echo "::error::A file of dist/ is named ${name}: names take letters, digits, . _ + -, and a bundle .sigstore.json is the release's own."
+                  exit 1
+              fi
+          done
+          mv "$tree/dist" "$RUNNER_TEMP/dist"
+          ls -l "$RUNNER_TEMP/dist"
+
+      # cosign at an exact version, checked against the sum in cosign_checksums.txt of its
+      # release, as gitleaks is (R08). Every file gets a bundle beside it, its signature and the
+      # certificate that says which workflow made it, and every bundle is checked before anything
+      # is published: the identity is this workflow at the ref the caller pins, job.workflow_ref,
+      # issued to GitHub Actions, in the caller's repository, at TARGET. The certificate of the
+      # first file is printed, its extensions among it, for whoever checks the signatures later
+      # (T37 in spec); a print that fails says so and holds nothing up.
+      - name: Sign every file
+        if: steps.version.outputs.version != ''
+        env:
+          COSIGN_VERSION: "3.1.4"
+          COSIGN_SHA256: 424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa
+          IDENTITY: https://github.com/${{ job.workflow_ref }}
+        run: |
+          cosign="$RUNNER_TEMP/cosign"
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors \
+              -o "$cosign" \
+              "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64"
+          echo "${COSIGN_SHA256}  ${cosign}" | sha256sum --check --strict
+          chmod +x "$cosign"
+          cd "$RUNNER_TEMP/dist"
+          files=(*)
+          for file in "${files[@]}"; do
+              "$cosign" sign-blob --yes --bundle "${file}.sigstore.json" "$file"
+          done
+          for file in "${files[@]}"; do
+              "$cosign" verify-blob --bundle "${file}.sigstore.json" \
+                  --certificate-identity "$IDENTITY" \
+                  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+                  --certificate-github-workflow-repository "$GITHUB_REPOSITORY" \
+                  --certificate-github-workflow-sha "$TARGET" \
+                  "$file"
+          done
+          if ! jq -r '.verificationMaterial.certificate.rawBytes' "${files[0]}.sigstore.json" \
+              | base64 -d | openssl x509 -inform DER -noout -text; then
+              echo "::warning::The certificate of ${files[0]} could not be printed; its bundle verified."
+          fi
+          ls -l
+
+      # Every release is marked Latest: its number is the highest so far, and the tip of main may
+      # get no release of its own when it changes nothing the release is built from. The notes run
+      # from the release before this one. A refusal of the Releases API is let pass only as
+      # spec's release-refusal decides, as in .github's own release (R14).
+      - id: publish
+        name: Publish the release
+        if: steps.version.outputs.version != '' && inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PREVIOUS: ${{ steps.version.outputs.previous }}
+        run: |
+          start=()
+          if [ -n "$PREVIOUS" ]; then start=(--notes-start-tag "$PREVIOUS"); fi
+          if ! gh release create "$VERSION" "$RUNNER_TEMP"/dist/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$TARGET" \
+              --title "$VERSION" \
+              --latest \
+              --generate-notes "${start[@]}" 2> "$RUNNER_TEMP/release-create.err"; then
+              cat "$RUNNER_TEMP/release-create.err" >&2
+              git fetch --quiet --no-tags --no-recurse-submodules origin refs/heads/main
+              tip=$(git rev-parse FETCH_HEAD)
+              if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile release-refusal \
+                  "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"; then
+                  exit 1
+              fi
+              echo "::warning::${TARGET} is no longer the tip of main (${tip}) and adds or modifies its workflow files, and the Releases API refused it; the release of the tip covers it."
+              exit 0
+          fi
+          echo "published=true" >> "$GITHUB_OUTPUT"
+
+      # The release is immutable and attested, and so is every file in it; the attestation may
+      # take a moment to appear. A run again of a commit released already verifies its release.
+      - name: Verify the release
+        if: steps.publish.outputs.published == 'true' || (steps.version.outputs.released != '' && inputs.publish)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version || steps.version.outputs.released }}
+        run: |
+          for attempt in 1 2 3 4 5; do
+              if gh release verify "$VERSION" --repo "$GITHUB_REPOSITORY"; then
+                  break
+              fi
+              if [ "$attempt" = 5 ]; then
+                  echo "::error::${VERSION} is published, but its attestation does not verify."
+                  exit 1
+              fi
+              echo "attempt $attempt: not verified yet"
+              sleep 10
+          done
+          if [ -d "$RUNNER_TEMP/dist" ]; then
+              for file in "$RUNNER_TEMP"/dist/*; do
+                  gh release verify-asset "$VERSION" "$file" --repo "$GITHUB_REPOSITORY"
+              done
+          fi
