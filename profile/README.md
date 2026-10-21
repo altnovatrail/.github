@@ -22,18 +22,18 @@ NovaTrail is a universal open platform for adaptive learning, interactive lesson
 | [app](https://github.com/altnovatrail/app) | the web app for learners and the adults beside them | 2. First slice with learners |
 | [infra](https://github.com/altnovatrail/infra) | shared infrastructure: Terraform, domains, logs, deployment and self-hosting | 2. First slice with learners |
 
-Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/product.md).
+Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/product.md).
 
 ## Documents
 
 The platform's documents live in spec, in Russian:
 
-- [product](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/product.md) — what we build and why: the principles, the first slice, the roadmap;
-- [concepts](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/concepts.md) — the shared vocabulary;
-- [privacy](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/privacy.md) — privacy and age;
-- [architecture](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/architecture.md) — the components and how they connect;
-- [repositories](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/repositories.md) — the repositories, the order they appear in, and how one is set up;
-- [decisions](https://github.com/altnovatrail/spec/blob/v0.2.12/docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
+- [product](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/product.md) — what we build and why: the principles, the first slice, the roadmap;
+- [concepts](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/concepts.md) — the shared vocabulary;
+- [privacy](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/privacy.md) — privacy and age;
+- [architecture](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/architecture.md) — the components and how they connect;
+- [repositories](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/repositories.md) — the repositories, the order they appear in, and how one is set up;
+- [decisions](https://github.com/altnovatrail/spec/blob/v0.2.13/docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
 
 ## Contributing
 
@@ -43,4 +43,4 @@ The platform's documents live in spec, in Russian:
 
 ## License
 
-Everything is [Apache-2.0](https://github.com/altnovatrail/spec/blob/v0.2.12/LICENSE): the code, the documents and the official modules' content. The one exception is the code of conduct, the Contributor Covenant 2.1, which keeps its own license, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Everything is [Apache-2.0](https://github.com/altnovatrail/spec/blob/v0.2.13/LICENSE): the code, the documents and the official modules' content. The one exception is the code of conduct, the Contributor Covenant 2.1, which keeps its own license, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
