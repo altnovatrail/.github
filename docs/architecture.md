@@ -306,7 +306,7 @@ sonar.exclusions=spec/**
       default-days: 3
 ```
 
-Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с первого после T16. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
+Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
 
 ```yaml
 # NovaTrail's shared release (R18 .github), pinned to a release of .github by SHA with its version
@@ -333,7 +333,7 @@ jobs:
       contents: write
       id-token: write
       actions: read
-    uses: altnovatrail/.github/.github/workflows/release.yml@<SHA релиза> # <версия>
+    uses: altnovatrail/.github/.github/workflows/release.yml@11435dbe61d3d4885c9a8dd30686e8111e26cabb # v0.1.4
     with:
       paths: |
         .
@@ -343,7 +343,7 @@ jobs:
         :(exclude)spec
 ```
 
-До первого релиза у репозитория включают неизменяемые релизы (`PUT repos/altnovatrail/<репозиторий>/immutable-releases`) и ставят ruleset тегов `v*`: `update`, `deletion` и `non_fast_forward`, без обхода, как ruleset `.github` 25452244 (R10). Без них Т-27 не может положиться на тег. Обе настройки — правило 4.
+До первого релиза у репозитория включают неизменяемые релизы (`PUT repos/altnovatrail/<репозиторий>/immutable-releases`) и ставят ruleset тегов `v*`: `update`, `deletion` и `non_fast_forward`, без обхода, как ruleset `.github` 25452244 (R10). Без них Т-27 не может положиться на тег. Обе настройки — правило 4. У `module-kit` они стоят с T16, его ruleset тегов — 25559103.
 
 Мерж в ruleset `main` держат проверки из колонки «Проверка в ruleset» раздела 3.1 — у репозитория на Go и четыре проверки «Go / …» (R16), — и свои job репозитория (R30 spec), с `integration_id` 15368 для проверок GitHub Actions и 12526 для SonarCloud, как у `spec` и `.github` (R11): без него обязательную проверку закроет статус с тем же именем от любого, у кого есть право записи (раздел 4). Мерж держат ещё и находки CodeQL — правилом `code_scanning`, — а pull request вливается в `main` только merge-коммитом. Так обязано быть у всех по поправке к R30 spec. Стоит это у `.github` с R12, у `spec`, `module-kit` и `tutor` — с T17 и T16 `spec`, а у девяти остальных — с T21 `spec`.
 - Правило ставят после первого анализа CodeQL на `main`: ему нужны результаты и на ветке, которую меняет pull request (раздел 4).
