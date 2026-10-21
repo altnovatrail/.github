@@ -15,10 +15,12 @@
 # releases the tip when the tip has no release yet and a shared workflow has changed since the
 # last one. It works on main alone, and only once CI has passed on that commit.
 #
-# The version is worked out on every green commit of main, released or not, with the toolchain,
-# spec and RELEASE_LINE of the tip the run checks out. A change that breaks the step — a new tag
-# of spec whose release-version recipe takes other arguments, say — turns red the first run
-# that checks it out: that of the commit that brought it, or of an older one whose CI ended later.
+# The version is worked out on every green commit of main, released or not, with the toolchain
+# and spec of the tip the run checks out, in the line the commit was made in. A change that
+# breaks the step — a new tag of spec whose release-version recipe takes other arguments, or
+# whose release-refusal is renamed or takes another number of them, say — turns red the first
+# run that checks it out: that of the commit that brought it, or of an older one whose CI ended
+# later.
 
 name: Release
 
@@ -33,8 +35,8 @@ permissions:
   contents: read
 
 # The line the releases are numbered in: the major and minor version every release carries, the
-# patch counting up within it. The step that works out the version reads it from this text, so
-# it may be quoted or not, and hands it to spec's recipe.
+# patch counting up within it. spec's release-version recipe reads it from this file as text, at
+# the commit it numbers, so it may be quoted or not.
 # Raising it releases nothing by itself: the new line starts with the next change to a shared
 # workflow.
 env:
@@ -96,12 +98,12 @@ jobs:
           fi
 
       # The tip of main the event saw, GITHUB_SHA, with every tag, and spec as its submodule. This
-      # file was read from that commit too, so the step below, the toolchain stage, spec's
-      # recipe and RELEASE_LINE all come from one commit. The commit the checks ran on, TARGET,
-      # is in its history, which main's ruleset keeps from being rewritten, and is named by its SHA
-      # alone: the release needs no checkout of it — git diff reads its tree from the history —
-      # and a checkout by a ref of the workflow_run event is what Scorecard's Dangerous-Workflow
-      # flags (R12).
+      # file was read from that commit too, so the step below, the toolchain stage and spec's
+      # recipes all come from one commit; the line comes from TARGET's copy of this file (R31 in
+      # spec). The commit the checks ran on, TARGET, is in its history, which main's ruleset keeps
+      # from being rewritten, and is named by its SHA alone: the release needs no checkout of it —
+      # git diff reads its tree from the history — and a checkout by a ref of the workflow_run
+      # event is what Scorecard's Dangerous-Workflow flags (R12).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -110,19 +112,19 @@ jobs:
 
       # The number comes from spec's own recipe, release-version, run as spec's release runs it: in
       # the toolchain stage, with the Node, git and just of the devcontainer (R31 in spec). It is
-      # handed TARGET and counts this repository's tags; outside spec it takes the line from
-      # RELEASE_LINE. That is read from the text of this file, as set above — the line of the tip
-      # this file was read from (R12) — by spec's line.mjs, as spec's recipe reads its own
-      # release.yml: through the parsed env, an unquoted 0.10 would arrive as 0.1. Nothing of
-      # this step's environment goes into the container. TARGET has to be a full SHA in the
-      # history of the checkout, which spec's recipe does not ask. The git diff against the
-      # release before runs with the runner's git, as the shared checks do (R08). The step's
-      # outputs: version — empty when there is nothing to release — previous, the release
-      # before, where the notes and the diff start, and released, the release TARGET has
-      # already. behind, the newest release when TARGET is older than it, is only checked here.
-      # A tag with no release behind it was pushed by hand: on TARGET, as the release before, or
-      # as the newest "release" off main's history, it would stop releases quietly, so the run
-      # stops on it instead.
+      # handed TARGET and this file, counts this repository's tags, and takes RELEASE_LINE as this
+      # file sets it at TARGET — the line the commit was made in, whatever the environment says; a
+      # commit older than this file takes the checked-out copy's line. The script
+      # $RUNNER_TEMP/toolchain, as spec's, runs a command in that stage with the workspace and
+      # RUNNER_TEMP mounted, and nothing of the step's environment goes in. TARGET has to be a full
+      # SHA in the history of the checkout, which spec's recipe does not ask (R12). The git diff
+      # against the release before runs with the runner's git, as the shared checks do (R08). The
+      # step's outputs: version — empty when there is nothing to release — previous, the release
+      # before, where the notes and the diff start, and released, the release TARGET has already.
+      # behind, the newest release when TARGET is older than it, is only checked here. A tag with
+      # no release behind it was pushed by hand: on TARGET, as the release before, or as the newest
+      # "release" off main's history, it would stop releases quietly, so the run stops on it
+      # instead.
       - id: version
         name: Work out the version
         env:
@@ -141,12 +143,21 @@ jobs:
               exit 1
           fi
           docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-          # The script is in single quotes, so no apostrophe may appear in it.
-          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work toolchain bash -c \
-              'RELEASE_LINE=$(node spec/tools/release/line.mjs < .github/workflows/self-release.yml) &&
-               export RELEASE_LINE && exec just -f spec/justfile release-version "$1"' \
-              release-version "$TARGET" > "$RUNNER_TEMP/release-version"
+          printf '#!/bin/sh\nexec docker run --rm --user "%s" --env HOME=/tmp --volume "%s:/work" --volume "%s:%s:ro" --workdir /work toolchain "$@"\n' \
+              "$(id -u):$(id -g)" "$PWD" "$RUNNER_TEMP" "$RUNNER_TEMP" > "$RUNNER_TEMP/toolchain"
+          chmod +x "$RUNNER_TEMP/toolchain"
+          # release-refusal runs only after a refusal, which is rare, so a tag of spec that renamed
+          # it or changed how many arguments it takes would show only then, failing that run.
+          # just's dry run, which runs nothing, asks here whether the publish step's call still
+          # parses; arguments that only swapped places it cannot see.
+          if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile --dry-run release-refusal \
+              "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
+              cat "$RUNNER_TEMP/release-refusal" >&2
+              echo "::error::spec's release-refusal is gone or takes another number of arguments than the publish step gives it: the commit, the tip and the error file."
+              exit 1
+          fi
+          "$RUNNER_TEMP/toolchain" just -f spec/justfile release-version "$TARGET" .github/workflows/self-release.yml \
+              > "$RUNNER_TEMP/release-version"
           cat "$RUNNER_TEMP/release-version"
           version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
           previous=$(sed -n 's/^previous=//p' "$RUNNER_TEMP/release-version")
@@ -208,17 +219,15 @@ jobs:
               --latest \
               --generate-notes "${start[@]}" 2> "$RUNNER_TEMP/release-create.err"; then
               cat "$RUNNER_TEMP/release-create.err" >&2
-              # Only the documented refusal is let pass, as in spec's release: of a commit that
-              # is no longer the tip and adds or modifies a workflow file relative to it. main is
-              # fetched again after the refusal: a commit merged meanwhile is what makes this one
-              # older. git diff --quiet exits 1 on a difference and 0 on none; anything else is
-              # its own failure.
+              # Only the documented refusal is let pass, by spec's own rule (R31 in spec):
+              # release-refusal says whether this commit is no longer the tip, is in the tip's
+              # history and adds or modifies a workflow file relative to it, and whether the
+              # error is that 404 or 403. main is fetched again after the refusal: a commit
+              # merged meanwhile is what makes this one older.
               git fetch --quiet --no-tags --no-recurse-submodules origin refs/heads/main
               tip=$(git rev-parse FETCH_HEAD)
-              changed=0
-              git diff --quiet --diff-filter=AM "$tip" "$TARGET" -- .github/workflows/ || changed=$?
-              if [ "$tip" = "$TARGET" ] || [ "$changed" != 1 ] \
-                  || ! grep -qE 'HTTP 404|HTTP 403: Resource not accessible by integration' "$RUNNER_TEMP/release-create.err"; then
+              if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile release-refusal \
+                  "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"; then
                   exit 1
               fi
               echo "::warning::${TARGET} is no longer the tip of main (${tip}) and adds or modifies its workflow files, and the Releases API refused it; the release of the tip covers it."
