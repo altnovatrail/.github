@@ -6,7 +6,7 @@ A component of [NovaTrail](https://github.com/altnovatrail/spec/tree/v0.2.13), a
 
 ## Status
 
-Detailing done. The first epic of [RUN.md](RUN.md) decided what the component's card left open: which CI workflows are shared and which are each repository's own, how they are versioned, and how they keep secrets ([docs/decisions.md](docs/decisions.md), R03–R05). The second epic, E2, is done. The shared checks for secrets, DCO, documents, CodeQL and Scorecard are written, and `.github` publishes them in releases of its own; the first is v0.1.0. Its `main` is under a ruleset: CodeQL's findings hold a merge, and a pull request goes into `main` only as a merge commit (E4). The workflows for code follow with the code they are checked on, in the order RUN.md sets: the Go wrapper and the signed release with module-kit's first code, the TypeScript wrapper with the first TypeScript code, at canvas.
+Detailing done. The first epic of [RUN.md](RUN.md) decided what the component's card left open: which CI workflows are shared and which are each repository's own, how they are versioned, and how they keep secrets ([docs/decisions.md](docs/decisions.md), R03–R05). The second epic, E2, is done. The shared checks for secrets, DCO, documents, CodeQL and Scorecard are written, and `.github` publishes them in releases of its own; the first is v0.1.0. Its `main` is under a ruleset: CodeQL's findings hold a merge, and a pull request goes into `main` only as a merge commit (E4). The third epic, E3, is done too: the Go wrapper, Go in the shared CodeQL and the signed release are written, and module-kit's first release, v0.1.0, came out of the shared release, each file signed. The TypeScript wrapper follows with the first TypeScript code, at canvas (E5 in RUN.md).
 
 ## Documents
 
