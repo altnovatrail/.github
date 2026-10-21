@@ -89,7 +89,8 @@ jobs:
       # text: every line between "export const allowed = [" and "];" has to be one quoted
       # identifier, and any other line — a comment, a second identifier, another quote or indent —
       # stops the step rather than being skipped. Each copy is named on its own, so a red step
-      # says which one strayed.
+      # says which one strayed: the two wrappers, which must have one, and any other workflow
+      # that comes to carry ALLOWED_LICENSES.
       - name: The license lists of go.yml and typescript.yml
         run: |
           body=$(sed -n '/^export const allowed = \[$/,/^\];$/p' spec/tools/licenses/config.mjs | sed '1d;$d')
@@ -99,7 +100,7 @@ jobs:
           fi
           spec_list=$(printf '%s\n' "$body" | sed 's/^  "\(.*\)",\{0,1\}$/\1/' | sort)
           strayed=0
-          for workflow in go.yml typescript.yml; do
+          while read -r workflow; do
               list=$(sed -n 's/^ *ALLOWED_LICENSES: //p' ".github/workflows/$workflow" | tr ',' '\n' | sort)
               if [ "$spec_list" != "$list" ]; then
                   echo "::error::ALLOWED_LICENSES in $workflow is not the list of spec/tools/licenses/config.mjs."
@@ -108,5 +109,5 @@ jobs:
               else
                   echo "$workflow allows the $(echo "$spec_list" | wc -l) licenses spec allows."
               fi
-          done
+          done < <({ printf '%s\n' go.yml typescript.yml; grep -l '^ *ALLOWED_LICENSES:' .github/workflows/*.yml | xargs -r -n1 basename; } | sort -u)
           exit "$strayed"

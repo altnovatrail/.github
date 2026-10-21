@@ -14,7 +14,8 @@
 # recipe's, each with its decision.
 #
 # There is no TypeScript code in .github, so a change here is tried by a trial pull request of
-# .github that calls this file by local path and is never merged, before the release (R19).
+# .github that calls this file by local path and is never merged, before the release (R19). The
+# first trial, #40, keeps its commits at refs/pull/40/head: a new trial starts from them.
 # Called from a job that gives it `contents: read`.
 
 name: TypeScript (shared)
@@ -50,16 +51,19 @@ jobs:
         run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
 
       # As in go.yml, the container runs as the runner's user, with its home in /tmp, and it has
-      # the network npm ci and npm audit need. --init and --ipc=host are what Playwright
-      # recommends for Chromium in Docker (R19). Of the step's environment only CI and
-      # ALLOWED_LICENSES go in. CI, which GitHub sets to true on every runner, is how the tools
-      # learn they run in CI: by it Vitest runs its browser headless and refuses test.only.
+      # the network npm ci and npm audit need. Playwright recommends --init for any container and
+      # --ipc=host for Chromium (R19); the latter only the test job gets, where a browser runs, so
+      # the checks that start none keep Docker's own IPC namespace. Of the step's environment only
+      # CI and ALLOWED_LICENSES go in. CI, which GitHub sets to true on every runner, is how the
+      # tools learn they run in CI: by it Vitest runs its browser headless and refuses test.only.
       - name: ci-${{ matrix.check }}
         env:
           RECIPE: ci-${{ matrix.check }}
           ALLOWED_LICENSES: 0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense
         run: |
-          docker run --rm --init --ipc=host --user "$(id -u):$(id -g)" \
+          ipc=()
+          if [ "$RECIPE" = ci-test ]; then ipc=(--ipc=host); fi
+          docker run --rm --init "${ipc[@]}" --user "$(id -u):$(id -g)" \
               --env HOME=/tmp --env CI --env ALLOWED_LICENSES \
               --volume "$PWD:/work" --workdir /work \
               toolchain just "$RECIPE"
