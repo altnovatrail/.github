@@ -165,7 +165,7 @@ SonarCloud — не workflow: анализ автоматический, а ег
 
 ### 3.3. Вызывающие файлы
 
-В каждом репозитории компонента — одни и те же файлы; различаются они только входами CodeQL — `languages` и `paths-ignore`, — тем, что добавляет вид репозитория: у вида go — job «Go» и экосистема `gomod` (R16), у вида typescript — job «TypeScript» и экосистема `npm` (R19), — и своими job. Общие workflow закреплены по SHA первого релиза `.github`, `v0.1.0` — коммит `ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed`, — с комментарием версии на той же строке, а поднимает их Dependabot (R04). Копируя, берут последний релиз `.github`: его тег называет `gh release view -R altnovatrail/.github`, а коммит — `git ls-remote https://github.com/altnovatrail/.github refs/tags/<тег>`; `v0.1.0` ниже — первый из них. Тексты ниже готовы к копированию, кроме job «TypeScript»: `typescript.yml` выходит с мержем T22, и SHA этого релиза встанет вместо `<SHA релиза>`. Отличия `spec` и `.github` — после текстов. actionlint 1.7.12 с shellcheck 0.11.0 замечаний к трём workflow ниже не нашёл, а все пять общих workflow на этом коммите есть; `dependabot.yml` никакая проверка здесь не читает.
+В каждом репозитории компонента — одни и те же файлы; различаются они только входами CodeQL — `languages` и `paths-ignore`, — тем, что добавляет вид репозитория: у вида go — job «Go» и экосистема `gomod` (R16), у вида typescript — job «TypeScript» и экосистема `npm` (R19), — и своими job. Общие workflow закреплены по SHA первого релиза `.github`, `v0.1.0` — коммит `ff2a3597769ca85e59e476b1a41bdcbc1f50e3ed`, — с комментарием версии на той же строке, а поднимает их Dependabot (R04). Копируя, берут последний релиз `.github`: его тег называет `gh release view -R altnovatrail/.github`, а коммит — `git ls-remote https://github.com/altnovatrail/.github refs/tags/<тег>`; `v0.1.0` ниже — первый из них. Тексты ниже готовы к копированию; отличия `spec` и `.github` — после них. actionlint 1.7.12 с shellcheck 0.11.0 замечаний к трём workflow ниже не нашёл, а все пять общих workflow на этом коммите есть; `dependabot.yml` никакая проверка здесь не читает.
 
 `.github/workflows/ci.yml` — на pull request и push в `main`; рядом с тремя общими — свои job репозитория. Job `documents` требует `.devcontainer/Dockerfile` со стадией `toolchain` и подмодуль `spec/` на теге с рецептом `docs-check-repo` — v0.2.3 или новее (R32 spec; раздел 3.1). Репозиторий на старом теге сначала переходит на новый, своей задачей (RULES.md, Across repositories), иначе «Documents / docs-check-repo» красная. До T21 `spec` так стоял, например, engine — на v0.1.0, коммит ec6c48e. Теперь все одиннадцать репозиториев компонентов стоят на v0.2.9 или новее (поправка к R32 spec): подмодуль engine — коммит 5eafb1a, v0.2.9 (API GitHub, 2026-10-21):
 
@@ -307,13 +307,13 @@ sonar.exclusions=spec/**
       default-days: 3
 ```
 
-Репозиторий на TypeScript добавляет в `ci.yml` job «TypeScript», который зовёт общий `typescript.yml` (R19). `typescript.yml` выходит с мержем T22, и SHA этого релиза встанет вместо `<SHA релиза>`. Что нужно от рецептов, `.npmrc` и стадии `toolchain`, — R19 и раздел 3.1:
+Репозиторий на TypeScript добавляет в `ci.yml` job «TypeScript», который зовёт общий `typescript.yml` (R19). `typescript.yml` есть в релизах `.github` с `v0.1.5`, коммит `c772cc86973240e21cebb310fd0cda221a752ade`; последний релиз называют `gh release view` и `git ls-remote`, как выше. Что нужно от рецептов, `.npmrc` и стадии `toolchain`, — R19 и раздел 3.1:
 
 ```yaml
   # The repository's TypeScript code, by its own ci- recipes in its toolchain stage (R19 .github).
   typescript:
     name: TypeScript
-    uses: altnovatrail/.github/.github/workflows/typescript.yml@<SHA релиза> # <версия>
+    uses: altnovatrail/.github/.github/workflows/typescript.yml@c772cc86973240e21cebb310fd0cda221a752ade # v0.1.5
 ```
 
 А в `dependabot.yml` — экосистему `npm`, с той же паузой; `directory` — папка `package.json`. Node в Dockerfile и браузеры для тестов Dependabot не видит, и их поднимают руками, как Go:

@@ -632,3 +632,5 @@
 - **Сверка списка.** Шаг «The license lists of go.yml and typescript.yml» job «Workflows» сверяет со списком `spec` обе копии — и любую другую, если `ALLOWED_LICENSES` появится в ещё одном workflow, — и называет ту, что разошлась (architecture 3.4).
 
 — architecture 2.7, 3.1, 3.3, 3.4, 4; RUN.md, T22; `typescript.yml`; `self-ci.yml`.
+
+— *Поправка 2026-10-21:* релиз вышел — `v0.1.5`, коммит c772cc8, неизменяемый и Latest; `gh release verify` его подтверждает, и `typescript.yml` в нём есть. Вызывающий job в architecture 3.3 зовёт обёртку по этому SHA, а первым её позовёт T08 canvas. — architecture 3.3; RUN.md, T22.
