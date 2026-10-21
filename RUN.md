@@ -105,7 +105,7 @@
 - есть `go.yml` и общий `release.yml` (architecture 3.1), а CodeQL читает Go (Д9 в RUN.md `spec`): точные входы, имена рецептов `just`, общий список лицензий — категория A ASF — и права релиза. Решены architecture 2.3 — по Т-27, вместе с `module-kit` и `infra`, — и 2.7 для списка лицензий;
 - обёртка проверена на заготовке CLI `module-kit` (T10 module-kit), а релиз — на его первом релизе. Тексты вызывающих job — в architecture 3.3.
 
-T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` — `v0.1.2`. T19 сделана; Go в `module-kit` CodeQL начнёт читать, когда его сессия передаст `go` (T19, «Открыто»). T16 сделана: общий `release.yml` есть, а первый релиз `module-kit` на нём выпустит его сессия; до тех пор эпик остаётся текущим.
+T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` — `v0.1.2`. T19 сделана; Go в `module-kit` CodeQL начнёт читать, когда его сессия передаст `go` (T19, «Открыто»). T16 сделана: общий `release.yml` вышел в `v0.1.4`, а первый релиз `module-kit` на нём выпустит его сессия; до тех пор эпик остаётся текущим.
 
 **Решено автором (2026-10-20), при планировании** — по рекомендациям:
 - в E3 сначала подготовка — переход на `spec` v0.2.8, релиз по рецепту `spec` и вход исключений у общего CodeQL, с которым выходит `v0.1.1`. Затем `go.yml` и `release.yml`;
@@ -683,3 +683,12 @@ E5 вынесен из E3 при его планировании, 2026-10-20: у
   - после мержа — первый релиз `.github` с `release.yml`; в architecture 3.3 вместо `<SHA релиза>` — его SHA;
   - `module-kit`: неизменяемые релизы и ruleset тегов `v*` — исполнитель. Его сессия — вызывающий `release.yml`, `release-files` и первый релиз, проверенный командой из R18;
   - Т-27 — T37 `spec`, по первому релизу `module-kit`. Сюда же — что Source Repository Digest у `workflow_run` может назвать вершину (architecture 4).
+- **Итог после мержа (2026-10-21):**
+  - pull request #34 слит merge-коммитом 11435db; мерж сделал исполнитель, по поручению автора. До мержа были зелёными все восемь проверок pull request, после — CI, CodeQL, Scorecard и Release на `main`;
+  - Release 39626220236 выпустил `v0.1.4` — «releasing v0.1.4 at 11435db…». Релиз неизменяемый и Latest, тег — на 11435db, а `gh release verify v0.1.4 -R altnovatrail/.github` отвечает «Release v0.1.4 verified!». Файлов в нём нет: у релиза `.github` нет ни файлов, ни подписи (R18);
+  - Release пришёл через полчаса. Все job CI 39621347946 кончились в 14:57 UTC, а сам прогон закрылся только в 15:29, и `workflow_run` пришёл после этого. В это время на githubstatus.com был открыт инцидент «Delays for Pull Requests and Webhook deliveries», с 14:52 UTC (прочитано 2026-10-21);
+  - в architecture 3.3 вызывающий `release.yml` зовёт общий по SHA `v0.1.4`;
+  - `module-kit`, с согласия автора (правило 4). Неизменяемые релизы включены: `GET repos/altnovatrail/module-kit/immutable-releases` отвечает `enabled: true`. Стоит ruleset `v-tags` 25559103 — `update`, `deletion` и `non_fast_forward` на `refs/tags/v*`, без обхода, как ruleset `.github` 25452244; сверено через `GET`;
+  - по правилу 12: на 11435db SonarCloud — 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard, новых нет; Scorecard — 6.8 (API Scorecard, коммит 11435db);
+  - промпт сессии `module-kit` — вызывающий `release.yml`, `release-files` и первый релиз `v0.1.0` — в отчёте автору;
+  - открыто: первый релиз `module-kit` и его проверка командой из R18 — его сессия; Т-27 — T37 `spec`; В17–В19; Д3.
