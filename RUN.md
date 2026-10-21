@@ -123,7 +123,7 @@
 | [x] | T22 | Обёртка TypeScript: `typescript.yml` | я + Claude | да | T21 |
 | [x] | T23 | Переход на spec v0.2.14 | Claude | — | T22 |
 
-T21 сделана: договор — R19. T22 сделана: `typescript.yml` проверила проба в `.github`, а вышел он в `v0.1.5`. T23 — переход на `spec` v0.2.14. Эпик закончит первый код `canvas`, T08 canvas: она зовёт обёртку по SHA релиза, а её шаг автора ставит проверки «TypeScript / …» в ruleset `main` `canvas`. T23 canvas слита с T08 canvas (pull request #14 `canvas`, 32e144a).
+T21 сделана: договор — R19. T22 сделана: `typescript.yml` проверила проба в `.github`, а вышел он в `v0.1.5`. T23 — переход на `spec` v0.2.14. Эпик закончит первый код `canvas`, T08 canvas: она зовёт обёртку по SHA релиза, а её шаг автора ставит проверки «TypeScript / …» в ruleset `main` `canvas`. T23 canvas слита с T08 canvas (pull request #14 `canvas`, 32e144a). T08 canvas сделана: её pull request #18 `canvas` прошёл все четыре «TypeScript / …», зовя обёртку по SHA `v0.1.5`, и слит 2026-10-21 (88492c4), а автор поставил эти проверки и «CodeQL / analyze (javascript-typescript)» в ruleset `main` `canvas` (T22, «Первый код `canvas`»). Эпик сделан.
 
 **Почему такой порядок.**
 - T21 — сейчас, до кода. T08 canvas пишет рецепты под обёртку, и имена нужны ей до кода, а не после. Без договора `canvas` возьмёт их у canvas-api, и обёртке пришлось бы подстраиваться под уже написанное.
@@ -278,6 +278,12 @@ T21 сделана: договор — R19. T22 сделана: `typescript.yml`
   - промпт сессии `canvas` — в отчёте автору;
   - открыто: эпик E5 закончат T08 и T23 canvas; В17–В21 «в реестр spec»; Д3.
 - **Дополнено (2026-10-21):** сессия `canvas` переписала T08 под `v0.1.5` и слила с ней T23 canvas (pull request #14 `canvas`, слит 32e144a). Проверено по самим файлам `canvas` на 32e144a: вызов — `typescript.yml@c772cc8…` # v0.1.5, в контейнер идут `CI` и `ALLOWED_LICENSES`, `--ipc=host` — только у `test`, а четыре проверки «TypeScript / …» с `integration_id` 15368 — шаг автора в T08 canvas. «T23 canvas» в этой задаче читается как «T08 canvas».
+- **Первый код `canvas` (2026-10-21; API GitHub, прочитано 2026-10-21):**
+  - pull request #18 `canvas`, «Set up the package skeleton and its tools (T08)», слит merge-коммитом 88492c4. Его вызывающий job зовёт `typescript.yml@c772cc8…` # v0.1.5, и все четыре «TypeScript / …» на нём зелёные, а с ними «CodeQL / analyze (javascript-typescript)»;
+  - на `main` `canvas` (88492c4) CI, CodeQL и Scorecard зелёные. В прогоне CI 39691386053 стадия `toolchain` `canvas` собирается за 65–93 секунды на job, а сами рецепты идут 0–6 секунд. Это дороже пробы, 49–52 секунды, но полторы минуты на job на открытом репозитории — довод о цене в поправке к R19 тот же, и кеш не нужен;
+  - системные библиотеки браузера `canvas` ставит из архива Ubuntu на дату — `ARG UBUNTU_SNAPSHOT` и `apt-get --snapshot`, — как рекомендует В21, и его сборка это проверила;
+  - ruleset `main` `canvas` (25506234) держит «TypeScript / lint», «TypeScript / test», «TypeScript / vuln», «TypeScript / licenses» и «CodeQL / analyze (javascript-typescript)», все с `integration_id` 15368 — GitHub Actions. Это шаг автора по правилу 4;
+  - «Цель» задачи сделана: обёртку проверил первый код на TypeScript, а проверки стоят в ruleset `canvas`. Эпик E5 сделан.
 
 #### T23. Переход на spec v0.2.14
 
