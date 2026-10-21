@@ -105,7 +105,7 @@
 - есть `go.yml` и общий `release.yml` (architecture 3.1), а CodeQL читает Go (Д9 в RUN.md `spec`): точные входы, имена рецептов `just`, общий список лицензий — категория A ASF — и права релиза. Решены architecture 2.3 — по Т-27, вместе с `module-kit` и `infra`, — и 2.7 для списка лицензий;
 - обёртка проверена на заготовке CLI `module-kit` (T10 module-kit), а релиз — на его первом релизе. Тексты вызывающих job — в architecture 3.3.
 
-T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` — `v0.1.2`. T19 сделана, релиз с ней — `v0.1.3`, и CodeQL читает Go `module-kit` (T19, «Итог после мержа»). T16 сделана: общий `release.yml` вышел в `v0.1.4`, а первый релиз `module-kit` на нём выпустит его сессия; до тех пор эпик остаётся текущим.
+T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` — `v0.1.2`. T19 сделана, релиз с ней — `v0.1.3`, и CodeQL читает Go `module-kit` (T19, «Итог после мержа»). T16 сделана: общий `release.yml` вышел в `v0.1.4`, и на нём вышел первый релиз `module-kit`, `v0.1.0`, — подписанный, и подпись сверена (T16, «Первый релиз `module-kit`»). Эпик сделан.
 
 **Решено автором (2026-10-20), при планировании** — по рекомендациям:
 - в E3 сначала подготовка — переход на `spec` v0.2.8, релиз по рецепту `spec` и вход исключений у общего CodeQL, с которым выходит `v0.1.1`. Затем `go.yml` и `release.yml`;
@@ -698,3 +698,15 @@ E5 вынесен из E3 при его планировании, 2026-10-20: у
   - по правилу 12: на 11435db SonarCloud — 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard, новых нет; Scorecard — 6.8 (API Scorecard, коммит 11435db);
   - промпт сессии `module-kit` — вызывающий `release.yml`, `release-files` и первый релиз `v0.1.0` — в отчёте автору;
   - открыто: первый релиз `module-kit` и его проверка командой из R18 — его сессия; Т-27 — T37 `spec`; В17–В19; Д3.
+- **Первый релиз `module-kit` (2026-10-21):**
+  - его сессия — T13 и R07 module-kit — написала вызывающий `release.yml` по architecture 3.3 и рецепт `release-files`. Pull request #11 слит автором merge-коммитом 7e0144a, и Release 39636884292 выпустил `v0.1.0` — первый релиз на общем `release.yml`; все его шаги зелёные;
+  - проверено из этой сессии, только чтением:
+    - релиз неизменяемый и Latest, тег — на 7e0144a. `gh release verify v0.1.0 -R altnovatrail/module-kit` — «Release v0.1.0 verified!»;
+    - `gh release verify-asset` проходит у всех девяти файлов: шесть бинарников — linux, darwin и windows, каждая на amd64 и arm64, — `LICENSE`, `LICENSE-go` и `SHA256SUMS`. У каждого рядом его `.sigstore.json`, и `sha256sum -c SHA256SUMS` сходится у восьми файлов, которые он называет;
+    - `cosign verify-blob` 3.1.4 каждого из девяти — «Verified OK». Флаги — из R18: идентичность `https://github.com/altnovatrail/.github/.github/workflows/release.yml@11435dbe61d3d4885c9a8dd30686e8111e26cabb`, issuer GitHub Actions, репозиторий `altnovatrail/module-kit` и коммит 7e0144a;
+    - скачанный бинарник linux amd64 отвечает «module-kit v0.1.0»;
+    - сертификат — в разделе 4 architecture. SAN называет общий `release.yml` по SHA `v0.1.4`, Build Config URI — `release.yml` `module-kit` на `refs/heads/main`, а Source Repository Digest — коммит тега;
+  - открыто:
+    - Т-27 — T37 `spec`, теперь по настоящему релизу;
+    - шаблон `paths` в architecture 3.3 — В6 module-kit «в реестр spec»: одна правка `RELEASE_LINE` релиза не даёт, а правки, от которых бинарник не меняется, дают. `module-kit` рекомендует перечень вместо исключений, и `.github` с ним согласен. Шаблон поменяется, когда это решит `spec`;
+    - как CLI берут CI `modules` и `canvas` — В7 module-kit «в реестр spec».

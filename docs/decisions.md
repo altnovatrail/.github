@@ -573,3 +573,5 @@
 — *Следствие:* architecture 2.3 решён в части подписи, а что проверяет потребитель — Т-27, T37 `spec`. В `module-kit` — неизменяемые релизы и ruleset тегов, а его сессия пишет вызывающий `release.yml` и `release-files` и выпускает первый релиз. — architecture 2.3, 3.1, 3.3, 4; RUN.md, T16; `release.yml`; `.github/actionlint.yaml`.
 
 — *Поправка 2026-10-21:* релиз вышел — `v0.1.4`, коммит 11435db, неизменяемый и Latest; `gh release verify` его подтверждает. У `module-kit` неизменяемые релизы включены и стоит ruleset тегов `v*` 25559103, как у `.github`; поставил их исполнитель, с согласия автора. Вызывающий `release.yml`, `release-files` и первый релиз — его сессия. — architecture 3.3; RUN.md, T16.
+
+— *Поправка 2026-10-21:* первый релиз на общем `release.yml` — `v0.1.0` `module-kit`, коммит 7e0144a (T13 и R07 module-kit). Все девять файлов подписаны. Каждый bundle проходит `cosign verify-blob` по общему `release.yml` на SHA `v0.1.4`, репозиторию `module-kit` и коммиту тега, а релиз — `gh release verify`. Т-27 решает T37 `spec`, теперь по настоящему релизу. — architecture 2.3, 4; RUN.md, T16.
