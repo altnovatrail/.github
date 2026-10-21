@@ -1,0 +1,26 @@
+# A trial for T16 of RUN.md, never merged: the shared release.yml, called by local path, on a
+# pull request, with publish false. RELEASE_LINE is the line it numbers in.
+name: Release trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_LINE: "0.1"
+
+jobs:
+  release:
+    name: Release
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      paths: |
+        trial/**
+        go.mod
+      publish: false
