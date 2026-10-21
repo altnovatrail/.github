@@ -105,7 +105,7 @@
 - есть `go.yml` и общий `release.yml` (architecture 3.1), а CodeQL читает Go (Д9 в RUN.md `spec`): точные входы, имена рецептов `just`, общий список лицензий — категория A ASF — и права релиза. Решены architecture 2.3 — по Т-27, вместе с `module-kit` и `infra`, — и 2.7 для списка лицензий;
 - обёртка проверена на заготовке CLI `module-kit` (T10 module-kit), а релиз — на его первом релизе. Тексты вызывающих job — в architecture 3.3.
 
-T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` — `v0.1.2`. T19 можно делать: код на Go в `main` `module-kit` есть (T10 module-kit). T16 ждёт первого релиза `module-kit`; до тех пор эпик остаётся текущим.
+T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` — `v0.1.2`. T19 сделана; Go в `module-kit` CodeQL начнёт читать, когда его сессия передаст `go` (T19, «Открыто»). T16 ждёт первого релиза `module-kit`; до тех пор эпик остаётся текущим.
 
 **Решено автором (2026-10-20), при планировании** — по рекомендациям:
 - в E3 сначала подготовка — переход на `spec` v0.2.8, релиз по рецепту `spec` и вход исключений у общего CodeQL, с которым выходит `v0.1.1`. Затем `go.yml` и `release.yml`;
@@ -145,7 +145,7 @@ T12–T15, T17, T18 и T20 сделаны, а релиз `.github` с `go.yml` �
 | [x] | T18 | Переход на spec v0.2.12 | Claude, проверяю я | — | T17 |
 | [x] | T20 | Переход на spec v0.2.13 | Claude | — | T18 |
 | [x] | T15 | Обёртка Go: `go.yml` | я + Claude | да | T18; T10 `module-kit` |
-| [ ] | T19 | Go в общем CodeQL | Claude | да | T15; T10 `module-kit` в `main` |
+| [x] | T19 | Go в общем CodeQL | Claude | да | T15; T10 `module-kit` в `main` |
 | [ ] | T16 | Общий релиз с подписью: `release.yml` | я + Claude | да | T15; первый релиз `module-kit` |
 
 **Почему такой порядок.**
@@ -616,6 +616,22 @@ E5 вынесен из E3 при его планировании, 2026-10-20: у
 - **Мой шаг:** промпт — сессии `module-kit`, а «CodeQL / analyze (go)» — в ruleset `main` `module-kit` (правило 4).
 - **Как проверить:** по итогам планирования. Среди прочего — находка в пробной ветке видна в code scanning, а без неё анализ Go зелёный; actionlint, docs-check и `/code-review high`.
 - **Разделы:** R09, R16; architecture 3.1, 4; Д9 в RUN.md `spec`; Д2 и R04 module-kit.
+- **Решено автором (2026-10-21):** T19 — сейчас, после T20, автономно: ветки, коммиты, push, pull request и мерж делает исполнитель; ревью — один круг, в конце (R35 spec).
+- **Решено при планировании** (исполнителем, по поручению автора; поправка к R09):
+  - build mode — `autobuild`: при явном режиме шаг analyze сам собирает базу, и шага сборки в общем workflow не нужно;
+  - Go — из стадии `toolchain` вызывающего, `/usr/local/go`, скопированный на раннер, с `GOTOOLCHAIN=local`. Это тот Go, что закреплён у вызывающего и идёт в его проверках `go.yml`;
+  - проба — pull request в самом `.github`, без мержа, как пробы T14: Go в его стадии `toolchain` только в пробной ветке. В `module-kit` вход `languages` меняет его сессия.
+- **Сделано (2026-10-21):**
+  - по правилу 12, перед задачей: на `main` после T20 (08d5568) CI, CodeQL, Scorecard и Release зелёные, у SonarCloud — 0 находок, в code scanning — те же шесть находок Scorecard;
+  - `codeql.yml`: `languages` принимает `go`. Для `go` — шаг «Go of the caller's toolchain stage» и `build-mode: autobuild`, для остальных языков — `none`, как было;
+  - журнал — поправка к R09; architecture — 3.1, 3.3 и раздел 4;
+  - проверено:
+    - actionlint 1.7.12 с shellcheck 0.11.0 — без замечаний; `just -f spec/justfile docs-check-repo` — ok;
+    - пробный pull request #30, закрыт без мержа. С находкой «CodeQL / analyze (go)» прошёл на go1.27.3 из стадии `toolchain`, а «CodeQL» упала на go/command-injection уровня critical. Без находки — 0 результатов Go и зелёная «CodeQL»;
+  - `/code-review high` — ниже, один круг.
+- **Открыто:**
+  - после мержа — релиз `.github` с этим `codeql.yml`;
+  - `module-kit`: его сессия передаёт `languages: go` в `.github/workflows/codeql.yml` по SHA этого релиза и закрывает Д2; «CodeQL / analyze (go)» в его ruleset `main` — мой шаг (правило 4). Промпт — в отчёте.
 
 #### T16. Общий релиз с подписью: `release.yml`
 
