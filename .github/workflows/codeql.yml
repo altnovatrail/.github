@@ -10,6 +10,10 @@
 # whatever the caller's file or job is called. Paths the caller names are left out of the
 # analysis of its languages — spec's draft/, a prototype a design tool built, say — while the
 # analysis of actions reads every workflow, whatever the caller passes.
+#
+# Go is analysed from a build, with the caller's own Go: the one in the toolchain stage of its
+# .devcontainer/Dockerfile, which its Go checks run with too (R16). A caller that names go needs
+# Go there, in /usr/local/go.
 
 name: CodeQL (shared)
 
@@ -19,8 +23,8 @@ on:
       languages:
         description: >-
           The languages of the repository besides actions, which is always analysed, as CodeQL
-          names them, divided by spaces, commas or lines. Only javascript-typescript is taken for
-          now. Empty before there is code.
+          names them, divided by spaces, commas or lines: javascript-typescript and go are taken.
+          Empty before there is code.
         type: string
         required: false
         default: ""
@@ -38,14 +42,13 @@ permissions:
   contents: read
 
 jobs:
-  # actions and the languages the caller names, each once. Besides actions only
-  # javascript-typescript is taken: the platform's code is Go and TypeScript (R03), and Go needs a
-  # build, which comes with the workflows for code (E3). Any other name stops the check with its
-  # reason. This job is a check of its own, CodeQL / languages, and need not be required: when it
-  # fails, the matrix never expands, the one check GitHub reports for it is a skipped
-  # "analyze (${{ matrix.language }})", and the required analyses never come, so the merge waits.
-  # This check says why. It also turns paths-ignore into the configuration that the analyses of
-  # the caller's languages take.
+  # actions and the languages the caller names, each once. Besides actions, javascript-typescript
+  # and go are taken: the platform's code is Go and TypeScript (R03). Any other name stops the
+  # check with its reason. This job is a check of its own, CodeQL / languages, and need not be
+  # required: when it fails, the matrix never expands, the one check GitHub reports for it is a
+  # skipped "analyze (${{ matrix.language }})", and the required analyses never come, so the merge
+  # waits. This check says why. It also turns paths-ignore into the configuration that the
+  # analyses of the caller's languages take.
   languages:
     name: languages
     runs-on: ubuntu-24.04
@@ -63,11 +66,11 @@ jobs:
           for language in "${requested[@]}"; do
               case "$language" in
                   "" | actions) ;;
-                  javascript-typescript)
+                  javascript-typescript | go)
                       [[ " ${list[*]} " == *" ${language} "* ]] || list+=("$language")
                       ;;
                   *)
-                      echo "::error::CodeQL here takes, besides actions, only javascript-typescript, not ${language}. Go, which needs a build, comes with the workflows for code (E3)."
+                      echo "::error::CodeQL here takes, besides actions, javascript-typescript and go, not ${language}."
                       exit 1
                       ;;
               esac
@@ -116,7 +119,8 @@ jobs:
           echo "config=${config}" >> "$GITHUB_OUTPUT"
           echo "configuration: ${config:-none}"
 
-  # build-mode none is what actions and javascript-typescript take. The queries are
+  # build-mode none is what actions and javascript-typescript take, and go takes autobuild: CodeQL
+  # reads Go only from a build, and with that mode the analyze step runs it itself. The queries are
   # security-extended, as canvas-api's (R50 canvas-api). tools: linked takes the CodeQL bundle
   # that this commit of the action ships with; without it, GitHub's flags choose the bundle at
   # run time. Only the analyses of the caller's languages take its paths-ignore: the analysis
@@ -139,11 +143,27 @@ jobs:
         with:
           persist-credentials: false
 
+      # The Go of the caller's toolchain stage, copied out of that image onto the runner ahead of
+      # the runner's own: the version the caller pins, from the archive its Dockerfile checked
+      # against its sum. GOTOOLCHAIN=local keeps the go command on it rather than on one a go.mod
+      # would have it fetch. The Dockerfile copies nothing from the repository, so it is built
+      # without a context, as documents.yml and go.yml build it.
+      - name: Go of the caller's toolchain stage
+        if: matrix.language == 'go'
+        run: |
+          docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+          container=$(docker create toolchain true)
+          docker cp "$container:/usr/local/go" "$RUNNER_TEMP/go"
+          docker rm "$container" > /dev/null
+          echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
+          echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/go/bin/go" version
+
       - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           languages: ${{ matrix.language }}
           tools: linked
-          build-mode: none
+          build-mode: ${{ matrix.language == 'go' && 'autobuild' || 'none' }}
           queries: security-extended
           config: ${{ matrix.language != 'actions' && needs.languages.outputs.config || '' }}
 
