@@ -13,7 +13,9 @@
 #
 # Go is analysed from a build, with the caller's own Go: the one in the toolchain stage of its
 # .devcontainer/Dockerfile, which its Go checks run with too (R16). A caller that names go needs
-# Go there, in /usr/local/go.
+# Go there, in /usr/local/go. The build runs on the runner with the step's token, like any code a
+# pull request brings into its own checks. paths-ignore does not reach it: CodeQL leaves paths
+# out only of what it reads without a build.
 
 name: CodeQL (shared)
 
@@ -30,9 +32,10 @@ on:
         default: ""
       paths-ignore:
         description: >-
-          Paths CodeQL leaves out of the analysis of the languages above — draft/**, say — as
+          Paths CodeQL leaves out of the analysis of javascript-typescript — draft/**, say — as
           the paths-ignore of a CodeQL configuration: bare paths, one per line, unquoted. The
-          analysis of actions never takes them and reads every workflow. A line that starts
+          analysis of actions never takes them and reads every workflow, and neither does that of
+          go, which CodeQL reads from a build. A line that starts
           with # is a comment. Empty by default.
         type: string
         required: false
@@ -123,9 +126,10 @@ jobs:
   # reads Go only from a build, and with that mode the analyze step runs it itself. The queries are
   # security-extended, as canvas-api's (R50 canvas-api). tools: linked takes the CodeQL bundle
   # that this commit of the action ships with; without it, GitHub's flags choose the bundle at
-  # run time. Only the analyses of the caller's languages take its paths-ignore: the analysis
-  # of actions reads every workflow, as R09 keeps it. A green analysis says that CodeQL ran, not
-  # that it found nothing: what it found holds a merge through the ruleset (architecture 3.1).
+  # run time. Only the analysis of javascript-typescript takes the caller's paths-ignore: that of
+  # actions reads every workflow, as R09 keeps it, and that of go reads what the build compiled.
+  # A green analysis says that CodeQL ran, not that it found nothing: what it found holds a merge
+  # through the ruleset (architecture 3.1).
   analyze:
     name: analyze (${{ matrix.language }})
     needs: languages
@@ -145,17 +149,20 @@ jobs:
 
       # The Go of the caller's toolchain stage, copied out of that image onto the runner ahead of
       # the runner's own: the version the caller pins, from the archive its Dockerfile checked
-      # against its sum. GOTOOLCHAIN=local keeps the go command on it rather than on one a go.mod
-      # would have it fetch. The Dockerfile copies nothing from the repository, so it is built
-      # without a context, as documents.yml and go.yml build it.
+      # against its sum, followed if /usr/local/go is a link. The image's GO and CGO_ variables
+      # come along, and GOTOOLCHAIN=local keeps the go command on this Go rather than on one a
+      # go.mod would have it fetch. The Dockerfile copies nothing from the repository, so it is
+      # built without a context, as documents.yml and go.yml build it.
       - name: Go of the caller's toolchain stage
         if: matrix.language == 'go'
         run: |
           docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
           container=$(docker create toolchain true)
-          docker cp "$container:/usr/local/go" "$RUNNER_TEMP/go"
+          docker cp -L "$container:/usr/local/go" "$RUNNER_TEMP/go"
           docker rm "$container" > /dev/null
           echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
+          docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' toolchain \
+              | grep -E '^(GO|CGO_)[A-Z0-9_]*=' | grep -v '^GOTOOLCHAIN=' >> "$GITHUB_ENV" || true
           echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
           "$RUNNER_TEMP/go/bin/go" version
 
@@ -165,7 +172,7 @@ jobs:
           tools: linked
           build-mode: ${{ matrix.language == 'go' && 'autobuild' || 'none' }}
           queries: security-extended
-          config: ${{ matrix.language != 'actions' && needs.languages.outputs.config || '' }}
+          config: ${{ matrix.language == 'javascript-typescript' && needs.languages.outputs.config || '' }}
 
       - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:

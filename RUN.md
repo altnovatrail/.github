@@ -606,7 +606,7 @@ E5 вынесен из E3 при его планировании, 2026-10-20: у
 
 #### T19. Go в общем CodeQL
 
-- **Цель:** общий `codeql.yml` принимает `go` во входе `languages` и разбирает Go со сборкой, и это показал pull request `module-kit`.
+- **Цель:** общий `codeql.yml` принимает `go` во входе `languages` и разбирает Go со сборкой, и это показал пробный pull request. При планировании проба ушла из `module-kit` в сам `.github` (ниже).
 - **Почему:** CodeQL разбирает Go только со сборкой (architecture 4), а общий `codeql.yml` сверх `actions` принимает один `javascript-typescript` (R09). С T10 `module-kit` код на Go есть, и его ждут Д2 `module-kit` и Д9 в RUN.md `spec`.
 - **Решить при планировании:**
   - build mode — `autobuild` или `manual`;
@@ -628,7 +628,7 @@ E5 вынесен из E3 при его планировании, 2026-10-20: у
   - проверено:
     - actionlint 1.7.12 с shellcheck 0.11.0 — без замечаний; `just -f spec/justfile docs-check-repo` — ok;
     - пробный pull request #30, закрыт без мержа. С находкой «CodeQL / analyze (go)» прошёл на go1.27.3 из стадии `toolchain`, а «CodeQL» упала на go/command-injection уровня critical. Без находки — 0 результатов Go и зелёная «CodeQL»;
-  - `/code-review high` — ниже, один круг.
+  - `/code-review high`, один круг — 7 находок. Исправлены пять: `paths-ignore` до анализа Go не доходит — теперь он его и не получает; с Go переходят переменные `GO*` и `CGO_*` образа; `docker cp -L` — на случай ссылки; цель задачи называла пробу в `module-kit`; не были записаны автосборка Makefile и `build.sh` на раннере и то, что сборка исполняет код pull request с токеном шага. Не исправлены две: полная сборка образа в каждом анализе Go — это минута, а не ошибка; и токен шага — та же граница доверия, что у вызывающего workflow, который автор ветки правит сам.
 - **Открыто:**
   - после мержа — релиз `.github` с этим `codeql.yml`;
   - `module-kit`: его сессия передаёт `languages: go` в `.github/workflows/codeql.yml` по SHA этого релиза и закрывает Д2; «CodeQL / analyze (go)» в его ruleset `main` — мой шаг (правило 4). Промпт — в отчёте.
