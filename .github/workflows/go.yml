@@ -2,8 +2,8 @@
 # repository's own — ci-lint, ci-test, ci-vuln and ci-licenses — one job each, in the toolchain
 # stage of the caller's .devcontainer/Dockerfile, where the caller pins its Go; the recipes pin
 # the versions of the tools they run. What the checks do is the repository's; how they are run is
-# the same everywhere (R30 in spec). Each job is a check of the caller's ruleset of main: "Go / lint",
-# "Go / test", "Go / vuln" and "Go / licenses", when the job that calls this one is named Go.
+# the same everywhere (R30 in spec). Each job is a check of the caller's ruleset of main:
+# "Go / lint", "Go / test", "Go / vuln" and "Go / licenses", when the calling job is named Go.
 #
 # ci-licenses is handed the licenses a NovaTrail repository may build from: the ASF's Category A
 # as SPDX identifiers, the list spec checks its own tools against (R12 in spec). It lives here,
