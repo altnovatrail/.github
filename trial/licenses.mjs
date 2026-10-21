@@ -10,7 +10,8 @@ if (allowed.size === 0) {
   console.error("licenses: ALLOWED_LICENSES is not set; typescript.yml sets it.");
   process.exit(1);
 }
-const exceptions = [{ name: /^lightningcss(-[a-z0-9-]+)?$/, license: "MPL-2.0" }];
+// The negative case: no exception, so lightningcss is refused.
+const exceptions = [];
 
 const lock = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
 if (!lock.packages) {
