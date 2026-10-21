@@ -1,8 +1,8 @@
 # Shared check (R03, R16): the Go code of the repository that calls it, by four recipes of that
 # repository's own — ci-lint, ci-test, ci-vuln and ci-licenses — one job each, in the toolchain
-# stage of the caller's .devcontainer/Dockerfile, where the caller pins its Go and the versions of
-# the tools its recipes run. What the checks do is the repository's; how they are run is the same
-# everywhere (R30 in spec). Each job is a check of the caller's ruleset of main: "Go / lint",
+# stage of the caller's .devcontainer/Dockerfile, where the caller pins its Go; the recipes pin
+# the versions of the tools they run. What the checks do is the repository's; how they are run is
+# the same everywhere (R30 in spec). Each job is a check of the caller's ruleset of main: "Go / lint",
 # "Go / test", "Go / vuln" and "Go / licenses", when the job that calls this one is named Go.
 #
 # ci-licenses is handed the licenses a NovaTrail repository may build from: the ASF's Category A
@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   check:
-    # Named after the recipe, so that each check reads "<calling job> / <recipe>".
+    # Named after the check, so that each reads "<calling job> / <check>": "Go / lint" for ci-lint.
     name: ${{ matrix.check }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -35,6 +35,8 @@ jobs:
       matrix:
         check: [lint, test, vuln, licenses]
     steps:
+      # Without the spec submodule: code takes spec's files from spec's releases, not from the
+      # submodule (R21 in spec), so a check that reads spec/ fails here as it would for a user.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false

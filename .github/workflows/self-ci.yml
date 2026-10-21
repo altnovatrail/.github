@@ -84,15 +84,21 @@ jobs:
 
       # go.yml hands the license check of every Go repository a copy of spec's list (R16): the
       # ASF's Category A in spec/tools/licenses/config.mjs, at the tag .github is on. A move to a
-      # tag that changes the list turns this red until go.yml follows. The list is read as text,
-      # one quoted identifier a line between "export const allowed = [" and "];", so that a file
-      # laid out otherwise fails here rather than passing an empty list.
+      # tag that changes the list turns this red until go.yml follows. spec has no interface for
+      # the list yet (В19 in RUN.md), so the file is read as text: every line between
+      # "export const allowed = [" and "];" has to be one quoted identifier, and any other line —
+      # a comment, a second identifier, another quote or indent — stops the step rather than
+      # being skipped.
       - name: The license list of go.yml
         run: |
-          spec_list=$(sed -n '/^export const allowed = \[$/,/^\];$/p' spec/tools/licenses/config.mjs \
-              | sed -n 's/^ *"\([^"]*\)",\{0,1\}$/\1/p' | sort)
+          body=$(sed -n '/^export const allowed = \[$/,/^\];$/p' spec/tools/licenses/config.mjs | sed '1d;$d')
+          if [ -z "$body" ] || printf '%s\n' "$body" | grep -qvE '^  "[A-Za-z0-9.+-]+",?$'; then
+              echo "::error::spec/tools/licenses/config.mjs no longer lists one quoted identifier a line between \"export const allowed = [\" and \"];\": read it again."
+              exit 1
+          fi
+          spec_list=$(printf '%s\n' "$body" | sed 's/^  "\(.*\)",\{0,1\}$/\1/' | sort)
           go_list=$(sed -n 's/^ *ALLOWED_LICENSES: //p' .github/workflows/go.yml | tr ',' '\n' | sort)
-          if [ -z "$spec_list" ] || [ "$spec_list" != "$go_list" ]; then
+          if [ "$spec_list" != "$go_list" ]; then
               echo "::error::ALLOWED_LICENSES in go.yml is not the list of spec/tools/licenses/config.mjs."
               diff <(echo "$spec_list") <(echo "$go_list") || true
               exit 1
