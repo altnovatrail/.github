@@ -140,7 +140,7 @@ Dependabot подписывает коммит не тем адресом, ка�
 |---|---|---|---|---|---|---|
 | `go.yml` | по job на каждый из четырёх рецептов `just` вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его `.devcontainer/Dockerfile`, от пользователя раннера. `ci-licenses` получает в окружении `ALLOWED_LICENSES` — категорию A ASF, идентификаторами SPDX (R16) | репозитории вида go; первым — `module-kit`, с заготовки CLI (T10 module-kit) | нет | `contents: read` | Go в стадии `toolchain` по точной версии и с `GOTOOLCHAIN=local`; рецепты с этими именами, а `ci-licenses` — по списку из `ALLOWED_LICENSES`. Код и тесты не читают `spec/`: job берёт checkout без подмодуля (R21 spec). Инструменты проверок и их версии — свои, исключения проверки лицензий — тоже, каждое с решением, как R48 canvas-api | да: «Go / lint», «Go / test», «Go / vuln» и «Go / licenses», когда job вызывающего называется «Go» |
 | `typescript.yml` | то же для TypeScript | репозитории вида typescript | с первым кодом на TypeScript, у `canvas` | `contents: read` | то же | да |
-| `release.yml` | релиз с подписью без ключей (R18). Номер — рецептами релиза `spec`, линия — `RELEASE_LINE` workflow вызывающего. Релиз выходит, только если с прошлого изменились пути `paths`; первый выходит всегда. Файлы собирает рецепт вызывающего `release-files` из дерева коммита, в его стадии `toolchain`. Каждый файл, пакеты модулей тоже (R17 spec), подписан cosign 3.1.4 с bundle рядом, и каждый bundle сверен до публикации. Релиз — Latest, неизменяемый, его проверяют `gh release verify` и `verify-asset` | `module-kit` первым, затем `modules` и остальные репозитории с релизами | `paths` — pathspec, из чего собран релиз, по одному на строку; `publish` — `false` для пробы без публикации | `contents: write`, `id-token: write`, `actions: read` | рецепт `release-files VERSION`, который пишет файлы в `dist/`; `RELEASE_LINE` в своём `release.yml`; CI — `ci.yml`; неизменяемые релизы и ruleset тегов `v*` (условие Т-27) | нет: это не проверка pull request |
+| `release.yml` | релиз с подписью без ключей (R18). Номер — рецептами релиза `spec`, линия — `RELEASE_LINE` workflow вызывающего. Релиз выходит, только если с прошлого изменились пути `paths`; первый выходит всегда. Файлы собирает рецепт вызывающего `release-files` из дерева коммита, в его стадии `toolchain`. Подписывается только коммит, который называет сам прогон, `GITHUB_SHA`: его сертификат называет тот же коммит, что тег, а более старый коммит покрывает релиз вершины. Каждый файл, пакеты модулей тоже (R17 spec), подписан cosign 3.1.4 с bundle рядом, и каждый bundle сверен до публикации — с общим `release.yml`, репозиторием вызывающего и этим коммитом. Релиз — Latest, неизменяемый, его проверяют `gh release verify` и `verify-asset` | `module-kit` первым, затем `modules` и остальные репозитории с релизами | `paths` — pathspec, из чего собран релиз, по одному на строку; `publish` — `false` для пробы без публикации | `contents: write`, `id-token: write`, `actions: read` | рецепт `release-files VERSION`, который пишет в `dist/` простые файлы с безопасными именами. Собирает он дерево коммита без истории и подмодулей, так что `git` в нём нет, а версия приходит аргументом; `RELEASE_LINE` в своём `release.yml`; CI — `ci.yml`; неизменяемые релизы и ruleset тегов `v*` (условие Т-27) | нет: это не проверка pull request |
 
 Список лицензий для `go.yml` и `typescript.yml` один на всех — категория A политики ASF, как у проверки `spec` (поправка к R12 spec). Лежит он в самом `go.yml`, `ALLOWED_LICENSES`, а `self-ci.yml` сверяет его со списком `spec` (2.7; R16). Входов у `go.yml` нет, а имена рецептов — выше (R16); у `typescript.yml` они будут по образцу `go.yml`, в эпике E5. Идентичность подписи — 2.3.
 
@@ -306,7 +306,7 @@ sonar.exclusions=spec/**
       default-days: 3
 ```
 
-Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с первого после T16. Список `paths` — из чего собран релиз; у `module-kit` это `cmd/**`, `go.mod`, `go.sum` и `justfile`:
+Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с первого после T16. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
 
 ```yaml
 # NovaTrail's shared release (R18 .github), pinned to a release of .github by SHA with its version
@@ -336,10 +336,11 @@ jobs:
     uses: altnovatrail/.github/.github/workflows/release.yml@<SHA релиза> # <версия>
     with:
       paths: |
-        cmd/**
-        go.mod
-        go.sum
-        justfile
+        .
+        :(exclude)docs/**
+        :(exclude)*.md
+        :(exclude).github/**
+        :(exclude)spec
 ```
 
 До первого релиза у репозитория включают неизменяемые релизы (`PUT repos/altnovatrail/<репозиторий>/immutable-releases`) и ставят ruleset тегов `v*`: `update`, `deletion` и `non_fast_forward`, без обхода, как ruleset `.github` 25452244 (R10). Без них Т-27 не может положиться на тег. Обе настройки — правило 4.
@@ -493,7 +494,7 @@ Ruleset `main` пускает в `main` только pull request с зелён�
   - Build Signer Digest (1.10), Source Repository Digest (1.13) и Build Config Digest (1.19) — коммит прогона, `GITHUB_SHA`;
   - Build Trigger (1.20) — `pull_request`.
 
-  У прогона по `workflow_run` `GITHUB_SHA` — вершина основной ветки (выше, «контекст `workflow_run`»). Поэтому Source Repository Digest может называть вершину, а не коммит релиза, а коммит релиза — это цель его тега. Это покажет первый релиз `module-kit`, а решает T37 `spec`.
+  У прогона по `workflow_run` `GITHUB_SHA` — вершина основной ветки (выше, «контекст `workflow_run`»), и Source Repository Digest назвал бы её, а не коммит релиза, если бы релизом был более старый коммит. Поэтому `release.yml` подписывает только `TARGET`, равный `GITHUB_SHA`, и `verify-blob` сверяет это флагом `--certificate-github-workflow-sha`.
 
 **Обёртка Go** (R16; прочитано 2026-10-21):
 - **имена рецептов** — `justfile` canvas-api на коммите 0901af0: `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`; govulncheck и go-licenses там идут через `go run` по точной версии модуля, а CI зовёт те же рецепты в образе тулчейна (R49 canvas-api);
