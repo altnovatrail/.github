@@ -1,8 +1,14 @@
 # actionlint does not know concurrency's queue key yet, which GitHub documents: "max: Up to 100
 # jobs or workflow runs can be pending in the concurrency group" (GitHub Docs, Workflow syntax,
-# read 2026-10-19, as spec's .github/actionlint.yaml cites it). Only that one complaint, only in
-# the workflow that uses the key, is waived.
+# read 2026-10-19, as spec's .github/actionlint.yaml cites it). Nor does it know job.workflow_ref,
+# "The full ref of the workflow file that defines the current job" (GitHub Docs, Contexts
+# reference, job context, read 2026-10-21), which release.yml signs under. Only those complaints,
+# only in the workflows that use them, are waived.
 paths:
   .github/workflows/self-release.yml:
     ignore:
       - 'unexpected key "queue" for "concurrency" section'
+  .github/workflows/release.yml:
+    ignore:
+      - 'unexpected key "queue" for "concurrency" section'
+      - 'property "workflow_ref" is not defined in object type'
