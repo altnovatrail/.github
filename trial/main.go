@@ -1,5 +1,4 @@
-// A trial for T19 of RUN.md, never merged: a command run from what a request says, which
-// CodeQL's go/command-injection is meant to find.
+// A trial for T19 of RUN.md, never merged: the same program, now running a fixed command.
 package main
 
 import (
@@ -7,8 +6,8 @@ import (
 	"os/exec"
 )
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	out, _ := exec.Command("sh", "-c", r.URL.Query().Get("cmd")).Output()
+func handler(w http.ResponseWriter, _ *http.Request) {
+	out, _ := exec.Command("date", "-u").Output()
 	_, _ = w.Write(out)
 }
 
