@@ -650,3 +650,11 @@ T24 сделана: `.github` стоит на `spec` v0.2.17 (R21), а В17–В
   - после мержа — релиз `.github`, его SHA — в architecture 3.3, и промпт сессии `canvas` для T24 canvas;
   - первая настоящая публикация и всё, что она проверит, — T24 canvas («Риски»);
   - В26 «в реестр spec» — новая; В23, В25, Д5 и Д6 — как были.
+- **Итог после мержа (2026-10-22):**
+  - pull request #62 слит merge-коммитом 41d5144, пятью коммитами: запись планирования, шаг, записи, правки по ревью и их запись. Мерж сделал исполнитель, по решению автора;
+  - до мержа были зелёными все проверки pull request, после — CI, CodeQL и Release на `main`. Scorecard упал на ошибке GraphQL API GitHub — «githubv4.Query: Something went wrong while executing your query» — и после перезапуска прошёл. Пробный #61 закрыт без мержа;
+  - Release, прогон 39813726609: «releasing v0.1.9 at 41d5144…». Релиз `v0.1.9` неизменяемый и Latest, и `gh release verify v0.1.9 -R altnovatrail/.github` отвечает «Release v0.1.9 verified!». Тег стоит на 41d5144, а в заметках релиза — заголовок #62 с «callers without npm-package are unaffected»;
+  - в architecture 3.3 текст `release.yml` закрепляет `v0.1.9`;
+  - по правилу 12: на 41d5144 у SonarCloud — 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard;
+  - промпт сессии `canvas` для T24 canvas — в отчёте автору;
+  - «Цель» задачи сделана: общий `release.yml` публикует в npm пакет, который назвал вызывающий, через trusted publishing и без долгоживущего токена, и шаг вышел релизом `.github`. Первую настоящую публикацию сделает T24 canvas, а её итог дописывается сюда.
