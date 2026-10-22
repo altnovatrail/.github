@@ -44,7 +44,8 @@ jobs:
   # archive as downloaded on 2026-10-20. actionlint is given that shellcheck by path, not whatever
   # the runner image has, and no pyflakes: there is no Python here. A waiver, when one is needed,
   # goes in .github/actionlint.yaml, with its reason. The job also holds the license lists of
-  # go.yml and typescript.yml to spec's, which is why spec comes along as the submodule.
+  # go.yml and typescript.yml to the one spec's own recipe prints, which is why spec comes along
+  # as the submodule.
   workflows:
     name: Workflows
     runs-on: ubuntu-24.04
@@ -82,28 +83,33 @@ jobs:
       - name: Lint the workflows
         run: '"$RUNNER_TEMP/actionlint" -color -shellcheck="$RUNNER_TEMP/shellcheck" -pyflakes='
 
+      # The toolchain stage of .github's own Dockerfile, with the Node and just of the devcontainer,
+      # built by spec's script, as spec's recipes run wherever they run (R31 in spec): the next
+      # step asks one of them for spec's list.
+      - name: Toolchain image
+        run: spec/tools/toolchain/toolchain.sh build
+
       # go.yml and typescript.yml hand the license check of every Go and TypeScript repository a
-      # copy of spec's list (R16, R19): the ASF's Category A in spec/tools/licenses/config.mjs, at
-      # the tag .github is on. A move to a tag that changes the list turns this red until both
-      # follow. spec has no interface for the list yet (В19 in RUN.md), so the file is read as
-      # text: every line between "export const allowed = [" and "];" has to be one quoted
-      # identifier, and any other line — a comment, a second identifier, another quote or indent —
-      # stops the step rather than being skipped. Each copy is named on its own, so a red step
-      # says which one strayed: the two wrappers, which must have one, and any other workflow
-      # that comes to carry ALLOWED_LICENSES.
+      # copy of spec's list (R16, R19): the ASF's Category A, which spec's recipe licenses-allowed
+      # prints at the tag .github is on, one SPDX identifier a line (R39 in spec). A move to a tag
+      # that changes the list turns this red until both follow. The list is taken by assignment,
+      # not through a pipe: the step's shell has no pipefail, and a recipe that failed would pass
+      # as an empty list. Each copy is named on its own, so a red step says which one strayed: the
+      # two wrappers, which must have one, and any other workflow that comes to carry
+      # ALLOWED_LICENSES.
       - name: The license lists of go.yml and typescript.yml
         run: |
-          body=$(sed -n '/^export const allowed = \[$/,/^\];$/p' spec/tools/licenses/config.mjs | sed '1d;$d')
-          if [ -z "$body" ] || printf '%s\n' "$body" | grep -qvE '^  "[A-Za-z0-9.+-]+",?$'; then
-              echo "::error::spec/tools/licenses/config.mjs no longer lists one quoted identifier a line between \"export const allowed = [\" and \"];\": read it again."
+          allowed=$(spec/tools/toolchain/toolchain.sh spec licenses-allowed)
+          if [ -z "$allowed" ] || printf '%s\n' "$allowed" | grep -qvE '^[A-Za-z0-9.+-]+$'; then
+              echo "::error::spec's licenses-allowed printed no list, or a line that is no SPDX identifier."
               exit 1
           fi
-          spec_list=$(printf '%s\n' "$body" | sed 's/^  "\(.*\)",\{0,1\}$/\1/' | sort)
+          spec_list=$(printf '%s\n' "$allowed" | sort)
           strayed=0
           while read -r workflow; do
               list=$(sed -n 's/^ *ALLOWED_LICENSES: //p' ".github/workflows/$workflow" | tr ',' '\n' | sort)
               if [ "$spec_list" != "$list" ]; then
-                  echo "::error::ALLOWED_LICENSES in $workflow is not the list of spec/tools/licenses/config.mjs."
+                  echo "::error::ALLOWED_LICENSES in $workflow is not the list spec's licenses-allowed prints."
                   diff <(echo "$spec_list") <(echo "$list") || true
                   strayed=1
               else
