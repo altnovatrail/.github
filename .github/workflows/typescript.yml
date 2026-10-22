@@ -65,7 +65,7 @@ jobs:
       - name: ci-${{ matrix.check }}
         env:
           RECIPE: ci-${{ matrix.check }}
-          ALLOWED_LICENSES: 0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense
+          ALLOWED_LICENSES: Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense
         run: |
           ipc=()
           if [ "$RECIPE" = ci-test ]; then ipc=(--ipc=host); fi

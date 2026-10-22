@@ -21,4 +21,4 @@ ci-vuln:
 # The license of every package of the lock file, by spec's recipe from the spec submodule, with
 # this repository's exceptions.
 ci-licenses:
-    just -f spec/justfile licenses-check-repo trial/lock-not-dev.json licenses.json
+    just -f spec/justfile licenses-check-repo package-lock.json licenses.json
