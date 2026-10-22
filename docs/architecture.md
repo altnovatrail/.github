@@ -362,7 +362,7 @@ sonar.exclusions=spec/**
         update-types: ["version-update:semver-major"]
 ```
 
-Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. С `v0.1.6`, коммит `630924eeb673272d634120b054d1ae93ca33a70c`, он запускает рецепты `spec` скриптом `spec/tools/toolchain/toolchain.sh` из подмодуля вызывающего. Подмодуль должен быть `altnovatrail/spec` на теге v0.2.17 или новее: иначе прогон Release на `main` останавливается и называет причину (поправка к R18). Поэтому вызывающий переходит на v0.2.17 раньше, чем поднимает ссылку на `.github`. С `v0.1.7`, коммит `0acbf75e5c8362b649924bf1abdae973ce71085e`, рецепты `spec` идут в копии checkout, а `git` раннера читает только сам checkout (поправка к R18); от вызывающего это ничего нового не требует. Текст ниже закрепляет `v0.1.7`. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
+Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. С `v0.1.6`, коммит `630924eeb673272d634120b054d1ae93ca33a70c`, он запускает рецепты `spec` скриптом `spec/tools/toolchain/toolchain.sh` из подмодуля вызывающего. Подмодуль должен быть `altnovatrail/spec` на теге v0.2.17 или новее: иначе прогон Release на `main` останавливается и называет причину (поправка к R18). Поэтому вызывающий переходит на v0.2.17 раньше, чем поднимает ссылку на `.github`. С `v0.1.7`, коммит `0acbf75e5c8362b649924bf1abdae973ce71085e`, рецепты `spec` идут в копии checkout, а `git` раннера читает только сам checkout (поправка к R18); от вызывающего это ничего нового не требует. С `v0.1.9`, коммит `41d5144e304cfad05c681de6934405c08a7435db`, у общего релиза есть вход `npm-package` — о нём ниже, — а вызывающему без него ничего нового не нужно. Текст ниже закрепляет `v0.1.9`. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
 
 ```yaml
 # NovaTrail's shared release (R18 .github), pinned to a release of .github by SHA with its version
@@ -389,7 +389,7 @@ jobs:
       contents: write
       id-token: write
       actions: read
-    uses: altnovatrail/.github/.github/workflows/release.yml@0acbf75e5c8362b649924bf1abdae973ce71085e # v0.1.7
+    uses: altnovatrail/.github/.github/workflows/release.yml@41d5144e304cfad05c681de6934405c08a7435db # v0.1.9
     with:
       paths: |
         .
@@ -403,7 +403,7 @@ jobs:
 
 Одна правка `RELEASE_LINE` релиза не даёт: файл вызывающего лежит в `.github/**`, вне `paths`, и новая линия выйдет с первой правкой в `paths`. Заменить ли исключения перечнем того, из чего собран релиз, — В6 module-kit «в реестр spec».
 
-Репозиторий с пакетом интерфейса добавляет в `with:` строку `npm-package: "@altnovatrail/<имя>"` — с релиза `.github`, который выпустит T27 (R37 spec; поправка к R18). Тогда тот же архив, что подписан в релизе, `<область>-<имя>-<X.Y.Z>.tgz`, как его называет `npm pack`, уходит в npm через trusted publishing. Шаги автора — по правилу 4, в задаче репозитория, которая выпускает пакет:
+Репозиторий с пакетом интерфейса добавляет в `with:` строку `npm-package: "@altnovatrail/<имя>"` — с `v0.1.9` (R37 spec; поправка к R18). Тогда тот же архив, что подписан в релизе, `<область>-<имя>-<X.Y.Z>.tgz`, как его называет `npm pack`, уходит в npm через trusted publishing. Шаги автора — по правилу 4, в задаче репозитория, которая выпускает пакет:
 1. первый релиз выходит без `npm-package`: trusted publisher настраивается только у пакета, который уже есть в реестре;
 2. архив из этого релиза автор проверяет — `gh release verify-asset` и подпись — и публикует руками из пустой папки, с 2FA: `npm publish ./<архив>.tgz --access public`. Provenance у этой версии нет;
 3. trusted publisher: `npm trust github @altnovatrail/<имя> --file <файл workflow релиза> --repository altnovatrail/<репозиторий> --allow-publish` или то же на сайте npm. Окружения нет, а прямая публикация разрешена: новая настройка по умолчанию разрешает только staged publishing;
