@@ -181,7 +181,7 @@ jobs:
           fi
           spec/tools/toolchain/toolchain.sh build
           if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-refusal \
-              "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
+              "$TARGET" "$TARGET" 2> "$RUNNER_TEMP/release-refusal"; then
               cat "$RUNNER_TEMP/release-refusal" >&2
               echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
               exit 1
