@@ -361,7 +361,7 @@ sonar.exclusions=spec/**
         update-types: ["version-update:semver-major"]
 ```
 
-Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. С `v0.1.6`, коммит `630924eeb673272d634120b054d1ae93ca33a70c`, он запускает рецепты `spec` скриптом `spec/tools/toolchain/toolchain.sh` из подмодуля вызывающего. Подмодуль должен быть `altnovatrail/spec` на теге v0.2.17 или новее: иначе прогон Release на `main` останавливается и называет причину (поправка к R18). Поэтому вызывающий переходит на v0.2.17 раньше, чем поднимает ссылку на `.github`. Текст ниже закрепляет `v0.1.6`. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
+Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. С `v0.1.6`, коммит `630924eeb673272d634120b054d1ae93ca33a70c`, он запускает рецепты `spec` скриптом `spec/tools/toolchain/toolchain.sh` из подмодуля вызывающего. Подмодуль должен быть `altnovatrail/spec` на теге v0.2.17 или новее: иначе прогон Release на `main` останавливается и называет причину (поправка к R18). Поэтому вызывающий переходит на v0.2.17 раньше, чем поднимает ссылку на `.github`. С `v0.1.7`, коммит `0acbf75e5c8362b649924bf1abdae973ce71085e`, рецепты `spec` идут в копии checkout, а `git` раннера читает только сам checkout (поправка к R18); от вызывающего это ничего нового не требует. Текст ниже закрепляет `v0.1.7`. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
 
 ```yaml
 # NovaTrail's shared release (R18 .github), pinned to a release of .github by SHA with its version
@@ -388,7 +388,7 @@ jobs:
       contents: write
       id-token: write
       actions: read
-    uses: altnovatrail/.github/.github/workflows/release.yml@630924eeb673272d634120b054d1ae93ca33a70c # v0.1.6
+    uses: altnovatrail/.github/.github/workflows/release.yml@0acbf75e5c8362b649924bf1abdae973ce71085e # v0.1.7
     with:
       paths: |
         .
