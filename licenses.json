@@ -1,6 +1,1 @@
-{
-  "lightningcss": {
-    "license": "MPL-2.0",
-    "reason": "the trial's tool of development, as R14 canvas: Vite's CSS minifier, which Vitest brings and which ships nothing"
-  }
-}
+{}
