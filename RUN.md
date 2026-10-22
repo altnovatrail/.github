@@ -284,6 +284,13 @@ T24 сделана: `.github` стоит на `spec` v0.2.17 (R21), а В17–В
 - **Открыто:**
   - после мержа — релиз `.github`, его SHA — в architecture 3.3, и промпты сессиям `module-kit`, `tutor` и `canvas`;
   - В23 «в реестр spec»; В24 и architecture 2.12 — контейнеры и `.git`; Д5.
+- **Итог после мержа (2026-10-22):**
+  - pull request #51 слит merge-коммитом 630924e; мерж сделал исполнитель, по решению автора. До мержа были зелёными все проверки pull request, после — CI, CodeQL, Scorecard и Release на `main`;
+  - Release, прогон 39705770095, — первый прогон `self-release.yml` со скриптом `spec`: скрипт собрал `novatrail-toolchain`, а номер — «releasing v0.1.6 at 630924e…». Релиз `v0.1.6` неизменяемый и Latest, и `gh release verify v0.1.6 -R altnovatrail/.github` отвечает «Release v0.1.6 verified!». Тег стоит на 630924e. В заметках релиза — заголовок #51 с «callers need spec v0.2.17»;
+  - в architecture 3.3 текст `release.yml` закрепляет `v0.1.6`;
+  - по правилу 12: на 630924e у SonarCloud — 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard;
+  - промпты сессиям `module-kit`, `tutor` и `canvas` — в отчёте автору;
+  - «Цель» задачи сделана: оба релиза запускают рецепты `spec` его скриптом, а правка вышла релизом `.github`.
 
 #### T26. Проверка лицензий рецептами `spec`
 

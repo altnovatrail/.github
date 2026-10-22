@@ -600,6 +600,8 @@
 
 — architecture 2.12, 3.1, 3.3, 4; RUN.md, T25, В23, В24.
 
+— *Поправка 2026-10-22:* релиз вышел — `v0.1.6`, коммит 630924e, неизменяемый и Latest; `gh release verify` его подтверждает. Вызывающий текст в architecture 3.3 зовёт общий `release.yml` по этому SHA, и с него вызывающему нужен `spec` v0.2.17 или новее. Заметки релиза несут заголовок pull request #51 — «callers need spec v0.2.17»: их принесёт pull request Dependabot у каждого вызывающего. — architecture 3.3; RUN.md, T25.
+
 ## Обёртка TypeScript
 
 **R19. Обёртка TypeScript — общий `typescript.yml`, по образцу `go.yml`: те же четыре рецепта вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его devcontainer, тот же список лицензий, а контейнер — с `--init` и `--ipc=host`, для тестов в браузере. Это договор: по нему `canvas` пишет рецепты своего первого кода (T08 canvas), а сам файл пишет T22, вместе с этим кодом.**
