@@ -27,4 +27,4 @@ jobs:
         :(exclude).github/**
         :(exclude)spec
       publish: false
-      npm-package: "@altnovatrail/release-trial"
+      npm-package: "@altnovatrail/release-trial-missing"
