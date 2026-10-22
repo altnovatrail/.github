@@ -114,18 +114,18 @@ jobs:
       # the toolchain stage, with the Node, git and just of the devcontainer (R31 in spec). It is
       # handed TARGET and this file, counts this repository's tags, and takes RELEASE_LINE as this
       # file sets it at TARGET — the line the commit was made in, whatever the environment says; a
-      # commit older than this file takes the line of the file checked out. spec's own script,
-      # tools/toolchain/toolchain.sh in the submodule, builds that stage and runs the recipes in it
-      # with a copy of the checkout and RUNNER_TEMP mounted, and nothing of the step's environment
-      # goes in (R31 in spec): how they run is spec's, and reaches here with its tag. TARGET has to
-      # be a full SHA in the history of the checkout, which spec's recipe does not ask (R12). The
-      # git diff against the release before runs with the runner's git, as the shared checks do
-      # (R08). The step's outputs: version — empty when there is nothing to release — previous, the
-      # release before, where the notes and the diff start, and released, the release TARGET has
-      # already. behind, the newest release when TARGET is older than it, is only checked here. A
-      # tag with no release behind it was pushed by hand: on TARGET, as the release before, or as
-      # the newest "release" off main's history, it would stop releases quietly, so the run stops
-      # on it instead.
+      # commit older than this file takes the line of the tip's file, as the copy of the checkout
+      # below holds it. spec's own script, tools/toolchain/toolchain.sh in the submodule, builds
+      # that stage and runs the recipes in it with a copy of the checkout and RUNNER_TEMP mounted,
+      # and nothing of the step's environment goes in (R31 in spec): how they run is spec's, and
+      # reaches here with its tag. TARGET has to be a full SHA in the history of the checkout,
+      # which spec's recipe does not ask (R12). The git diff against the release before runs with
+      # the runner's git, as the shared checks do (R08). The step's outputs: version — empty when
+      # there is nothing to release — previous, the release before, where the notes and the diff
+      # start, and released, the release TARGET has already. behind, the newest release when
+      # TARGET is older than it, is only checked here. A tag with no release behind it was pushed
+      # by hand: on TARGET, as the release before, or as the newest "release" off main's history,
+      # it would stop releases quietly, so the run stops on it instead.
       - id: version
         name: Work out the version
         env:
