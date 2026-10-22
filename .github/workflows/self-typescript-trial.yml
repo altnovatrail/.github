@@ -1,0 +1,14 @@
+# Trial (T26, never merged): the shared typescript.yml, called by local path from this pull
+# request, on the trial package at the root (R19).
+name: TypeScript trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  typescript:
+    name: TypeScript
+    uses: ./.github/workflows/typescript.yml
