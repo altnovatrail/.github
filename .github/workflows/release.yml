@@ -207,6 +207,12 @@ jobs:
           fi
           toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
           cp -a . "$RUNNER_TEMP/checkout"
+          # Trial (T28): how the checkout links its submodule, and where the copy's spec points.
+          git --version
+          cat spec/.git
+          git config --file .git/modules/spec/config core.worktree
+          ls .git/objects/info
+          git -C "$RUNNER_TEMP/checkout/spec" rev-parse --absolute-git-dir
           (
               cd "$RUNNER_TEMP/checkout"
               spec/tools/toolchain/toolchain.sh build
@@ -216,8 +222,6 @@ jobs:
                   echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
                   exit 1
               fi
-              # Trial (T28): a container changes the copy's script after the dry run, as one could.
-              spec/tools/toolchain/toolchain.sh run sh -c 'echo "# changed by a container" >> spec/tools/toolchain/toolchain.sh'
               if ! printf '%s\n' "$toolchain_sum" | sha256sum --check --strict --status; then
                   echo "::error::spec/tools/toolchain/toolchain.sh changed in the copy of the checkout while the release ran: something a container ran wrote into the copy. Nothing more runs from it."
                   exit 1
