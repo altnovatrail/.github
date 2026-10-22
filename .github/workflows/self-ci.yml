@@ -96,7 +96,7 @@ jobs:
       # step's shell has no pipefail, and a recipe that failed would pass as an empty list. Each
       # copy is named on its own, so a red step says which one strayed: go.yml, which must have
       # one, and any other workflow that comes to carry ALLOWED_LICENSES.
-      - name: The license list of go.yml
+      - name: The license lists of the workflows
         run: |
           allowed=$(spec/tools/toolchain/toolchain.sh spec licenses-allowed)
           if [ -z "$allowed" ] || printf '%s\n' "$allowed" | grep -qvE '^[A-Za-z0-9.+-]+$'; then

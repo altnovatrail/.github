@@ -11,8 +11,9 @@
 # caller's spec submodule, with the repository's own exceptions: the list and the rule of an
 # exception are spec's, at the tag the caller pins (R39 in spec). That is why the licenses job
 # alone checks the submodule out: there it is the tool of the check, while the code and its tests
-# read nothing of spec/. So, unlike go.yml, this file carries no copy of the list: spec has no
-# recipe to check Go by. A repository's exceptions are its own, each with its decision.
+# read nothing of spec/. So this file carries no copy of the list: its callers take the list from
+# spec. go.yml keeps one, since spec has no recipe to check Go by. A repository's exceptions are
+# its own, each with its decision.
 #
 # There is no TypeScript code in .github, so a change here is tried by a trial pull request of
 # .github that calls this file by local path and is never merged, before the release (R19). The
