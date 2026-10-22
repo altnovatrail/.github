@@ -43,9 +43,8 @@ jobs:
   # actionlint_1.7.12_checksums.txt; shellcheck publishes no checksums, so its is the SHA-256 of the
   # archive as downloaded on 2026-10-20. actionlint is given that shellcheck by path, not whatever
   # the runner image has, and no pyflakes: there is no Python here. A waiver, when one is needed,
-  # goes in .github/actionlint.yaml, with its reason. The job also holds the license lists of
-  # go.yml and typescript.yml to the one spec's own recipe prints, which is why spec comes along
-  # as the submodule.
+  # goes in .github/actionlint.yaml, with its reason. The job also holds go.yml's license list to
+  # the one spec's own recipe prints, which is why spec comes along as the submodule.
   workflows:
     name: Workflows
     runs-on: ubuntu-24.04
@@ -89,15 +88,15 @@ jobs:
       - name: Toolchain image
         run: spec/tools/toolchain/toolchain.sh build
 
-      # go.yml and typescript.yml hand the license check of every Go and TypeScript repository a
-      # copy of spec's list (R16, R19): the ASF's Category A, which spec's recipe licenses-allowed
-      # prints at the tag .github is on, one SPDX identifier a line (R39 in spec). A move to a tag
-      # that changes the list turns this red until both follow. The list is taken by assignment,
-      # not through a pipe: the step's shell has no pipefail, and a recipe that failed would pass
-      # as an empty list. Each copy is named on its own, so a red step says which one strayed: the
-      # two wrappers, which must have one, and any other workflow that comes to carry
-      # ALLOWED_LICENSES.
-      - name: The license lists of go.yml and typescript.yml
+      # go.yml hands the license check of every Go repository a copy of spec's list (R16): the
+      # ASF's Category A, which spec's recipe licenses-allowed prints at the tag .github is on, one
+      # SPDX identifier a line (R39 in spec). A move to a tag that changes the list turns this red
+      # until go.yml follows. typescript.yml carries no copy: its callers check by spec's recipe, at
+      # the tag of spec they pin (R19). The list is taken by assignment, not through a pipe: the
+      # step's shell has no pipefail, and a recipe that failed would pass as an empty list. Each
+      # copy is named on its own, so a red step says which one strayed: go.yml, which must have
+      # one, and any other workflow that comes to carry ALLOWED_LICENSES.
+      - name: The license list of go.yml
         run: |
           allowed=$(spec/tools/toolchain/toolchain.sh spec licenses-allowed)
           if [ -z "$allowed" ] || printf '%s\n' "$allowed" | grep -qvE '^[A-Za-z0-9.+-]+$'; then
@@ -115,5 +114,5 @@ jobs:
               else
                   echo "$workflow allows the $(echo "$spec_list" | wc -l) licenses spec allows."
               fi
-          done < <({ printf '%s\n' go.yml typescript.yml; grep -l '^ *ALLOWED_LICENSES:' .github/workflows/*.yml | xargs -r -n1 basename; } | sort -u)
+          done < <({ printf '%s\n' go.yml; grep -l '^ *ALLOWED_LICENSES:' .github/workflows/*.yml | xargs -r -n1 basename; } | sort -u)
           exit "$strayed"

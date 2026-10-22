@@ -11,10 +11,8 @@
 # caller's spec submodule, with the repository's own exceptions: the list and the rule of an
 # exception are spec's, at the tag the caller pins (R39 in spec). That is why the licenses job
 # alone checks the submodule out: there it is the tool of the check, while the code and its tests
-# read nothing of spec/. A recipe that still checks by a list of its own reads ALLOWED_LICENSES,
-# the ASF's Category A as SPDX identifiers: go.yml's list, copied here for the reason it lives in
-# go.yml (architecture 2.7), and self-ci.yml holds both copies to spec's own list at the tag
-# .github is on. A repository's exceptions are its own, each with its decision.
+# read nothing of spec/. So, unlike go.yml, this file carries no copy of the list: spec has no
+# recipe to check Go by. A repository's exceptions are its own, each with its decision.
 #
 # There is no TypeScript code in .github, so a change here is tried by a trial pull request of
 # .github that calls this file by local path and is never merged, before the release (R19). The
@@ -60,16 +58,15 @@ jobs:
       # the network npm ci and npm audit need. Playwright recommends --init for any container and
       # --ipc=host for Chromium (R19); the latter only the test job gets, where a browser runs, so
       # the checks that start none keep Docker's own IPC namespace. Of the step's environment only
-      # CI and ALLOWED_LICENSES go in. CI, which GitHub sets to true on every runner, is how the
-      # tools learn they run in CI: by it Vitest runs its browser headless and refuses test.only.
+      # CI goes in. CI, which GitHub sets to true on every runner, is how the tools learn they run
+      # in CI: by it Vitest runs its browser headless and refuses test.only.
       - name: ci-${{ matrix.check }}
         env:
           RECIPE: ci-${{ matrix.check }}
-          ALLOWED_LICENSES: 0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense
         run: |
           ipc=()
           if [ "$RECIPE" = ci-test ]; then ipc=(--ipc=host); fi
           docker run --rm --init "${ipc[@]}" --user "$(id -u):$(id -g)" \
-              --env HOME=/tmp --env CI --env ALLOWED_LICENSES \
+              --env HOME=/tmp --env CI \
               --volume "$PWD:/work" --workdir /work \
               toolchain just "$RECIPE"
