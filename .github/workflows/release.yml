@@ -209,6 +209,7 @@ jobs:
               echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
               exit 1
           fi
+          echo '# changed by the trial, as a container could' >> spec/tools/toolchain/toolchain.sh
           if ! printf '%s\n' "$toolchain_sum" | sha256sum --check --strict --status; then
               echo "::error::spec/tools/toolchain/toolchain.sh changed while the release ran: something a container ran wrote into the checkout. Nothing more runs from it."
               exit 1
