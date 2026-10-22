@@ -15,7 +15,9 @@
 #
 # The caller's release workflow runs on the workflow_run of its CI and on the button, gives this
 # job contents: write, id-token: write and actions: read, and sets RELEASE_LINE in its own env.
-# Its repository keeps its releases immutable and its tags v* under a ruleset (architecture 3.3).
+# Its repository keeps its releases immutable and its tags v* under a ruleset (architecture 3.3),
+# and its spec submodule is at v0.2.17 or newer: spec's recipes run by the script that spec ships
+# from that tag (R31 in spec).
 # With publish: false a run builds, signs and checks the signatures and publishes nothing, which
 # lets a pull request try a change here.
 
@@ -116,6 +118,14 @@ jobs:
       # here whether the publish step's call of it still parses. A commit whose change touches
       # none of the caller's paths since the release before it gets no release; a tag with no
       # release behind it was pushed by hand and stops the run.
+      #
+      # The recipes run by spec's own script, tools/toolchain/toolchain.sh in the caller's spec
+      # submodule, at the tag it pins (R31 in spec). A submodule older than the script stops the
+      # run before anything is built, and the error names the tag it needs. A run of a commit
+      # older than the tip leaves before that, without a release, as it always has. The script
+      # itself runs on the runner, in this step's environment and the job's: it is spec's code at
+      # the commit the caller pins, where the caller's own code runs in a container with no token
+      # (R18).
       - id: version
         name: Work out the version
         env:
@@ -164,17 +174,19 @@ jobs:
               echo "::error::paths names nothing the release is built from."
               exit 1
           fi
-          docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-          printf '#!/bin/sh\nexec docker run --rm --user "%s" --env HOME=/tmp --volume "%s:/work" --volume "%s:%s:ro" --workdir /work toolchain "$@"\n' \
-              "$(id -u):$(id -g)" "$PWD" "$RUNNER_TEMP" "$RUNNER_TEMP" > "$RUNNER_TEMP/toolchain"
-          chmod +x "$RUNNER_TEMP/toolchain"
-          if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile --dry-run release-refusal \
-              "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
-              cat "$RUNNER_TEMP/release-refusal" >&2
-              echo "::error::spec's release-refusal is gone or takes another number of arguments than the publish step gives it: the commit, the tip and the error file."
+          if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
+              pinned=$(git rev-parse --short=12 HEAD:spec 2> /dev/null) || pinned="no commit"
+              echo "::error::The spec submodule, pinned at ${pinned}, has no executable tools/toolchain/toolchain.sh. This release runs spec's recipes by that script, which spec ships from v0.2.17 (R31 in spec): move spec/ to v0.2.17 or newer, then run the release again."
               exit 1
           fi
-          "$RUNNER_TEMP/toolchain" just -f spec/justfile release-version "$TARGET" "$workflow" \
+          spec/tools/toolchain/toolchain.sh build
+          if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-refusal \
+              "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
+              cat "$RUNNER_TEMP/release-refusal" >&2
+              echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
+              exit 1
+          fi
+          spec/tools/toolchain/toolchain.sh spec release-version "$TARGET" "$workflow" \
               > "$RUNNER_TEMP/release-version"
           cat "$RUNNER_TEMP/release-version"
           version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
@@ -215,7 +227,9 @@ jobs:
       # with the Go and tools it pins. The caller's release-files recipe gets the version, has no
       # git to ask, and writes the files into dist/: plain files, named with letters, digits, dots,
       # dashes, pluses and underscores, none a bundle of its own. Nothing of the step's
-      # environment, no token among it, goes into the container.
+      # environment, no token among it, goes into the container. The step builds and runs the
+      # stage itself rather than by spec's script: the caller's own code sees its tree alone and no
+      # token, whatever a later tag of the script comes to mount or hand in (R18).
       - name: Build the files
         if: steps.version.outputs.version != ''
         env:
@@ -307,7 +321,7 @@ jobs:
               cat "$RUNNER_TEMP/release-create.err" >&2
               git fetch --quiet --no-tags --no-recurse-submodules origin refs/heads/main
               tip=$(git rev-parse FETCH_HEAD)
-              if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile release-refusal \
+              if ! spec/tools/toolchain/toolchain.sh spec release-refusal \
                   "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"; then
                   exit 1
               fi

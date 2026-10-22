@@ -114,15 +114,16 @@ jobs:
       # the toolchain stage, with the Node, git and just of the devcontainer (R31 in spec). It is
       # handed TARGET and this file, counts this repository's tags, and takes RELEASE_LINE as this
       # file sets it at TARGET — the line the commit was made in, whatever the environment says; a
-      # commit older than this file takes the checked-out copy's line. The script
-      # $RUNNER_TEMP/toolchain, as spec's, runs a command in that stage with the workspace and
-      # RUNNER_TEMP mounted, and nothing of the step's environment goes in. TARGET has to be a full
-      # SHA in the history of the checkout, which spec's recipe does not ask (R12). The git diff
-      # against the release before runs with the runner's git, as the shared checks do (R08). The
-      # step's outputs: version — empty when there is nothing to release — previous, the release
+      # commit older than this file takes the checked-out copy's line. spec's own script,
+      # tools/toolchain/toolchain.sh in the submodule, builds that stage and runs the recipes in it
+      # with the workspace and RUNNER_TEMP mounted, and nothing of the step's environment goes in
+      # (R31 in spec): how they run is spec's, and reaches here with its tag. TARGET has to be a
+      # full SHA in the history of the checkout, which spec's recipe does not ask (R12). The git
+      # diff against the release before runs with the runner's git, as the shared checks do (R08).
+      # The step's outputs: version — empty when there is nothing to release — previous, the release
       # before, where the notes and the diff start, and released, the release TARGET has already.
-      # behind, the newest release when TARGET is older than it, is only checked here. A tag with
-      # no release behind it was pushed by hand: on TARGET, as the release before, or as the newest
+      # behind, the newest release when TARGET is older than it, is only checked here. A tag with no
+      # release behind it was pushed by hand: on TARGET, as the release before, or as the newest
       # "release" off main's history, it would stop releases quietly, so the run stops on it
       # instead.
       - id: version
@@ -142,21 +143,19 @@ jobs:
               echo "::error::${TARGET} is not in the history of the checkout, $(git rev-parse HEAD)."
               exit 1
           fi
-          docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-          printf '#!/bin/sh\nexec docker run --rm --user "%s" --env HOME=/tmp --volume "%s:/work" --volume "%s:%s:ro" --workdir /work toolchain "$@"\n' \
-              "$(id -u):$(id -g)" "$PWD" "$RUNNER_TEMP" "$RUNNER_TEMP" > "$RUNNER_TEMP/toolchain"
-          chmod +x "$RUNNER_TEMP/toolchain"
+          spec/tools/toolchain/toolchain.sh build
           # release-refusal runs only after a refusal, which is rare, so a tag of spec that renamed
           # it or changed how many arguments it takes would show only then, failing that run.
           # just's dry run, which runs nothing, asks here whether the publish step's call still
-          # parses; arguments that only swapped places it cannot see.
-          if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile --dry-run release-refusal \
+          # parses; arguments that only swapped places it cannot see. What failed — just, the
+          # script or docker — says why in the lines it printed.
+          if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-refusal \
               "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
               cat "$RUNNER_TEMP/release-refusal" >&2
-              echo "::error::spec's release-refusal is gone or takes another number of arguments than the publish step gives it: the commit, the tip and the error file."
+              echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
               exit 1
           fi
-          "$RUNNER_TEMP/toolchain" just -f spec/justfile release-version "$TARGET" .github/workflows/self-release.yml \
+          spec/tools/toolchain/toolchain.sh spec release-version "$TARGET" .github/workflows/self-release.yml \
               > "$RUNNER_TEMP/release-version"
           cat "$RUNNER_TEMP/release-version"
           version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
@@ -226,7 +225,7 @@ jobs:
               # merged meanwhile is what makes this one older.
               git fetch --quiet --no-tags --no-recurse-submodules origin refs/heads/main
               tip=$(git rev-parse FETCH_HEAD)
-              if ! "$RUNNER_TEMP/toolchain" just -f spec/justfile release-refusal \
+              if ! spec/tools/toolchain/toolchain.sh spec release-refusal \
                   "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"; then
                   exit 1
               fi
