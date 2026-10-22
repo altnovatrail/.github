@@ -747,6 +747,8 @@
 
 — architecture 2.7, 3.1, 3.3, 4; RUN.md, T26, Д6; `typescript.yml`.
 
+— *Поправка 2026-10-22:* релиз вышел — `v0.1.8`, коммит 0ab2799, неизменяемый и Latest; `gh release verify` его подтверждает. Вызывающий job в architecture 3.3 зовёт `typescript.yml` по этому SHA. С него `ci-licenses` вызывающего может звать рецепт `spec`: job `licenses` берёт подмодуль. Прежний `ci-licenses` с `ALLOWED_LICENSES` на нём тоже проходит. — architecture 3.3; RUN.md, T26.
+
 ## Тег `spec` v0.2.14
 
 **R20. `.github` стоит на `spec` v0.2.14: подмодуль `spec/` — на этом теге, и ссылки на `spec`, закреплённые на теге, называют его.**
