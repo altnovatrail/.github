@@ -126,10 +126,15 @@ jobs:
       # out at the commit the caller pins and at a tag of spec — every NovaTrail repository pins
       # spec at an exact tag (RULES.md) — and that the tag hold the script, which spec ships from
       # v0.2.17; anything else stops it before anything is built, with the reason. A run of a
-      # commit older than the tip leaves before that, without a release, as it always has. Every
-      # container the script starts has the checkout mounted read-write, so the script's sum is
-      # taken before the first and checked before each later call: what runs on the runner is the
-      # script the tag holds. The publish step gets the sum as an output, which no container writes.
+      # commit older than the tip leaves before that, without a release, as it always has.
+      #
+      # Every container the script starts has the folder it runs from mounted read-write, .git and
+      # all, so the script runs from a copy of the checkout, in RUNNER_TEMP. The runner's own git
+      # reads the checkout alone, which no container mounts: the diff below, the archive the next
+      # step builds and signs, the fetch after a refusal and the post step of actions/checkout.
+      # Containers may change the copy, so the script's sum is taken in the checkout and checked
+      # in the copy before each call after a container: what runs on the runner is the script the
+      # tag holds.
       - id: version
         name: Work out the version
         env:
@@ -201,20 +206,23 @@ jobs:
               exit 1
           fi
           toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
-          echo "toolchain=${toolchain_sum}" >> "$GITHUB_OUTPUT"
-          spec/tools/toolchain/toolchain.sh build
-          if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-refusal \
-              "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
-              cat "$RUNNER_TEMP/release-refusal" >&2
-              echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
-              exit 1
-          fi
-          if ! printf '%s\n' "$toolchain_sum" | sha256sum --check --strict --status; then
-              echo "::error::spec/tools/toolchain/toolchain.sh changed while the release ran: something a container ran wrote into the checkout. Nothing more runs from it."
-              exit 1
-          fi
-          spec/tools/toolchain/toolchain.sh spec release-version "$TARGET" "$workflow" \
-              > "$RUNNER_TEMP/release-version"
+          cp -a . "$RUNNER_TEMP/checkout"
+          (
+              cd "$RUNNER_TEMP/checkout"
+              spec/tools/toolchain/toolchain.sh build
+              if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-refusal \
+                  "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
+                  cat "$RUNNER_TEMP/release-refusal" >&2
+                  echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
+                  exit 1
+              fi
+              if ! printf '%s\n' "$toolchain_sum" | sha256sum --check --strict --status; then
+                  echo "::error::spec/tools/toolchain/toolchain.sh changed in the copy of the checkout while the release ran: something a container ran wrote into the copy. Nothing more runs from it."
+                  exit 1
+              fi
+              spec/tools/toolchain/toolchain.sh spec release-version "$TARGET" "$workflow" \
+                  > "$RUNNER_TEMP/release-version"
+          )
           cat "$RUNNER_TEMP/release-version"
           version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
           previous=$(sed -n 's/^previous=//p' "$RUNNER_TEMP/release-version")
@@ -328,7 +336,10 @@ jobs:
       # Every release is marked Latest: its number is the highest so far, and the tip of main may
       # get no release of its own when it changes nothing the release is built from. The notes run
       # from the release before this one. A refusal of the Releases API is let pass only as
-      # spec's release-refusal decides, as in .github's own release (R14).
+      # spec's release-refusal decides, as in .github's own release (R14). The recipe runs in a
+      # new copy of the checkout, taken after main is fetched again: the version step's copy has
+      # no new tip, and a fetch there would read a .git/config a container may have changed. No
+      # container has had the checkout, so the new copy's script is the one the tag holds.
       - id: publish
         name: Publish the release
         if: steps.version.outputs.version != '' && inputs.publish
@@ -336,7 +347,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
-          TOOLCHAIN_SUM: ${{ steps.version.outputs.toolchain }}
         run: |
           start=()
           if [ -n "$PREVIOUS" ]; then start=(--notes-start-tag "$PREVIOUS"); fi
@@ -349,12 +359,10 @@ jobs:
               cat "$RUNNER_TEMP/release-create.err" >&2
               git fetch --quiet --no-tags --no-recurse-submodules origin refs/heads/main
               tip=$(git rev-parse FETCH_HEAD)
-              if ! printf '%s\n' "$TOOLCHAIN_SUM" | sha256sum --check --strict --status; then
-                  echo "::error::spec/tools/toolchain/toolchain.sh changed while the release ran: something a container ran wrote into the checkout. Nothing more runs from it."
-                  exit 1
-              fi
-              if ! spec/tools/toolchain/toolchain.sh spec release-refusal \
-                  "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"; then
+              cp -a . "$RUNNER_TEMP/checkout-tip"
+              if ! (cd "$RUNNER_TEMP/checkout-tip" &&
+                  spec/tools/toolchain/toolchain.sh spec release-refusal \
+                      "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"); then
                   exit 1
               fi
               echo "::warning::${TARGET} is no longer the tip of main (${tip}) and adds or modifies its workflow files, and the Releases API refused it; the release of the tip covers it."
