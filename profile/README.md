@@ -10,7 +10,7 @@ NovaTrail is a universal open platform for adaptive learning, interactive lesson
 |---|---|---|
 | [spec](https://github.com/altnovatrail/spec) | the vocabulary, formats, contracts and platform documents | 0. Foundation |
 | [.github](https://github.com/altnovatrail/.github) | the organization's profile, community files and shared CI workflows | 0. Foundation |
-| [modules](https://github.com/altnovatrail/modules) | the official modules: olympiad maths for grades 1–6 and Spanish A1 | 1. Format and core |
+| [modules](https://github.com/altnovatrail/modules) | the official modules: olympiad maths for grades 1–6, school maths for grade 3 and short essays in English | 1. Format and core |
 | [module-kit](https://github.com/altnovatrail/module-kit) | the module format in code — validation, packages, open views, check kinds — and the authors' CLI | 1. Format and core |
 | [learner-model](https://github.com/altnovatrail/learner-model) | the learner model: how well each skill is mastered, from the evidence of attempts | 1. Format and core |
 | [engine](https://github.com/altnovatrail/engine) | the engine: picks the next lesson or task, with a reason code | 1. Format and core |
@@ -22,18 +22,18 @@ NovaTrail is a universal open platform for adaptive learning, interactive lesson
 | [app](https://github.com/altnovatrail/app) | the web app for learners and the adults beside them | 2. First slice with learners |
 | [infra](https://github.com/altnovatrail/infra) | shared infrastructure: Terraform, domains, logs, deployment and self-hosting | 2. First slice with learners |
 
-Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/product.md).
+Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/product.md).
 
 ## Documents
 
 The platform's documents live in spec, in Russian:
 
-- [product](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/product.md) — what we build and why: the principles, the first slice, the roadmap;
-- [concepts](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/concepts.md) — the shared vocabulary;
-- [privacy](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/privacy.md) — privacy and age;
-- [architecture](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/architecture.md) — the components and how they connect;
-- [repositories](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/repositories.md) — the repositories, the order they appear in, and how one is set up;
-- [decisions](https://github.com/altnovatrail/spec/blob/v0.2.17/docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
+- [product](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/product.md) — what we build and why: the principles, the first slice, the roadmap;
+- [concepts](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/concepts.md) — the shared vocabulary;
+- [privacy](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/privacy.md) — privacy and age;
+- [architecture](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/architecture.md) — the components and how they connect;
+- [repositories](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/repositories.md) — the repositories, the order they appear in, and how one is set up;
+- [decisions](https://github.com/altnovatrail/spec/blob/v0.2.21/docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
 
 ## Contributing
 
@@ -43,4 +43,4 @@ The platform's documents live in spec, in Russian:
 
 ## License
 
-Everything is [Apache-2.0](https://github.com/altnovatrail/spec/blob/v0.2.17/LICENSE): the code, the documents and the official modules' content. The one exception is the code of conduct, the Contributor Covenant 2.1, which keeps its own license, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Everything is [Apache-2.0](https://github.com/altnovatrail/spec/blob/v0.2.21/LICENSE): the code, the documents and the official modules' content. The one exception is the code of conduct, the Contributor Covenant 2.1, which keeps its own license, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
