@@ -327,13 +327,13 @@ sonar.exclusions=spec/**
       default-days: 3
 ```
 
-Репозиторий на TypeScript добавляет в `ci.yml` job «TypeScript», который зовёт общий `typescript.yml` (R19). `typescript.yml` есть в релизах `.github` с `v0.1.5`, коммит `c772cc86973240e21cebb310fd0cda221a752ade`; последний релиз называют `gh release view` и `git ls-remote`, как выше. С `v0.1.8`, коммит `0ab279940126dadbde0f5a3912ce196ed39470ab`, job `licenses` берёт подмодуль `spec`, и `ci-licenses` проверяет lock-файл рецептом `spec` `licenses-check-repo`. Подмодуль — на теге v0.2.18 или новее (поправка к R19). На рецепт вызывающий переводит `ci-licenses` вместе с подъёмом ссылки на этот релиз или после него, но не раньше: прежняя обёртка подмодуля не даёт. Текст ниже закрепляет `v0.1.8`. Что нужно от рецептов, `.npmrc` и стадии `toolchain`, — R19 и раздел 3.1:
+Репозиторий на TypeScript добавляет в `ci.yml` job «TypeScript», который зовёт общий `typescript.yml` (R19). `typescript.yml` есть в релизах `.github` с `v0.1.5`, коммит `c772cc86973240e21cebb310fd0cda221a752ade`; последний релиз называют `gh release view` и `git ls-remote`, как выше. С `v0.1.8`, коммит `0ab279940126dadbde0f5a3912ce196ed39470ab`, job `licenses` берёт подмодуль `spec`, и `ci-licenses` проверяет lock-файл рецептом `spec` `licenses-check-repo`. Подмодуль — на теге v0.2.18 или новее (поправка к R19). На рецепт вызывающий переводит `ci-licenses` вместе с подъёмом ссылки на этот релиз или после него, но не раньше: прежняя обёртка подмодуля не даёт. С `v0.1.10`, коммит `f3addb7403d084c560c61481e217b93f8e7ee1f3`, обёртка не передаёт в контейнер `ALLOWED_LICENSES`: из окружения туда идёт только `CI`, а список `ci-licenses` берёт у `spec` (поправка к R19). Текст ниже закрепляет `v0.1.10`. Что нужно от рецептов, `.npmrc` и стадии `toolchain`, — R19 и раздел 3.1:
 
 ```yaml
   # The repository's TypeScript code, by its own ci- recipes in its toolchain stage (R19 .github).
   typescript:
     name: TypeScript
-    uses: altnovatrail/.github/.github/workflows/typescript.yml@0ab279940126dadbde0f5a3912ce196ed39470ab # v0.1.8
+    uses: altnovatrail/.github/.github/workflows/typescript.yml@f3addb7403d084c560c61481e217b93f8e7ee1f3 # v0.1.10
 ```
 
 А в `dependabot.yml` — экосистему `npm`, с той же паузой; `directory` — папка `package.json`. Node в Dockerfile и браузеры для тестов Dependabot не видит, и их поднимают руками, как Go: в Dockerfile он читает только строки `FROM` (раздел 4), а образ Playwright стоит в `COPY --from`. Поэтому pull request, который поднимает `playwright`, красный, пока в нём же руками не подняты тег и digest образа и ревизия браузера (R13 canvas):
