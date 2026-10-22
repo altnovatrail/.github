@@ -206,7 +206,9 @@ jobs:
               exit 1
           fi
           toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
-          cp -a . "$RUNNER_TEMP/checkout"
+          # Trial (T28): how big the checkout is and how long its copy takes.
+          du -sh . .git
+          time cp -a . "$RUNNER_TEMP/checkout"
           (
               cd "$RUNNER_TEMP/checkout"
               spec/tools/toolchain/toolchain.sh build
@@ -222,6 +224,8 @@ jobs:
               fi
               spec/tools/toolchain/toolchain.sh spec release-version "$TARGET" "$workflow" \
                   > "$RUNNER_TEMP/release-version"
+              # Trial (T28): a container breaks the copy's .git, as one could, and its git fails.
+              spec/tools/toolchain/toolchain.sh run sh -c 'printf "[core\n" >> .git/config && find .git/objects -type f -delete && git rev-parse HEAD' || true
           )
           cat "$RUNNER_TEMP/release-version"
           version=$(sed -n 's/^version=//p' "$RUNNER_TEMP/release-version")
