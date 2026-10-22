@@ -1,0 +1,30 @@
+# A trial for T27 of RUN.md, never merged: the shared release.yml, called by local path, on a
+# pull request, with publish false and an npm package. RELEASE_LINE is the line it numbers in.
+name: Release trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_LINE: "0.1"
+
+jobs:
+  release:
+    name: Release
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      paths: |
+        .
+        :(exclude)docs/**
+        :(exclude)*.md
+        :(exclude).github/**
+        :(exclude)spec
+      publish: false
+      npm-package: "@altnovatrail/release-trial"

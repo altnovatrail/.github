@@ -1,0 +1,11 @@
+{
+  "name": "@altnovatrail/release-trial",
+  "version": "0.0.0",
+  "description": "A trial package of T27, never published.",
+  "license": "Apache-2.0",
+  "files": ["trial"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altnovatrail/.github.git"
+  }
+}
