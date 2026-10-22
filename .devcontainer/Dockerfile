@@ -61,6 +61,19 @@ RUN arch="$(dpkg --print-architecture)"; \
 
 ENV PATH="/usr/local/node/bin:/home/vscode/.local/bin:${PATH}"
 
+# Trial (T26, never merged): Chromium for the tests, the way R19 recommends. The browsers come
+# from Playwright's own image, pinned by tag and digest, and Chromium's system libraries on Ubuntu
+# 24.04 are the list of nativeDeps.ts at v1.64.1, with the fonts it reads. apt pins no versions.
+COPY --from=mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf /ms-playwright /ms-playwright
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends \
+        libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 libcairo2 \
+        libcups2t64 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0t64 libnspr4 libnss3 \
+        libpango-1.0-0 libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
+        libxkbcommon0 libxrandr2 libfontconfig1 libfreetype6 fonts-liberation; \
+    rm -rf /var/lib/apt/lists/*
+
 # -- devcontainer: the toolchain, plus what a person works with --------------
 
 FROM toolchain AS devcontainer
