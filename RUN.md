@@ -1,6 +1,6 @@
 # RUN.md — план работ .github
 
-> Что делает .github, чего не делает и что о нём ещё предстоит решить — [docs/architecture.md](docs/architecture.md); почему он устроен именно так — [docs/decisions.md](docs/decisions.md). Платформа целиком — в `spec/`, подмодуле на теге v0.2.21: карточка компонента — architecture 3.11 spec, порядок репозиториев — repositories 6 spec, данные учеников и законы — privacy spec, решения платформы — журнал `spec`.
+> Что делает .github, чего не делает и что о нём ещё предстоит решить — [docs/architecture.md](docs/architecture.md); почему он устроен именно так — [docs/decisions.md](docs/decisions.md). Платформа целиком — в `spec/`, подмодуле на теге v0.2.23: карточка компонента — architecture 3.11 spec, порядок репозиториев — repositories 6 spec, данные учеников и законы — privacy spec, решения платформы — журнал `spec`.
 >
 > Этот файл задаёт порядок работы: маленькие задачи, которые запускаются по одной. После каждой задачи я проверяю результат и только потом запускаю следующую. Задачи собраны в эпики. Подробно расписан только текущий эпик, остальные расписываются, когда до них доходит очередь (R19 spec).
 >
@@ -106,7 +106,9 @@
 
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
-| [ ] | T30 | Переход на spec v0.2.23 | Claude | — | — |
+| [x] | T30 | Переход на spec v0.2.23 | Claude | — | — |
+
+T30 сделана: `.github` стоит на `spec` v0.2.23 (R24), а строка статуса профиля — по README `spec` этого тега.
 
 ## Таблица 2. Эпики на потом
 
@@ -150,7 +152,7 @@
 
 ## Эпик E8. Переход на spec v0.2.23
 
-**Почему эпик такой.** `spec` выпустил v0.2.22 и v0.2.23 после того, как `.github` перешёл на v0.2.21 (R22). Ответов на строки `.github` в них нет, и работы для `.github` тоже: они принесли формат модуля и его проверку `just format-check`. Но документы `.github` ссылаются на тег `spec`, а ссылаться на устаревший без причины R20 отверг. На новый тег репозиторий переходит своей задачей (RULES.md, Across repositories), и автор решил сделать это сразу.
+**Почему эпик такой.** `spec` выпустил v0.2.22 и v0.2.23 после того, как `.github` перешёл на v0.2.21 (R22). Ответов на строки `.github` в них нет, и работы для `.github` тоже: они принесли формат модуля, R45 spec, и его проверку `just format-check`. Но документы `.github` ссылаются на тег `spec`, а ссылаться на устаревший без причины R20 отверг. На новый тег репозиторий переходит своей задачей (RULES.md, Across repositories), и автор решил сделать это сразу.
 
 **Не входит:**
 - строки «в реестр spec» В23, В25 и В26: их записывает `spec`, а не переход;
@@ -161,10 +163,10 @@
 - **Цель:** подмодуль `spec/` стоит на v0.2.23, ссылки на тег — тоже, а переход записан решением.
 - **Почему:** v0.2.23 — новейший релиз `spec`. На v0.2.21 документы `.github` ссылались бы на устаревший тег, а R20 это отверг.
 - **Выяснилось при записи** (прочитано 2026-10-22 — клоном `spec` вне репозитория и через API GitHub):
-  - v0.2.22 — коммит d560947, T24 `spec`: формат модуля — JSON Schema 2020-12, новым решением `spec`, и Т-7 закрыт. v0.2.23 — коммит ed7709c, T25 `spec`: проверка формата `just format-check` и её место в CI `spec`. Оба релиза неизменяемые (`gh release view`);
+  - v0.2.22 — коммит d560947, T24 `spec`: формат модуля — JSON Schema 2020-12, R45 spec, и Т-7 закрыт. v0.2.23 — коммит ed7709c, T25 `spec`: проверка формата `just format-check` и её место в CI `spec`. Оба релиза неизменяемые (`gh release view`);
   - `.devcontainer/`, RULES.md, AGENTS.md, заготовка, `tools/toolchain/`, `tools/licenses/`, `tools/release/` и `tools/new-repo/` с v0.2.21 не менялись (`git diff --quiet`);
   - в `justfile` добавились рецепты `format-check` и `format-check-test`, а `docs-check-repo`, `licenses-allowed`, `licenses-check-repo` и рецепты релиза — как были. В `tools/package.json` — новые `ajv` 8.20.0 и `yaml` 2.9.1: их ставит и `_tools`, а с ним `docs-check-repo`. В `tools/docs-check/config.mjs` изменился только профиль самого `spec`;
-  - долги `spec` об ответах на Т-11 и Т-7 у компонентов — Д20 и следующий за ним в RUN.md `spec` — `.github` ничего не поручают. Их берут `module-kit`, `modules`, `api`, `sim`, `canvas`, `app`, `engine` и `tutor`;
+  - долги `spec` об ответах на Т-11 и Т-7 у компонентов — Д20 и Д21 в RUN.md `spec` — `.github` ничего не поручают. Их берут `module-kit`, `modules`, `api`, `sim`, `canvas`, `app`, `engine` и `tutor`;
   - В23, В25 и В26 `spec` не записал — ни в v0.2.23, ни на своём `main`;
   - README `spec` на v0.2.23 говорит о статусе по-новому: «This repository holds the platform's documents and the start of the module format, in format/ … The contracts between components come after it». Строка Status в `profile/README.md` — прежняя: «The platform's documents come first, then the module format and the contracts between its parts».
 - **Сделать:**
@@ -174,6 +176,14 @@
   - решение `spec` о формате модуля, названное здесь словами, — номером, как сделала T24;
   - журнал — новое решение о теге и поправка к R22; architecture — статус.
 - **Как проверить:** `git submodule status`; `gh release verify v0.2.23 -R altnovatrail/spec`; ссылки профиля открываются; `just -f spec/justfile docs-check-repo`.
-- **Разделы:** RULES.md, Across repositories; R20, R22; R44 spec; Т-7.
+- **Разделы:** RULES.md, Across repositories; R20, R22, R24; R44 и R45 spec; Т-7; Д20 и Д21 в RUN.md `spec`.
 - **Риски:** если `spec` выпустит новый тег раньше этой задачи, она переходит на новейший и сверяет его заново.
 - **Стоимость:** $0.
+- **Сделано (2026-10-22):**
+  - по правилу 12, перед задачей: на `main` (932d575) CI, CodeQL, Scorecard и Release зелёные, у SonarCloud — 0 находок и 0 мест безопасности на проверку, quality gate OK, в code scanning — те же шесть находок Scorecard;
+  - подмодуль — на v0.2.23, коммит ed7709c. `gh release verify v0.2.23 -R altnovatrail/spec` — «Release v0.2.23 verified!», релиз неизменяемый. Тег — в README.md, `profile/README.md`, CLAUDE.md и в начале этого файла;
+  - `git -C spec diff v0.2.21 v0.2.23` — как в «Выяснилось при записи». Заготовка у `spec` лежит в `repo-template/`, и она тоже не менялась;
+  - строка Status профиля — по README `spec` v0.2.23, со ссылкой на `format/README.md` тега;
+  - журнал — R24 и поправка к R22; R45 spec назван номером здесь и в описании эпика. architecture — статус;
+  - проверено: `git submodule status` — v0.2.23; все ссылки на `spec` в профиле и README отвечают 200; `just -f spec/justfile docs-check-repo` на v0.2.23 — ok. Ревью не было: правка небольшая, тег и записи (правило 6).
+- **Открыто:** после мержа — итог и архив E8. В23, В25 и В26 «в реестр spec», Д5 и Д7 — как были.
