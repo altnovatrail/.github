@@ -791,6 +791,8 @@
 
 — architecture 2.7, 3.1, 3.4, 4; RUN.md, T29, Д6; `typescript.yml`; `self-ci.yml`.
 
+— *Поправка 2026-10-22:* релиз вышел — `v0.1.10`, коммит f3addb7, неизменяемый и Latest; `gh release verify` его подтверждает. Вызывающий job в architecture 3.3 зовёт `typescript.yml` по этому SHA, и `ALLOWED_LICENSES` обёртка с него не передаёт. — architecture 3.3; RUN.md, T29.
+
 ## Тег `spec` v0.2.14
 
 **R20. `.github` стоит на `spec` v0.2.14: подмодуль `spec/` — на этом теге, и ссылки на `spec`, закреплённые на теге, называют его.**
