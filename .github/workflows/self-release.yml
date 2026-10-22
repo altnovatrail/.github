@@ -143,6 +143,15 @@ jobs:
               echo "::error::${TARGET} is not in the history of the checkout, $(git rev-parse HEAD)."
               exit 1
           fi
+          # The script runs on the runner, and every container it starts has the checkout mounted
+          # read-write: its sum is taken before the first and checked before each later call, and
+          # the publish step gets it as an output, which no container writes.
+          if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
+              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 in spec): .github's spec submodule is older than that."
+              exit 1
+          fi
+          toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
+          echo "toolchain=${toolchain_sum}" >> "$GITHUB_OUTPUT"
           spec/tools/toolchain/toolchain.sh build
           # release-refusal runs only after a refusal, which is rare, so a tag of spec that renamed
           # it or changed how many arguments it takes would show only then, failing that run.
@@ -153,6 +162,10 @@ jobs:
               "$TARGET" "$TARGET" "$RUNNER_TEMP/release-create.err" 2> "$RUNNER_TEMP/release-refusal"; then
               cat "$RUNNER_TEMP/release-refusal" >&2
               echo "::error::The dry run of spec's release-refusal, with the arguments the publish step gives it — the commit, the tip and the error file — failed; the lines above say why. A tag of spec whose recipe is gone or takes other arguments fails it."
+              exit 1
+          fi
+          if ! printf '%s\n' "$toolchain_sum" | sha256sum --check --strict --status; then
+              echo "::error::spec/tools/toolchain/toolchain.sh changed while the release ran: something a container ran wrote into the checkout. Nothing more runs from it."
               exit 1
           fi
           spec/tools/toolchain/toolchain.sh spec release-version "$TARGET" .github/workflows/self-release.yml \
@@ -208,6 +221,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           PREVIOUS: ${{ steps.version.outputs.previous }}
+          TOOLCHAIN_SUM: ${{ steps.version.outputs.toolchain }}
         run: |
           start=()
           if [ -n "$PREVIOUS" ]; then start=(--notes-start-tag "$PREVIOUS"); fi
@@ -225,6 +239,10 @@ jobs:
               # merged meanwhile is what makes this one older.
               git fetch --quiet --no-tags --no-recurse-submodules origin refs/heads/main
               tip=$(git rev-parse FETCH_HEAD)
+              if ! printf '%s\n' "$TOOLCHAIN_SUM" | sha256sum --check --strict --status; then
+                  echo "::error::spec/tools/toolchain/toolchain.sh changed while the release ran: something a container ran wrote into the checkout. Nothing more runs from it."
+                  exit 1
+              fi
               if ! spec/tools/toolchain/toolchain.sh spec release-refusal \
                   "$TARGET" "$tip" "$RUNNER_TEMP/release-create.err"; then
                   exit 1
