@@ -82,6 +82,34 @@ jobs:
       - name: Lint the workflows
         run: '"$RUNNER_TEMP/actionlint" -color -shellcheck="$RUNNER_TEMP/shellcheck" -pyflakes='
 
+      # The tests of the workflows' steps read the workflows with yq (R28): at an exact version, by
+      # the SHA-256 that checksums of its release gives the binary, in the column
+      # checksums_hashes_order names SHA-256. The runner image has a yq of its own, at a version
+      # nobody here pins, so tests/run.sh takes the one YQ names and holds it to YQ_VERSION here.
+      - name: Install yq
+        env:
+          YQ_VERSION: "4.54.1"
+          YQ_SHA256: 8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f
+        run: |
+          yq="$RUNNER_TEMP/yq"
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors \
+              -o "$yq" \
+              "https://github.com/mikefarah/yq/releases/download/v${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  ${yq}" | sha256sum --check --strict
+          chmod +x "$yq"
+
+      # actionlint reads the scripts inside the workflows; the tests and their stand-ins are files
+      # of their own, which shellcheck reads here, following what they source.
+      - name: Lint the tests
+        run: '"$RUNNER_TEMP/shellcheck" --external-sources tests/*.sh tests/stubs/*'
+
+      # Every step a test of tests/ takes, run as its workflow has it, with stand-ins for docker,
+      # gh, curl, wget, cosign and npm (R28): a change to a step comes with its cases. A test stops
+      # after two minutes, and the suite after five, well inside the job's ten.
+      - name: Test the workflows
+        timeout-minutes: 5
+        run: YQ="$RUNNER_TEMP/yq" bash tests/run.sh
+
       # The toolchain stage of .github's own Dockerfile, with the Node and just of the devcontainer,
       # built by spec's script, as spec's recipes run wherever they run (R31 in spec): the next
       # step asks one of them for spec's list.

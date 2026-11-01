@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# The stand-in for a program no case expected the step to run: docker, gh, curl, cosign and npm
+# until a case stands a stand-in of its own in, and cosign and npm-isolated in RUNNER_TEMP. It
+# writes the call down, so the test fails whatever the step makes of the exit status — a step may
+# well run `gh ... || true` — and it fails the call too.
+state=$(cd -- "${0%/*}/.." && pwd -P)
+{
+    printf '%s' "${0##*/}"
+    printf ' %q' "$@"
+    printf '\n'
+} >> "$state/unexpected"
+echo "${0##*/}: not expected in this case" >&2
+exit 127

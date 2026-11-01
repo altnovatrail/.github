@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# A stand-in for docker. Besides its arguments, it writes down what it read on stdin when its last
+# argument is -, as docker build reads a Dockerfile, and, for every bare --env NAME, the value NAME
+# had: what docker would hand the container, which the arguments alone do not show. It exits as
+# the case says, 0 unless stub_exit says otherwise.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record docker "$@"
+if [ "$#" -gt 0 ] && [ "${!#}" = - ]; then
+    cat > "$call.stdin"
+fi
+previous=""
+for argument in "$@"; do
+    if [ "$previous" = --env ] && [[ $argument != *=* ]]; then
+        if [ -n "${!argument+x}" ]; then
+            printf '%s=%s\n' "$argument" "${!argument}"
+        else
+            printf '%s unset\n' "$argument"
+        fi >> "$call.env"
+    fi
+    previous=$argument
+done
+exit "$(cat "$state/stub/docker.exit" 2> /dev/null || echo 0)"

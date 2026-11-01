@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# A stand-in for curl, for the options the steps under test give it and no other: -sS, --proto,
+# --retry, -o and -w. Any other option is a call no case expected, since it may change what curl
+# does: with -f, a 404 would end curl with 22 rather than with the code the step reads. Like curl
+# without -f, it writes the body to -o whatever the code, and prints -w with %{http_code} filled
+# in, from what curl_answer gave it. After curl_offline it fails as curl does when it cannot
+# connect: 000 for the code, and 7.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record curl "$@"
+unexpected() {
+    printf 'curl: %s\n' "$1" >> "$state/unexpected"
+    echo "curl: the stand-in $1" >&2
+    exit 2
+}
+out=""
+format=""
+url=""
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        -sS) ;;
+        --proto | --retry | -o | -w)
+            [ "$#" -gt 1 ] || unexpected "got $1 without its value"
+            case $1 in
+                -o) out=$2 ;;
+                -w) format=$2 ;;
+            esac
+            shift
+            ;;
+        -*) unexpected "knows no option $1" ;;
+        *)
+            [ -z "$url" ] || unexpected "got a second URL, $1"
+            url=$1
+            ;;
+    esac
+    shift
+done
+[ -n "$url" ] || unexpected "got no URL"
+if [ -e "$state/stub/curl.offline" ]; then
+    printf '%s' "${format//'%{http_code}'/000}"
+    echo "curl: (7) Failed to connect to ${url#*://}: Couldn't connect to server" >&2
+    exit 7
+fi
+[ -f "$state/stub/curl.code" ] || unexpected "was given no answer for $url"
+code=$(< "$state/stub/curl.code")
+if [ -n "$out" ]; then
+    cp "$state/stub/curl.body" "$out"
+fi
+printf '%s' "${format//'%{http_code}'/$code}"
