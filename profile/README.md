@@ -38,6 +38,7 @@ The platform's documents live in spec, in Russian:
 ## Contributing
 
 - [How to contribute](https://github.com/altnovatrail/.github/blob/main/CONTRIBUTING.md), and the rules every repository shares.
+- Issues open with a [bug report or a change proposal form](https://github.com/altnovatrail/.github/tree/main/.github/ISSUE_TEMPLATE), and pull requests with a [checklist](https://github.com/altnovatrail/.github/blob/main/.github/pull_request_template.md).
 - [How to report a vulnerability](https://github.com/altnovatrail/.github/blob/main/SECURITY.md), privately.
 - [The code of conduct](https://github.com/altnovatrail/.github/blob/main/CODE_OF_CONDUCT.md).
 

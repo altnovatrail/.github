@@ -13,7 +13,7 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=altnovatrail_.github&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=altnovatrail_.github)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=altnovatrail_.github&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=altnovatrail_.github)
 
-The NovaTrail organization's own repository on GitHub. It holds the organization's profile, which GitHub shows on [github.com/altnovatrail](https://github.com/altnovatrail). It also holds the community health files that GitHub shows in every repository of the organization that has none of its own: how to contribute, how to report a vulnerability, and the code of conduct. It also gets the CI workflows that the repositories share: the shared checks before any repository has code, and the workflows for code together with the first code.
+The NovaTrail organization's own repository on GitHub. It holds the organization's profile, which GitHub shows on [github.com/altnovatrail](https://github.com/altnovatrail). It also holds the community health files that GitHub shows in every repository of the organization that has none of its own: how to contribute, how to report a vulnerability, the code of conduct, and the forms and template for issues and pull requests. It also gets the CI workflows that the repositories share: the shared checks before any repository has code, and the workflows for code together with the first code.
 
 A component of [NovaTrail](https://github.com/altnovatrail/spec/tree/v0.5.3), a universal open platform for adaptive learning, interactive lessons and AI tutoring. It belongs to stage 0, Foundation, together with spec.
 
@@ -35,6 +35,8 @@ The profile and the community health files are in English, since GitHub shows th
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to contribute to a NovaTrail repository.
 - [SECURITY.md](SECURITY.md) — how to report a vulnerability, privately.
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — the code of conduct, the Contributor Covenant 2.1.
+- [.github/ISSUE_TEMPLATE/](.github/ISSUE_TEMPLATE/) — the issue forms, a bug report and a change proposal, and the template chooser: it offers no blank issue and sends a vulnerability to SECURITY.md.
+- [.github/pull_request_template.md](.github/pull_request_template.md) — the pull request template and its checklist.
 
 The working rules, for people and coding agents alike, are in [CLAUDE.md](CLAUDE.md) and [AGENTS.md](AGENTS.md). The platform's shared vocabulary, formats, contracts and decisions are in [spec](https://github.com/altnovatrail/spec/tree/v0.5.3), checked out here as a git submodule at `v0.5.3`: clone this repository with `git clone --recurse-submodules`.
 

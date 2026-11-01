@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# A stand-in for npm-isolated, the script release.yml's step "Node and npm" writes into
+# RUNNER_TEMP, through which every npm command of the release runs. It writes down its arguments
+# and whether the OIDC variables reached it, prints what stub_stdout gave it, and exits as the case
+# says, 0 unless stub_exit says otherwise.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record npm-isolated "$@"
+for variable in ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN; do
+    if [ -n "${!variable+x}" ]; then
+        echo "$variable set"
+    else
+        echo "$variable unset"
+    fi
+done > "$call.oidc"
+if [ -f "$state/stub/npm-isolated.stdout" ]; then
+    cat "$state/stub/npm-isolated.stdout"
+fi
+exit "$(cat "$state/stub/npm-isolated.exit" 2> /dev/null || echo 0)"

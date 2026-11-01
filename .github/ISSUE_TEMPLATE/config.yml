@@ -1,0 +1,8 @@
+# The default template chooser of every repository of altnovatrail with no issue templates of
+# its own: no blank issue, so every issue comes through a form with its warning about learners'
+# data, and a vulnerability goes to SECURITY.md (the 2026-11-01 amendment to R22 spec; R29).
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability
+    url: https://github.com/altnovatrail/.github/blob/main/SECURITY.md
+    about: Privately, as SECURITY.md says, and never in an issue.
