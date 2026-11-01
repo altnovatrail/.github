@@ -1,0 +1,25 @@
+# Trial (T34, never merged): the shared go.yml and typescript.yml, called by local path from this
+# pull request, on the trial code at the root, each giving the wrapper the OIDC token its coverage
+# job asks for (R16, R19).
+name: Coverage trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/go.yml
+
+  typescript:
+    name: TypeScript
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/typescript.yml
