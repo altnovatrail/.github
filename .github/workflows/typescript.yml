@@ -66,7 +66,7 @@ jobs:
           RECIPE: ci-${{ matrix.check }}
         run: |
           ipc=()
-          if [ "$RECIPE" = ci-test ]; then ipc=(--ipc=host); fi
+          ipc=(--ipc=host)
           docker run --rm --init "${ipc[@]}" --user "$(id -u):$(id -g)" \
               --env HOME=/tmp --env CI \
               --volume "$PWD:/work" --workdir /work \
