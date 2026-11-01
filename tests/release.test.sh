@@ -1,25 +1,51 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of release.yml's step "Check the npm package" (the amendment to R18 for T27): the
-# archive a release would publish to npm, checked before the GitHub release exists — which is
-# immutable — against the registry's packument, then by npm's own dry run. The registry is the
-# stand-in curl, the dry run the stand-in npm-isolated; the archives are made here with tar, laid
-# out as npm pack lays one out, and their integrity worked out without openssl, which the step uses.
+# The tests of release.yml's step "Check the npm package" (the amendments to R18 for T27 and
+# T33): the archive a release would publish to npm, checked before the GitHub release exists —
+# which is immutable — against the registry's packument, then by npm's own dry run. The registry
+# is the stand-in curl, the dry run the stand-in npm-isolated; the archives are made here with
+# tar, laid out as npm pack lays one out, and their integrity worked out without openssl, which
+# the step uses.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 
 target=0123456789abcdef0123456789abcdef01234567
 
 # The step for @altnovatrail/canvas, of altnovatrail/canvas, at a version without v, 0.1.9 by
-# default, with publish as given, true by default. TARGET is the job's, and every step gets it.
+# default, with publish as given, true by default, in the run that releases that version: before
+# its GitHub release exists. TARGET is the job's, and every step gets it.
 npm_check() {
     use_workflow release.yml
     select_step release id=npm
     runner_env GITHUB_REPOSITORY altnovatrail/canvas
     set_env TARGET "$target"
     set_env VERSION "v${1:-0.1.9}"
+    ctx steps.version.outputs.released ""
     ctx inputs.npm-package @altnovatrail/canvas
     ctx steps.npm-name.outputs.stem altnovatrail-canvas
     ctx inputs.publish "${2:-true}"
+}
+
+# The same in a run of a commit released already as v0.1.9, again or by the button: the number is
+# the release's, and VERSION, version || released, is the same.
+npm_check_after_release() {
+    npm_check
+    ctx steps.version.outputs.released v0.1.9
+}
+
+# What the step says of a number npm has held, before the release and after it.
+gone_before="No release has that number yet, and every release of the line would take it again: raise RELEASE_LINE in the caller's release workflow, so that the next release gets a number npm has never held."
+gone_after="The next release, with a new number, publishes the package."
+# And of a package unpublished as a whole.
+whole="@altnovatrail/canvas was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3)."
+
+# A package unpublished as a whole, as the registry answers for one (asdasd, 2026-11-01): 200, and
+# no versions, but a time with every number it held — 0.1.7 among them, which unpublished.versions
+# leaves out, as a version unpublished before the rest — and unpublished.
+tombstone() {
+    registry 200 '{_id: "@altnovatrail/canvas", name: "@altnovatrail/canvas", _rev: "5-0",
+        time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-03T00:00:00.000Z",
+            "0.1.7": "2026-10-01T00:00:00.000Z", "0.1.8": "2026-10-02T00:00:00.000Z",
+            unpublished: {time: "2026-10-03T00:00:00.000Z", versions: ["0.1.8"]}}}'
 }
 
 # sha512- and the archive's SHA-512 in base64, as npm writes an integrity.
@@ -86,6 +112,14 @@ assert_registry_asked() {
 assert_dry_run() {
     assert_calls npm-isolated 1
     assert_call npm-isolated 1 publish "$archive" --dry-run --json --access public "$@" --loglevel verbose
+}
+
+assert_refused_by_the_registry() {
+    assert_status 1
+    assert_line "$1"
+    assert_registry_asked
+    assert_calls npm-isolated 0
+    refute_output action
 }
 
 assert_refused_before_the_registry() {
@@ -164,15 +198,122 @@ test_npm_a_version_the_registry_holds_with_this_integrity_is_published_already()
     assert_calls npm-isolated 0
 }
 
+# Before the release, every release of the line would take the same number again.
 test_npm_a_version_the_registry_holds_with_another_integrity_stops_the_release() {
     npm_check
     package
     registry 200 '{versions: {"0.1.9": {dist: {integrity: "sha512-another"}}}}'
     run_step
-    assert_status 1
-    assert_line "::error::@altnovatrail/canvas@0.1.9 is in the npm registry with the integrity sha512-another, and this archive's is ${integrity}. npm never takes a version back: the next release, with a new number, publishes the package."
-    assert_calls npm-isolated 0
-    refute_output action
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.9 is in the npm registry with the integrity sha512-another, and this archive's is ${integrity}. npm never takes a version back. ${gone_before}"
+}
+
+test_npm_another_integrity_after_the_release_leaves_the_package_to_the_next_release() {
+    npm_check_after_release
+    package
+    registry 200 '{versions: {"0.1.9": {dist: {integrity: "sha512-another"}}}}'
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.9 is in the npm registry with the integrity sha512-another, and this archive's is ${integrity}. npm never takes a version back. ${gone_after}"
+}
+
+# The registry keeps in time every number it has given out, the unpublished ones too, which
+# versions no longer holds (ua-parser-js's 0.7.29, 2026-11-01).
+test_npm_a_number_npm_held_and_unpublished_stops_the_release() {
+    npm_check
+    package
+    registry 200 '{versions: {"0.1.8": {}}, time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-03T00:00:00.000Z", "0.1.8": "2026-10-01T00:00:00.000Z", "0.1.9": "2026-10-02T00:00:00.000Z"}}'
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.9 was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_before}"
+}
+
+test_npm_a_number_npm_held_and_unpublished_after_the_release_leaves_the_package_to_the_next_release() {
+    npm_check_after_release
+    package
+    registry 200 '{versions: {}, time: {"0.1.9": "2026-10-02T00:00:00.000Z"}}'
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.9 was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_after}"
+}
+
+# A trial would go through and leave a release that npm refuses to the next run that publishes.
+test_npm_a_number_npm_held_and_unpublished_stops_a_trial_too() {
+    npm_check 0.1.9 false
+    package
+    registry 200 '{versions: {}, time: {"0.1.9": "2026-10-02T00:00:00.000Z"}}'
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.9 was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_before}"
+}
+
+# A version that versions holds is not an unpublished one, whatever its dist lacks: one with no
+# integrity, as a version from before npm wrote them has, is another archive than this one.
+test_npm_a_version_the_registry_holds_with_no_integrity_stops_the_release() {
+    npm_check
+    package
+    registry 200 '{versions: {"0.1.9": {dist: {shasum: "0123456789abcdef0123456789abcdef01234567"}}}, time: {"0.1.9": "2026-10-02T00:00:00.000Z"}}'
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.9 is in the npm registry with the integrity none, and this archive's is ${integrity}. npm never takes a version back. ${gone_before}"
+}
+
+test_npm_the_times_of_other_versions_leave_a_new_number_new() {
+    npm_check
+    package
+    registry 200 '{versions: {"0.1.8": {}}, time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-01T00:00:00.000Z", "0.1.8": "2026-10-01T00:00:00.000Z"}}'
+    dry_run
+    run_step
+    assert_status 0
+    assert_output action publish
+    assert_output tag ""
+    assert_dry_run
+}
+
+# Before its release and after it alike: the package has to come back by hand first.
+test_npm_a_package_unpublished_as_a_whole_stops_a_release() {
+    local check
+    for check in npm_check npm_check_after_release; do
+        "$check"
+        package
+        tombstone
+        run_step
+        assert_refused_by_the_registry "::error::${whole} Only then does a release publish."
+    done
+}
+
+# A package published again keeps no time.unpublished (pokemon-assets, 2026-11-01); if one ever
+# did, its versions would still say it is back.
+test_npm_a_package_with_versions_beside_an_unpublished_is_no_package_unpublished_as_a_whole() {
+    npm_check
+    package
+    registry 200 '{versions: {"0.1.8": {}}, time: {"0.1.8": "2026-10-04T00:00:00.000Z", unpublished: {time: "2026-10-03T00:00:00.000Z", versions: ["0.1.7"]}}}'
+    dry_run
+    run_step
+    assert_status 0
+    assert_output action publish
+    assert_output tag ""
+    assert_dry_run
+}
+
+test_npm_a_package_unpublished_as_a_whole_is_read_by_the_dry_run_of_a_trial() {
+    npm_check 0.1.9 false
+    package
+    tombstone
+    dry_run
+    run_step
+    assert_status 0
+    assert_line "::notice::@altnovatrail/canvas was unpublished from the npm registry as a whole, which matters not with publish false."
+    assert_output action publish
+    assert_output tag ""
+    assert_dry_run
+}
+
+# Its numbers are gone like any other's: those its unpublished lists, and those unpublished before.
+# The error says both what the number needs and what the package needs.
+test_npm_a_number_of_a_package_unpublished_as_a_whole_is_gone_too() {
+    local version
+    for version in 0.1.8 0.1.7; do
+        npm_check "$version" false
+        package . "$version"
+        tombstone
+        run_step
+        assert_refused_by_the_registry "::error::@altnovatrail/canvas@${version} was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_before} ${whole}"
+    done
 }
 
 test_npm_a_version_below_the_highest_goes_out_as_previous() {

@@ -22,11 +22,11 @@ tests=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 root=${tests%/*}
 
 wanted=$(sed -n 's/^ *YQ_VERSION: "\([^"]*\)"$/\1/p' "$root/.github/workflows/self-ci.yml")
-if [ -z "$wanted" ] || [ "$(wc -l <<< "$wanted")" != 1 ]; then
+if [[ -z $wanted ]] || [[ "$(wc -l <<< "$wanted")" != 1 ]]; then
     echo "run.sh: .github/workflows/self-ci.yml pins no single YQ_VERSION." >&2
     exit 2
 fi
-if [ -z "${YQ:-}" ] || [ ! -x "$YQ" ]; then
+if [[ -z ${YQ:-} ]] || [[ ! -x $YQ ]]; then
     echo "run.sh: YQ names no yq. Take yq ${wanted} as the step Install yq of self-ci.yml does, by its SHA-256, and name it: YQ=/path/to/yq bash tests/run.sh" >&2
     exit 2
 fi
@@ -37,7 +37,7 @@ if [[ $version != *" version v${wanted}" ]]; then
 fi
 export YQ
 
-if [ "$#" -gt 0 ]; then
+if [[ $# -gt 0 ]]; then
     files=("$@")
 else
     files=("$tests"/*.test.sh)
@@ -52,9 +52,9 @@ report() {
     local verdict=$1 file=$2 name=$3 log=${4:-}
     count=$((count + 1))
     printf '%s %d %s %s\n' "$verdict" "$count" "${file##*/}" "$name"
-    if [ "$verdict" = "not ok" ]; then
+    if [[ $verdict == "not ok" ]]; then
         failed=$((failed + 1))
-        if [ -n "$log" ] && [ -s "$log" ]; then
+        if [[ -n $log && -s $log ]]; then
             sed 's/^/  | /' "$log"
         fi
     fi
@@ -62,7 +62,7 @@ report() {
 
 for file in "${files[@]}"; do
     log="$work/file.log"
-    if [ ! -f "$file" ]; then
+    if [[ ! -f $file ]]; then
         report "not ok" "$file" "(there is no such file)"
         continue
     fi
@@ -79,17 +79,17 @@ for file in "${files[@]}"; do
         report "not ok" "$file" "(it cannot be read)" "$log"
         continue
     fi
-    if [ -z "$declared" ]; then
+    if [[ -z $declared ]]; then
         report "not ok" "$file" "(it has no test)"
         continue
     fi
     twice=$(uniq -d <<< "$declared")
-    if [ -n "$twice" ]; then
+    if [[ -n $twice ]]; then
         printf 'tests defined twice: %s\n' "$twice" > "$log"
         report "not ok" "$file" "(a test is defined twice)" "$log"
         continue
     fi
-    if [ "$declared" != "$defined" ]; then
+    if [[ $declared != "$defined" ]]; then
         diff <(echo "$declared") <(echo "$defined") > "$log" || true
         report "not ok" "$file" "(a test is not written as test_name() at the start of a line)" "$log"
         continue
@@ -104,7 +104,7 @@ for file in "${files[@]}"; do
             harness_begin
             "$2"
             harness_end
-        ' _ "$file" "$name" > "$state/log" 2>&1 < /dev/null && [ ! -e "$state/failed" ]; then
+        ' _ "$file" "$name" > "$state/log" 2>&1 < /dev/null && [[ ! -e $state/failed ]]; then
             report ok "$file" "$name"
         else
             report "not ok" "$file" "$name" "$state/log"
@@ -113,4 +113,4 @@ for file in "${files[@]}"; do
 done
 
 echo "${count} tests, ${failed} failed"
-[ "$count" -gt 0 ] && [ "$failed" = 0 ]
+[[ $count -gt 0 && $failed == 0 ]]
