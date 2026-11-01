@@ -1,0 +1,67 @@
+# A default issue form: GitHub offers it in every repository of altnovatrail with no issue
+# templates of its own, and a form or config.yml in a repository's own .github/ISSUE_TEMPLATE
+# drops all of these (the 2026-11-01 amendment to R22 spec; R29). Links are absolute, since the
+# form is shown outside this repository, and only in markdown and checkbox labels, where GitHub
+# documents Markdown links.
+name: Bug report
+description: Something does not work as it should.
+type: Bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in English or Russian.
+
+        **Never report a vulnerability in an issue.** Report it privately, as [SECURITY.md](https://github.com/altnovatrail/.github/blob/main/SECURITY.md) says.
+
+        **No learners' data** in the issue or in anything attached to it: see [what every contribution keeps to](https://github.com/altnovatrail/.github/blob/main/CONTRIBUTING.md#what-every-contribution-keeps-to). Reproduce the bug on synthetic data.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The steps that lead to the bug, on synthetic data.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The commit, release or tag you found the bug in.
+      placeholder: v0.1.0, or a commit's SHA
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: The operating system, browser or tool versions, where they matter.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: The output that shows the bug, with no learners' data and no secrets in it. It is shown as code.
+      render: text
+  - type: checkboxes
+    id: no-learners-data
+    attributes:
+      label: No learners' data, no secrets
+      options:
+        - label: This issue holds no learners' data and no secrets, as [CONTRIBUTING.md](https://github.com/altnovatrail/.github/blob/main/CONTRIBUTING.md#what-every-contribution-keeps-to) asks.
+          required: true

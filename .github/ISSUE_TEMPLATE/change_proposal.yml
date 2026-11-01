@@ -1,0 +1,43 @@
+# A default issue form: GitHub offers it in every repository of altnovatrail with no issue
+# templates of its own, and a form or config.yml in a repository's own .github/ISSUE_TEMPLATE
+# drops all of these (the 2026-11-01 amendment to R22 spec; R29). Its required fields ask for
+# no detail of a vulnerability, so the fallback of SECURITY.md, an issue that asks for a
+# security contact, comes through this form.
+name: Change proposal
+description: Propose a change before you open a pull request.
+type: Feature
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write in English or Russian.
+
+        Open this issue before a pull request, unless the change fixes a typo or a broken link, and read the repository's decision log first: see [before you start](https://github.com/altnovatrail/.github/blob/main/CONTRIBUTING.md#before-you-start).
+
+        **Never report a vulnerability in an issue**: report it privately, as [SECURITY.md](https://github.com/altnovatrail/.github/blob/main/SECURITY.md) says. Where a repository shows no **Report a vulnerability** button, use this form to ask for a security contact, without any detail of the vulnerability.
+  - type: textarea
+    id: what-should-change
+    attributes:
+      label: What should change
+      description: What is there now, and what should be there instead.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: What the change solves or makes possible.
+    validations:
+      required: true
+  - type: textarea
+    id: decisions
+    attributes:
+      label: Decisions it touches
+      description: The numbers of the entries in the repository's docs/decisions.md that the change touches. If one of them rejected it, the new evidence.
+  - type: checkboxes
+    id: no-learners-data
+    attributes:
+      label: No learners' data, no secrets
+      options:
+        - label: This issue holds no learners' data and no secrets, as [CONTRIBUTING.md](https://github.com/altnovatrail/.github/blob/main/CONTRIBUTING.md#what-every-contribution-keeps-to) asks.
+          required: true
