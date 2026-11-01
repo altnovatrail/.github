@@ -432,15 +432,23 @@ jobs:
       #   package with provenance.
       # The registry is read by its packument, with write=true, as npm reads one before it writes:
       # so the registry's CDN serves no copy cached for minutes. A package it lacks stops a
-      # release: its first version is published by hand (architecture 3.3). A version it holds
-      # with this archive's integrity is published already; with another, a number npm never takes
-      # back would differ from the release's file. A version below the highest one npm holds goes
-      # out with the tag previous, since npm puts none below the highest under latest, and latest
-      # is never named. Then npm's own dry run, npm-isolated, reads the archive, and has to read
-      # the same file and integrity. The check's own files lie apart from the empty folder npm runs
-      # in. This step has no token and no OIDC variables, so the dry run, which tries npm's token
-      # exchange too, gets nothing to exchange: npm gets a token in the last step alone, which runs
-      # only when publish is true.
+      # release: its first version is published by hand (architecture 3.3). So does a package
+      # unpublished as a whole, which the registry answers with 200 and a packument with no
+      # versions, whose time has unpublished, and which npm view takes for a 404 (npm/cli v11.19.1,
+      # lib/commands/view.js, read 2026-11-01): it takes no new version for 24 hours, and then its
+      # next one is published by hand too. A version it holds with this archive's integrity is
+      # published already. With another, or with none, or a version it held once and that was
+      # unpublished, which its time still lists, the number is gone: "Once package@version has
+      # been used, you can never use it again" (npm/documentation, content/policies/unpublish.mdx,
+      # read 2026-11-01). Before the release, such a number stops every release of the line, each
+      # of which would take it again, until the caller raises RELEASE_LINE; after the release, the
+      # next one has a new number. A version below the highest one npm holds goes out with the tag
+      # previous, since npm puts none below the highest under latest, and latest is never named.
+      # Then npm's own dry run, npm-isolated, reads the archive, and has to read the same file and
+      # integrity. The check's own files lie apart from the empty folder npm runs in. This step has
+      # no token and no OIDC variables, so the dry run, which tries npm's token exchange too, gets
+      # nothing to exchange: npm gets a token in the last step alone, which runs only when publish
+      # is true.
       - id: npm
         name: Check the npm package
         if: >-
@@ -450,6 +458,7 @@ jobs:
           NPM_PACKAGE: ${{ inputs.npm-package }}
           STEM: ${{ steps.npm-name.outputs.stem }}
           VERSION: ${{ steps.version.outputs.version || steps.version.outputs.released }}
+          RELEASED: ${{ steps.version.outputs.released }}
           PUBLISH: ${{ inputs.publish }}
         run: |
           unset ACTIONS_ID_TOKEN_REQUEST_URL ACTIONS_ID_TOKEN_REQUEST_TOKEN
@@ -492,6 +501,11 @@ jobs:
           code=$(curl -sS --proto "=https" --retry 3 -o "$packument" -w '%{http_code}' \
               "https://registry.npmjs.org/${NPM_PACKAGE/\//%2f}?write=true")
           tag=""
+          if [ -n "$RELEASED" ]; then
+              gone="The next release, with a new number, publishes the package."
+          else
+              gone="No release has that number yet, and every release of the line would take it again: raise RELEASE_LINE in the caller's release workflow, so that the next release gets a number npm has never held."
+          fi
           case "$code" in
               404)
                   if [ "$PUBLISH" = true ]; then
@@ -502,13 +516,27 @@ jobs:
                   action=publish
                   ;;
               200)
-                  published=$(jq -r --arg v "$version" '(.versions // {})[$v].dist.integrity // ""' "$packument")
+                  published=$(jq -r --arg v "$version" '(.versions // {}) | if has($v) then .[$v].dist.integrity // "none" else "" end' "$packument")
+                  whole=""
+                  if jq -e '((.time // {}) | has("unpublished")) and ((.versions // {}) | length == 0)' "$packument" > /dev/null; then
+                      whole="${NPM_PACKAGE} was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3)."
+                  fi
                   if [ -n "$published" ] && [ "$published" != "$integrity" ]; then
-                      echo "::error::${NPM_PACKAGE}@${version} is in the npm registry with the integrity ${published}, and this archive's is ${integrity}. npm never takes a version back: the next release, with a new number, publishes the package."
+                      echo "::error::${NPM_PACKAGE}@${version} is in the npm registry with the integrity ${published}, and this archive's is ${integrity}. npm never takes a version back. ${gone}"
+                      exit 1
+                  elif [ -z "$published" ] && jq -e --arg v "$version" '(.time // {}) | has($v)' "$packument" > /dev/null; then
+                      echo "::error::${NPM_PACKAGE}@${version} was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone}${whole:+ ${whole}}"
                       exit 1
                   elif [ -n "$published" ]; then
                       echo "::notice::${NPM_PACKAGE}@${version} is in the npm registry already, with this archive's integrity."
                       action=skip
+                  elif [ -n "$whole" ]; then
+                      if [ "$PUBLISH" = true ]; then
+                          echo "::error::${whole} Only then does a release publish."
+                          exit 1
+                      fi
+                      echo "::notice::${NPM_PACKAGE} was unpublished from the npm registry as a whole, which matters not with publish false."
+                      action=publish
                   else
                       highest=$(jq -r '(.versions // {}) | to_entries[] | select(.value.deprecated == null) | .key | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+$"))' "$packument" | sort -V | tail -n 1)
                       if [ -n "$highest" ] && [ "$(printf '%s\n' "$version" "$highest" | sort -V | tail -n 1)" = "$highest" ]; then
