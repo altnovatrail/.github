@@ -408,7 +408,8 @@ T31–T33 и T35–T37 сделаны. С T36 `.github` стоит на `spec` v
     - проба — pull request #80, без мержа (architecture 4):
       - b5cf941 — все проверки зелёные, обе загрузки по OIDC, `codecov/patch` от приложения Codecov, а оба отчёта Codecov слил в один, с путями файлов;
       - b3ca2c8 — job вызывающего без `id-token: write`: прогон не стартовал — «The nested job 'coverage' is requesting 'id-token: write', but is only allowed 'id-token: none'»;
-      - 309a6ff — `ci-test` без профиля Go: «Go / test» красная, «Go / coverage» пропущен.
+      - 309a6ff — `ci-test` без профиля Go: «Go / test» красная, «Go / coverage» пропущен;
+    - на раннере — pull request #81: все проверки зелёные, «Workflows» — «71 tests, 0 failed», а у SonarCloud на нём 0 находок и quality gate OK;
   - `/code-review high`, один круг, — 5 находок:
     - исправлены 3:
       - у репозитория с двумя загрузками на коммит статус мог уйти по первому отчёту. Теперь `after_n_builds` — в 3.3 и в поправке к R19, с цитатой Codecov;
