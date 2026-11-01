@@ -2,12 +2,14 @@
 # A stand-in for curl, for the options the steps under test give it and no other: -sS, or -fsSL as
 # the steps that download a tool give it, --proto, --proto-redir, --retry, --retry-all-errors, -o
 # and -w. Any other option, or these letters bundled another way, is a call no case expected,
-# since it may change what curl does: with -f, a 404 would end curl with 22 rather than with the
-# code the step reads. Without -f, like curl, it writes the body to -o whatever the code; with -f,
-# a code of 400 or more writes nothing and ends it with 22, as curl's --fail does. It prints -w
-# with %{http_code} filled in, from what curl_answer gave it. -L follows redirects, and the
-# stand-in has none to follow. After curl_offline it fails as curl does when it cannot connect:
-# 000 for the code, and 7.
+# since it may change what curl does: -f added to the step that reads the code, -fsS rather than
+# -sS, would end curl with 22 on a 404 rather than with the code the step reads. Without -f, like
+# curl, it writes the body to -o whatever the code; with -f, a code of 400 or more writes nothing
+# and ends it with 22, as curl's --fail does. It prints -w with %{http_code} filled in, from what
+# curl_answer gave it. -L follows redirects, and the stand-in has none to follow. It answers once:
+# the retries --retry and --retry-all-errors ask for end as the last attempt does, which is the
+# answer the case gave, and the cases hold the options by the call's exact arguments. After
+# curl_offline it fails as curl does when it cannot connect: 000 for the code, and 7.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh

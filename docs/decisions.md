@@ -573,7 +573,8 @@
   - CLI, который action качает сам и сверяет ключом с Keybase, — его отверг R48 spec: отпечатка ключа action не сверяет;
   - отдельный job `test` с загрузкой после одного его: шаги checkout, образа и рецепта стояли бы дважды;
   - `if: !cancelled()` у job загрузки: упавший `ci-test` давал бы ещё и красную загрузку без своей причины;
-  - `id-token: write` у job матрицы — право получил бы код pull request.
+  - `id-token: write` у job матрицы — право получил бы код pull request;
+  - общий workflow загрузки, который зовут обе обёртки, — предложение ревью. Это ещё один уровень вложенных workflow, по которому право OIDC шло бы дальше, и имя проверки вида «Go / coverage / …». А то, что две копии job одинаковы, держит случай набора.
 
 — architecture 1, 3.1, 3.3, 3.5, 3.6, 4; RUN.md, T34; `go.yml`; `tests/`.
 
@@ -869,7 +870,7 @@
 
 — *Поправка 2026-11-01:* по Д29 в RUN.md `spec`, задача T34. `typescript.yml` отправляет покрытие тестов в Codecov по OIDC так же, как `go.yml` (поправка 2026-11-01 к R16): job `test` отдаёт отчёт артефактом, а job `coverage` — проверка «TypeScript / coverage» — с правом `id-token: write` отправляет его. Job вызывающего даёт `contents: read` и `id-token: write`. Своё у неё вот что.
 - **Договор `ci-test`:** отчёт lcov — `coverage/lcov.info`, как его называет репортёр `lcov` и `lcovonly` istanbul (architecture 4). Модуль, которого не загружает ни один тест, в отчёте с нулями или валит рецепт. Vitest такой модуль сам не показывает: «By default Vitest will show only files that were imported during test run», — и нужен `coverage.include` с исходниками (architecture 4). Или рецепт падает на таком модуле, как `just coverage` `spec` (поправка 2026-10-23 к R30 spec).
-- **`coverage/` чистит Vitest:** с `coverage.clean`, по умолчанию, он удаляет папку отчёта перед тестами (architecture 4). Репозиторий с Go и TypeScript, как проба, пишет профиль Go после Vitest.
+- **`coverage/` чистит Vitest:** с `coverage.clean`, по умолчанию, он удаляет папку отчёта перед тестами (architecture 4). Репозиторий с Go и TypeScript, как проба, пишет профиль Go после Vitest. Загрузок на коммит у него две, и его `codecov.yml` задаёт `after_n_builds: 2`: по умолчанию Codecov шлёт статус по первому отчёту (architecture 3.3, 4).
 - **Провайдер покрытия** — пакет lock-файла, например `@vitest/coverage-v8`, и `ci-licenses` проверяет его, как всё. Своего исключения ему не нужно: в пробе рецепт `spec` прошёл с одним прежним исключением, `lightningcss`.
 - **Артефакт** — `typescript-coverage`, а job `coverage` — тот же, что у `go.yml`, кроме имени артефакта и файла отчёта. Это держит случай набора R28, и шаги загрузки проверены там случаями `go.yml`.
 - **Проба** — тот же pull request #80, что для `go.yml` (RUN.md, T34; architecture 4). Пакет — с коммитов #65, без браузера: к загрузке он отношения не имеет. Модуль, которого не загружает ни один тест, по `coverage.include` лёг в отчёт с нулём.
