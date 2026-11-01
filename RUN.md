@@ -366,6 +366,20 @@ T31–T33 и T35–T37 сделаны. С T36 `.github` стоит на `spec` v
 - **Мой шаг:** приложение Codecov должно видеть репозиторий, где идёт проба (правило 4).
 - **Как проверить:** как решит план; `/code-review high`.
 - **Разделы:** R48 spec и его поправки 2026-10-23; поправки 2026-10-23 к R30 spec; Д10 и Д29 в RUN.md `spec`; R05, R16, R19; T35.
+- **Стоимость:** $0: репозитории открытые, а Codecov бесплатен для открытого кода (R48 spec).
+- **Риски:** правка обеих обёрток даёт релиз `.github`, и Dependabot предложит его `module-kit`, `tutor`, `spec` и `canvas`. Пока job вызывающего не даёт `id-token: write`, а `ci-test` не пишет отчёт, такой pull request красный, и его придерживают руками (architecture 3.3).
+- **Решено автором (2026-11-01)** — при планировании, все три по рекомендации:
+  - CLI Codecov — v11.3.2, новейший. Сумма — из файла `SHA256SUM`, чью подпись gpg сверяет по отпечатку со страницы Codecov Uploader, как в поправке 2026-10-23 к R48 spec;
+  - проба — пробный pull request `.github` без мержа, как #40, #58 и #65 (R19): обе обёртки по локальному пути, на настоящем Codecov;
+  - коммит, pull request, мерж и SHA релиза в architecture 3.3 — исполнитель, как в T33.
+- **Выяснилось при планировании** (прочитано 2026-11-01):
+  - **вызывающие** (`ci.yml` на `main`, API GitHub): `canvas` — `typescript.yml` v0.1.10, `spec` — `go.yml` v0.1.10, `tutor` — v0.1.5, `module-kit` — v0.1.2. Отчёт покрытия пишет только `ci-test` `spec`, `coverage/go.out` (поправка 2026-11-01 к R48 spec). У `module-kit` и `tutor` — `go test -race -count=1 ./...`, у `canvas` — `vitest run`. Модули Go называются `github.com/altnovatrail/<репозиторий>`, и такой путь Codecov сам сокращает до пути в репозитории;
+  - **приложение Codecov** стоит у организации на все репозитории, `repository_selection: all` (`gh api orgs/altnovatrail/installations`), так что `.github` оно видит. «Мой шаг» не понадобился;
+  - **права.** «The `GITHUB_TOKEN` permissions passed from the caller workflow can be only downgraded (not elevated) by the called workflow» (GitHub Docs, Reusing workflow configurations). Job загрузки с `id-token: write` требует этого права и у job вызывающего. Чем кончается вызов без него, документация не говорит — это покажет проба;
+  - **имена артефактов** в прогоне уникальны: «Artifact names must be unique» (README `actions/upload-artifact` v7.0.2). У `spec` уже есть артефакт `coverage`, поэтому у обёрток — `go-coverage` и `typescript-coverage`;
+  - **CLI.** v11.3.2 вышел 2026-10-28 — «Clear Dependabot high alert (urllib3)», — а `spec` стоит на v11.3.1. codecov-action v7.1.1, upload-artifact v7.0.2 и download-artifact v8.0.2 — последние релизы;
+  - **job загрузки ждёт всю матрицу**, `needs: check`, как у `spec` загрузка ждёт всех его проверок. Матрица и имена проверок не меняются, а красная «lint» или «vuln» мерж держит и так. Отдельный job `test` удвоил бы шаги;
+  - **карточка 3.11 spec** о покрытии и Codecov не говорит — строка «в реестр spec».
 
 #### T37. Шаблоны issue и pull request
 
