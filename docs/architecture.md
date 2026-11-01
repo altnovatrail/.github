@@ -327,7 +327,7 @@ updates:
 sonar.exclusions=spec/**
 ```
 
-Репозиторий на Go добавляет в `ci.yml` job «Go», который зовёт общий `go.yml` (R16). `go.yml` есть в релизах `.github` с `v0.1.2`, коммит `d01dd881d6b4efb6013dd72f40a713b8d2dd3bad`; последний релиз называют `gh release view` и `git ls-remote`, как выше. С релиза, который принесла T34, обёртка отправляет покрытие тестов в Codecov, и job вызывающего даёт ей `id-token: write` (поправка 2026-11-01 к R16). Прежним релизам это право ничего не меняет: вызываемый workflow права только понижает. Как переходит вызывающий — «Покрытие» ниже:
+Репозиторий на Go добавляет в `ci.yml` job «Go», который зовёт общий `go.yml` (R16). `go.yml` есть в релизах `.github` с `v0.1.2`, коммит `d01dd881d6b4efb6013dd72f40a713b8d2dd3bad`; последний релиз называют `gh release view` и `git ls-remote`, как выше. С `v0.1.12`, коммит `4225639bcd04f43ef58f95cabf9fdfd947cbcb07`, обёртка отправляет покрытие тестов в Codecov, и job вызывающего даёт ей `id-token: write` (поправка 2026-11-01 к R16). Текст ниже закрепляет `v0.1.12`. Прежним релизам это право ничего не меняет: вызываемый workflow права только понижает. Как переходит вызывающий — «Покрытие» ниже:
 
 ```yaml
   # The repository's Go code, by its own ci- recipes in its toolchain stage, and the coverage of
@@ -339,7 +339,7 @@ sonar.exclusions=spec/**
     permissions:
       contents: read
       id-token: write
-    uses: altnovatrail/.github/.github/workflows/go.yml@d01dd881d6b4efb6013dd72f40a713b8d2dd3bad # v0.1.2
+    uses: altnovatrail/.github/.github/workflows/go.yml@4225639bcd04f43ef58f95cabf9fdfd947cbcb07 # v0.1.12
 ```
 
 А в `dependabot.yml` — экосистему `gomod`, с той же паузой. Go в Dockerfile и инструменты, которые рецепты запускают через `go run` по точной версии, Dependabot не видит, и их поднимают руками (R04 module-kit):
@@ -354,7 +354,7 @@ sonar.exclusions=spec/**
       default-days: 3
 ```
 
-Репозиторий на TypeScript добавляет в `ci.yml` job «TypeScript», который зовёт общий `typescript.yml` (R19). `typescript.yml` есть в релизах `.github` с `v0.1.5`, коммит `c772cc86973240e21cebb310fd0cda221a752ade`; последний релиз называют `gh release view` и `git ls-remote`, как выше. С `v0.1.8`, коммит `0ab279940126dadbde0f5a3912ce196ed39470ab`, job `licenses` берёт подмодуль `spec`, и `ci-licenses` проверяет lock-файл рецептом `spec` `licenses-check-repo`. Подмодуль — на теге v0.2.18 или новее (поправка к R19). На рецепт вызывающий переводит `ci-licenses` вместе с подъёмом ссылки на этот релиз или после него, но не раньше: прежняя обёртка подмодуля не даёт. С `v0.1.10`, коммит `f3addb7403d084c560c61481e217b93f8e7ee1f3`, обёртка не передаёт в контейнер `ALLOWED_LICENSES`: из окружения туда идёт только `CI`, а список `ci-licenses` берёт у `spec` (поправка к R19). Текст ниже закрепляет `v0.1.10`. С релиза, который принесла T34, обёртка отправляет покрытие тестов в Codecov, как `go.yml`, и права job — те же (поправка 2026-11-01 к R19). Что нужно от рецептов, `.npmrc` и стадии `toolchain`, — R19 и раздел 3.1:
+Репозиторий на TypeScript добавляет в `ci.yml` job «TypeScript», который зовёт общий `typescript.yml` (R19). `typescript.yml` есть в релизах `.github` с `v0.1.5`, коммит `c772cc86973240e21cebb310fd0cda221a752ade`; последний релиз называют `gh release view` и `git ls-remote`, как выше. С `v0.1.8`, коммит `0ab279940126dadbde0f5a3912ce196ed39470ab`, job `licenses` берёт подмодуль `spec`, и `ci-licenses` проверяет lock-файл рецептом `spec` `licenses-check-repo`. Подмодуль — на теге v0.2.18 или новее (поправка к R19). На рецепт вызывающий переводит `ci-licenses` вместе с подъёмом ссылки на этот релиз или после него, но не раньше: прежняя обёртка подмодуля не даёт. С `v0.1.10`, коммит `f3addb7403d084c560c61481e217b93f8e7ee1f3`, обёртка не передаёт в контейнер `ALLOWED_LICENSES`: из окружения туда идёт только `CI`, а список `ci-licenses` берёт у `spec` (поправка к R19). С `v0.1.12`, коммит `4225639bcd04f43ef58f95cabf9fdfd947cbcb07`, обёртка отправляет покрытие тестов в Codecov, как `go.yml`, и права job — те же (поправка 2026-11-01 к R19). Текст ниже закрепляет `v0.1.12`. Что нужно от рецептов, `.npmrc` и стадии `toolchain`, — R19 и раздел 3.1:
 
 ```yaml
   # The repository's TypeScript code, by its own ci- recipes in its toolchain stage, and the
@@ -366,7 +366,7 @@ sonar.exclusions=spec/**
     permissions:
       contents: read
       id-token: write
-    uses: altnovatrail/.github/.github/workflows/typescript.yml@f3addb7403d084c560c61481e217b93f8e7ee1f3 # v0.1.10
+    uses: altnovatrail/.github/.github/workflows/typescript.yml@4225639bcd04f43ef58f95cabf9fdfd947cbcb07 # v0.1.12
 ```
 
 А в `dependabot.yml` — экосистему `npm`, с той же паузой; `directory` — папка `package.json`. Node в Dockerfile и браузеры для тестов Dependabot не видит, и их поднимают руками, как Go: в Dockerfile он читает только строки `FROM` (раздел 4), а образ Playwright стоит в `COPY --from`. Поэтому pull request, который поднимает `playwright`, красный, пока в нём же руками не подняты тег и digest образа и ревизия браузера (R13 canvas):
@@ -426,7 +426,7 @@ comment:
 
 Вызывающий переходит в таком порядке — сессия самого репозитория, своей задачей (Д29 в RUN.md `spec`):
 1. ещё на прежнем релизе обёртки — `ci-test` с отчётом, `.gitignore`, `codecov.yml` и `permissions` у job языка, как в текстах выше. Прежняя обёртка отчёта не читает, а право `id-token: write` ей ничего не даёт;
-2. подъём ссылки на релиз с загрузкой — pull request Dependabot или свой. Если он придёт раньше шага 1, он красный: без права прогон CI не стартует вовсе — «The nested job 'coverage' is requesting 'id-token: write', but is only allowed 'id-token: none'», — а без отчёта красная «… / test» (раздел 4). Такой pull request придерживают руками, пока шаг 1 не слит;
+2. подъём ссылки на релиз с загрузкой, `v0.1.12` или новее, — pull request Dependabot или свой. Если он придёт раньше шага 1, он красный: без права прогон CI не стартует вовсе — «The nested job 'coverage' is requesting 'id-token: write', but is only allowed 'id-token: none'», — а без отчёта красная «… / test» (раздел 4). Такой pull request придерживают руками, пока шаг 1 не слит;
 3. после первого pull request Dependabot с загрузкой — `codecov/patch` в ruleset `main`, с `integration_id` 254, как у `spec`: правило 4, шаг автора (поправки 2026-10-23 к R30 spec). Пока на `main` нет отчёта, `codecov/patch` приходит успехом — «No report found to compare against» (раздел 4);
 4. значок покрытия в README — по repositories 2.3 spec, с первой загрузкой на `main`.
 
