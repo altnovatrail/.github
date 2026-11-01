@@ -7,6 +7,10 @@
 # "TypeScript / lint", "TypeScript / test", "TypeScript / vuln" and "TypeScript / licenses", when
 # the calling job is named TypeScript.
 #
+# ci-test writes the coverage of the tests as an lcov report, coverage/lcov.info, and the job
+# coverage sends it to Codecov by OIDC, with no secret (R48 in spec). "TypeScript / coverage" is no
+# check of the ruleset: codecov/patch, which Codecov sets from the upload, is.
+#
 # ci-licenses checks every package of the lock file by spec's recipe licenses-check-repo, from the
 # caller's spec submodule, with the repository's own exceptions: the list and the rule of an
 # exception are spec's, at the tag the caller pins (R39 in spec). That is why the licenses job
@@ -18,7 +22,8 @@
 # There is no TypeScript code in .github, so a change here is tried by a trial pull request of
 # .github that calls this file by local path and is never merged, before the release (R19). The
 # first trial, #40, keeps its commits at refs/pull/40/head: a new trial starts from them.
-# Called from a job that gives it `contents: read`.
+# Called from a job that gives it `contents: read` and `id-token: write`: the coverage job alone
+# asks for the token, and a called workflow can only lower what its caller gives.
 
 name: TypeScript (shared)
 
@@ -71,3 +76,77 @@ jobs:
               --env HOME=/tmp --env CI \
               --volume "$PWD:/work" --workdir /work \
               toolchain just "$RECIPE"
+
+      # The test job hands the report its recipe wrote to the coverage job, the one job that may ask
+      # for an OIDC token: this one runs the code under test. A recipe that wrote none fails
+      # "TypeScript / test", as it owes one (R19). The report is kept a week, so that the coverage
+      # job can be run again after an outage of Codecov. The name is the wrapper's own: an
+      # artifact's name is unique in a run, and the caller's own jobs may upload one called
+      # coverage, as spec's do.
+      - name: Coverage report
+        if: matrix.check == 'test'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typescript-coverage
+          path: coverage/lcov.info
+          retention-days: 7
+          if-no-files-found: error
+
+  # Codecov takes the report by OIDC, with no secret (R48 in spec). This job alone may ask GitHub for
+  # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
+  # none of the repository's code. A pull request from a fork gets no token: the action then sends
+  # the report without one, as Codecov takes it from a fork's branch. The job waits for every check,
+  # as spec's upload does: a red one holds the merge anyway.
+  #
+  # Any failure of the job fails a pull request, so that a missing codecov/patch has its reason in
+  # sight. Elsewhere, on main, it does not fail the run: the caller's release waits for CI to pass,
+  # and an outage of Codecov must not hold it back.
+  coverage:
+    name: coverage
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    continue-on-error: ${{ github.event_name != 'pull_request' }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      # The files of the commit, which the upload lists so that Codecov can match the report's paths
+      # to them; without the spec submodule, as the checks. Which commit and pull request the report
+      # is for, the action takes from the event.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: typescript-coverage
+          path: coverage
+
+      # The Codecov CLI at an exact version, checked against its SHA-256 here, as the tools of
+      # self-ci.yml are (R08), rather than against a key the action would fetch during the run. The
+      # sum is the one the release's codecov.SHA256SUM gives, whose signature checks against the key
+      # Codecov's docs name by its fingerprint. Dependabot moves the actions' SHAs alone: the
+      # version and its sum are raised by hand, together, and in go.yml too.
+      - name: Codecov CLI
+        env:
+          CLI_VERSION: v11.3.2
+          CLI_SHA256: 8e1bfb71661378530f6ea21e82b414095899e565cbb4cf555c613064be17b973
+        run: |
+          cli="$RUNNER_TEMP/codecov"
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors \
+              -o "$cli" "https://cli.codecov.io/${CLI_VERSION}/linux/codecov"
+          echo "${CLI_SHA256}  ${cli}" | sha256sum --check --strict
+          chmod +x "$cli"
+
+      # The one report alone: no search for others, and no plugins, which would run coverage tools
+      # of their own. A failed upload fails the job, as any of its steps does.
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          binary: ${{ runner.temp }}/codecov
+          use_oidc: true
+          files: coverage/lcov.info
+          disable_search: true
+          plugins: noop
+          disable_telem: true
+          fail_ci_if_error: true

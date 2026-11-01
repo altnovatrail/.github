@@ -112,10 +112,10 @@
 | [x] | T36 | Переход на spec v0.5.3 | Claude | — | T31 |
 | [x] | T35 | Набор тестов общих workflow | я + Claude | да | T31 |
 | [x] | T33 | Снятый номер в шаге npm общего релиза | Claude | да | T35 |
-| [ ] | T34 | Загрузка покрытия в обёртках Go и TypeScript | я + Claude | да | T35 |
+| [x] | T34 | Загрузка покрытия в обёртках Go и TypeScript | я + Claude | да | T35 |
 | [x] | T37 | Шаблоны issue и pull request | Claude, проверяю я | — | — |
 
-T31–T33 и T35–T37 сделаны. С T36 `.github` стоит на `spec` v0.5.3, где есть ответ на В28. T35 дала общим workflow набор тестов шагов (R28), а T37 — организации шаблоны issue и pull request (R29). T33 — первая правка общего workflow, которая пришла со своими случаями в наборе: шаг npm общего релиза отвергает номер, который npm уже выдавал (поправка к R18). Следующая — T34.
+T31–T33 и T35–T37 сделаны. С T36 `.github` стоит на `spec` v0.5.3, где есть ответ на В28. T35 дала общим workflow набор тестов шагов (R28), а T37 — организации шаблоны issue и pull request (R29). T33 — первая правка общего workflow, которая пришла со своими случаями в наборе: шаг npm общего релиза отвергает номер, который npm уже выдавал (поправка к R18). T34 — вторая: обёртки Go и TypeScript отправляют покрытие тестов вызывающего в Codecov по OIDC (поправки к R16 и R19). Все задачи E9 сделаны.
 
 ## Таблица 2. Эпики на потом
 
@@ -149,8 +149,9 @@ T31–T33 и T35–T37 сделаны. С T36 `.github` стоит на `spec` v
 | ID | Вопрос | Откуда | Варианты | Рекомендация |
 |---|---|---|---|---|
 | В29 | «В реестр spec». Шаг «Check the npm package» `release.yml` `spec` пропускает новый номер пакета, который сняли целиком. Реестр отвечает на такой пакет 200, а не 404: только `_id`, `name`, `_rev` и `time` с `unpublished`, без `versions` — так 2026-11-01 отвечали `asdasd`, `aaaaaaa` и `test-unpublish`. Шаг находит номер новым, и релиз выходит. npm же 24 часа после снятия новых версий не берёт, а сохранилась ли у такого пакета настройка trusted publisher, документация не говорит. `npm view` npm 11.19 читает `time.unpublished` как E404 (`lib/commands/view.js`). Общий шаг с T33 читает такой пакет как 404, если и `versions` пуст, а старые номера ловит проверка `time` (поправка к R18). Ещё одно отличие: версию из `versions` без `dist.integrity` шаг `spec` назвал бы снятой, а общий называет версией с другим архивом | T33 | 1) у `spec` — как у общего: `time.unpublished` при пустых `versions` — как 404, прогон падает до релиза, а версия без `integrity` — другой архив; 2) оставить: пакет снимает только автор, руками, а версия без `integrity` у пакетов `spec` не встречалась | 1: одна проверка jq. Шаг `spec` снова копия общего, и правки переносятся `diff`ом |
+| В30 | «В реестр spec». Карточка 3.11 spec называет обёртки Go и TypeScript «с проверкой лицензий». С T34 они ещё и отправляют покрытие тестов вызывающего в Codecov по OIDC — из своего job `coverage`, которому job вызывающего даёт `id-token: write` (поправки 2026-11-01 к R16 и R19). Этой загрузки ждут Д29 в RUN.md `spec` и строка Codecov в architecture 3.12 spec. Порядок перехода у вызывающего (architecture 3.3, «Покрытие»): сначала отчёт `ci-test` и право у job языка, а потом подъём ссылки. Иначе прогон CI без права не стартует, а без отчёта красная «… / test» — и pull request Dependabot с одной новой ссылкой красный у `module-kit`, `tutor`, `spec` и `canvas`. Артефакты `go-coverage` и `typescript-coverage` — имена обёрток. У `spec` после перехода загрузок на коммит станет две, своя и `go.yml`, и его `codecov.yml` задаёт `after_n_builds: 2` (architecture 3.3). CLI Codecov у обёрток — v11.3.2, у `ci.yml` `spec` — v11.3.1 | T34 | 1) записать в `spec`: карточка 3.11 — обёртки с загрузкой покрытия; Д29 — что часть `.github` сделана, порядок перехода, имена артефактов и `after_n_builds`; CLI `spec` — до v11.3.2 его правкой; 2) карточку не трогать: она сводка, а подробности — architecture 3.1 и 3.3 `.github` | 1: загрузка покрытия — новая работа компонента и новая связь с Codecov, а карточка говорит, что компонент делает и с чем связан (RULES.md, Across repositories). Без строки в Д29 четыре вызывающих узнают о порядке перехода по красному pull request Dependabot |
 
-Номера не переиспользуются: следующий — В30.
+Номера не переиспользуются: следующий — В31.
 
 ## Таблица 4. Технический долг
 
@@ -366,6 +367,62 @@ T31–T33 и T35–T37 сделаны. С T36 `.github` стоит на `spec` v
 - **Мой шаг:** приложение Codecov должно видеть репозиторий, где идёт проба (правило 4).
 - **Как проверить:** как решит план; `/code-review high`.
 - **Разделы:** R48 spec и его поправки 2026-10-23; поправки 2026-10-23 к R30 spec; Д10 и Д29 в RUN.md `spec`; R05, R16, R19; T35.
+- **Стоимость:** $0: репозитории открытые, а Codecov бесплатен для открытого кода (R48 spec).
+- **Риски:** правка обеих обёрток даёт релиз `.github`, и Dependabot предложит его `module-kit`, `tutor`, `spec` и `canvas`. Пока job вызывающего не даёт `id-token: write`, а `ci-test` не пишет отчёт, такой pull request красный, и его придерживают руками (architecture 3.3).
+- **Решено автором (2026-11-01)** — при планировании, все три по рекомендации:
+  - CLI Codecov — v11.3.2, новейший. Сумма — из файла `SHA256SUM`, чью подпись gpg сверяет по отпечатку со страницы Codecov Uploader, как в поправке 2026-10-23 к R48 spec;
+  - проба — пробный pull request `.github` без мержа, как #40, #58 и #65 (R19): обе обёртки по локальному пути, на настоящем Codecov;
+  - коммит, pull request, мерж и SHA релиза в architecture 3.3 — исполнитель, как в T33.
+- **Выяснилось при планировании** (прочитано 2026-11-01):
+  - **вызывающие** (`ci.yml` на `main`, API GitHub): `canvas` — `typescript.yml` v0.1.10, `spec` — `go.yml` v0.1.10, `tutor` — v0.1.5, `module-kit` — v0.1.2. Отчёт покрытия пишет только `ci-test` `spec`, `coverage/go.out` (поправка 2026-11-01 к R48 spec). У `module-kit` и `tutor` — `go test -race -count=1 ./...`, у `canvas` — `vitest run`. Модули Go называются `github.com/altnovatrail/<репозиторий>`, и такой путь Codecov сам сокращает до пути в репозитории;
+  - **приложение Codecov** стоит у организации на все репозитории, `repository_selection: all` (`gh api orgs/altnovatrail/installations`), так что `.github` оно видит. «Мой шаг» не понадобился;
+  - **права.** «The `GITHUB_TOKEN` permissions passed from the caller workflow can be only downgraded (not elevated) by the called workflow» (GitHub Docs, Reusing workflow configurations). Job загрузки с `id-token: write` требует этого права и у job вызывающего. Чем кончается вызов без него, документация не говорит — это покажет проба;
+  - **имена артефактов** в прогоне уникальны: «Artifact names must be unique» (README `actions/upload-artifact` v7.0.2). У `spec` уже есть артефакт `coverage`, поэтому у обёрток — `go-coverage` и `typescript-coverage`;
+  - **CLI.** v11.3.2 вышел 2026-10-28 — «Clear Dependabot high alert (urllib3)», — а `spec` стоит на v11.3.1. codecov-action v7.1.1, upload-artifact v7.0.2 и download-artifact v8.0.2 — последние релизы;
+  - **job загрузки ждёт всю матрицу**, `needs: check`, как у `spec` загрузка ждёт всех его проверок. Матрица и имена проверок не меняются, а красная «lint» или «vuln» мерж держит и так. Отдельный job `test` удвоил бы шаги;
+  - **карточка 3.11 spec** о покрытии и Codecov не говорит — строка «в реестр spec».
+- **Сделано (2026-11-01):**
+  - по правилу 12, перед задачей: на `main` 623c2ad у SonarCloud 0 находок и 0 мест безопасности на проверку, quality gate OK, а в code scanning — те же шесть находок Scorecard;
+  - CLI Codecov v11.3.2 сверен. Подпись `codecov.SHA256SUM` верна, ключ — с отпечатком со страницы Codecov Uploader, а сумма бинарника сходится с файлом. SHA трёх actions сверены по их тегам (architecture 4);
+  - `go.yml` и `typescript.yml`:
+    - шаг «Coverage report» в job `test` — отчёт артефактом `go-coverage` или `typescript-coverage`;
+    - job `coverage` — `id-token: write`, CLI по sha256 и codecov-action v7.1.1, `continue-on-error` вне pull request;
+    - шапки — о загрузке и правах вызывающего;
+  - `tests/`:
+    - в `go.test.sh` — пять новых случаев и обновлённый случай строения;
+    - в `typescript.test.sh` — два новых случая: свои артефакт и отчёт и равенство job `coverage` двух обёрток;
+    - подмена curl знает `-fsSL`, `--proto-redir` и `--retry-all-errors`, а `-f` ведёт себя как у curl — с новым случаем в `harness.test.sh`.
+
+    Всего в наборе 71 тест;
+  - журнал — поправки 2026-11-01 к R16 и R19;
+  - architecture — статус, 1, 3.1, 3.3 — тексты job, `codecov.yml` и «Покрытие» с порядком перехода, — 3.5, 3.6 и раздел 4, «Загрузка покрытия»;
+  - CLAUDE.md, The component, и абзац статуса README.md;
+  - В30 — в таблице 3;
+  - проверено:
+    - локально — 71 тест `ok`. shellcheck 0.11.0 по `tests/` и actionlint 1.7.12 по всем workflow — чисто, `just -f spec/justfile docs-check-repo` — ok;
+    - порча — 22, каждая в своей копии, и каждая дала красный набор со своим случаем:
+      - в `go.yml` — загрузка во всех job матрицы, без `if-no-files-found`, артефакт `coverage`, `id-token` у `check` и без него у `coverage`, `continue-on-error` всегда и без него;
+      - там же — без `sha256sum`, без `-f`, `http://`, без `chmod`, без `plugins: noop`, телеметрия, другой файл, без `needs`, подмодуль в checkout загрузки;
+      - в `typescript.yml` — другой тайм-аут, другая сумма, загрузка во всех job, артефакт `coverage`, без `id-token`;
+      - подмена curl, которая при `-f` пишет тело 404;
+    - проба — pull request #80, без мержа (architecture 4):
+      - b5cf941 — все проверки зелёные, обе загрузки по OIDC, `codecov/patch` от приложения Codecov, а оба отчёта Codecov слил в один, с путями файлов;
+      - b3ca2c8 — job вызывающего без `id-token: write`: прогон не стартовал — «The nested job 'coverage' is requesting 'id-token: write', but is only allowed 'id-token: none'»;
+      - 309a6ff — `ci-test` без профиля Go: «Go / test» красная, «Go / coverage» пропущен;
+    - на раннере — pull request #81: все проверки зелёные, «Workflows» — «71 tests, 0 failed», а у SonarCloud на нём 0 находок и quality gate OK;
+  - `/code-review high`, один круг, — 5 находок:
+    - исправлены 3:
+      - у репозитория с двумя загрузками на коммит статус мог уйти по первому отчёту. Теперь `after_n_builds` — в 3.3 и в поправке к R19, с цитатой Codecov;
+      - комментарий `.github/dependabot.yml` не называл yq, cosign, Node и CLI Codecov;
+      - шапка подмены curl объясняла отказ от `-f`, которое подмена теперь знает;
+    - принята частично 1: подмена отвечает один раз и повторов curl не моделирует — теперь это сказано в её шапке. А то, что без `--retry-all-errors` ни один случай не красный, неверно: аргументы вызова точно сверяет `test_go_takes_the_codecov_cli_of_its_version_by_its_sum`;
+    - не принята 1: общий workflow загрузки для обеих обёрток — он отвергнут в поправке к R16.
+- **Открыто:**
+  - В30 «в реестр spec» — карточка 3.11 spec, Д29 и порядок перехода вызывающих;
+  - вызов обёрток с загрузкой из другого репозитория проба не показала: его покажет первый переход вызывающего — `module-kit`, `tutor`, `canvas` или `spec` (Д29 в RUN.md `spec`);
+  - Codecov теперь знает `.github` активным, с отчётами пробы #80. Значка покрытия у `.github` нет: своего кода, который мерил бы Codecov, у него нет (architecture 1);
+  - после мержа — релиз, его SHA в architecture 3.3 и поправках к R16 и R19, и находки SonarCloud, CodeQL и Scorecard по правилу 12;
+  - все задачи E9 сделаны, и архив эпика — шаг автора.
 
 #### T37. Шаблоны issue и pull request
 

@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
-# A stand-in for curl, for the options the steps under test give it and no other: -sS, --proto,
-# --retry, -o and -w. Any other option is a call no case expected, since it may change what curl
-# does: with -f, a 404 would end curl with 22 rather than with the code the step reads. Like curl
-# without -f, it writes the body to -o whatever the code, and prints -w with %{http_code} filled
-# in, from what curl_answer gave it. After curl_offline it fails as curl does when it cannot
-# connect: 000 for the code, and 7.
+# A stand-in for curl, for the options the steps under test give it and no other: -sS, or -fsSL as
+# the steps that download a tool give it, --proto, --proto-redir, --retry, --retry-all-errors, -o
+# and -w. Any other option, or these letters bundled another way, is a call no case expected,
+# since it may change what curl does: -f added to the step that reads the code, -fsS rather than
+# -sS, would end curl with 22 on a 404 rather than with the code the step reads. Without -f, like
+# curl, it writes the body to -o whatever the code; with -f, a code of 400 or more writes nothing
+# and ends it with 22, as curl's --fail does. It prints -w with %{http_code} filled in, from what
+# curl_answer gave it. -L follows redirects, and the stand-in has none to follow. It answers once:
+# the retries --retry and --retry-all-errors ask for end as the last attempt does, which is the
+# answer the case gave, and the cases hold the options by the call's exact arguments. After
+# curl_offline it fails as curl does when it cannot connect: 000 for the code, and 7.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh
@@ -18,10 +23,12 @@ unexpected() {
 out=""
 format=""
 url=""
+fail=0
 while [ "$#" -gt 0 ]; do
     case $1 in
-        -sS) ;;
-        --proto | --retry | -o | -w)
+        -sS | --retry-all-errors) ;;
+        -fsSL) fail=1 ;;
+        --proto | --proto-redir | --retry | -o | -w)
             [ "$#" -gt 1 ] || unexpected "got $1 without its value"
             case $1 in
                 -o) out=$2 ;;
@@ -45,6 +52,11 @@ if [ -e "$state/stub/curl.offline" ]; then
 fi
 [ -f "$state/stub/curl.code" ] || unexpected "was given no answer for $url"
 code=$(< "$state/stub/curl.code")
+if [ "$fail" = 1 ] && [ "$code" -ge 400 ]; then
+    printf '%s' "${format//'%{http_code}'/$code}"
+    echo "curl: (22) The requested URL returned error: $code" >&2
+    exit 22
+fi
 if [ -n "$out" ]; then
     cp "$state/stub/curl.body" "$out"
 fi

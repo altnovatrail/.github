@@ -3,8 +3,10 @@
 # devcontainer, tag and digest. An action it moves in a shared workflow comes out in the next
 # release of .github, and the callers' Dependabot moves their reference to it (R04).
 #
-# Raised by hand, because no ecosystem here reads them: gitleaks, actionlint and shellcheck, each
-# with the sha256 of its archive in the workflow that downloads it (R08), and the ARGs of
+# Raised by hand, because no ecosystem here reads them: gitleaks, actionlint, shellcheck and the
+# yq of the tests (R08, R28), cosign and the Node of the npm step of release.yml (R18), and the
+# Codecov CLI of go.yml and typescript.yml, raised in both at once (R16, R19), each with the
+# sha256 of its download in the workflow that fetches it; and the ARGs of
 # .devcontainer/Dockerfile, which come with a new tag of spec.
 #
 # Every ecosystem waits three days after a release before proposing it, as in spec: a bad
