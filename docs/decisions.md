@@ -550,6 +550,33 @@
 
 — architecture 2.7, 3.4, 4; RUN.md, T26; `self-ci.yml`.
 
+— *Поправка 2026-11-01:* по Д29 в RUN.md `spec`, задача T34. `go.yml` отправляет покрытие тестов в Codecov по OIDC, без секрета (R48 spec). Ответы автора при планировании — CLI v11.3.2, пробный pull request `.github` и мерж исполнителем — в RUN.md, T34.
+- **Договор `ci-test`.** Рецепт пишет покрытие своих тестов одним профилем `go test -coverprofile` в файл `coverage/go.out` — по каждому пакету каждого модуля репозитория, как `ci-test` `spec` (поправка 2026-11-01 к R48 spec). Пакет без своих тестов Go кладёт в профиль сам, с нулями: с Go 1.22 «functions in the package are treated as uncovered» (architecture 4). Пакет совсем без исполняемого кода в профиль не попадает, но и строк для `codecov/patch` у него нет. Отчёт пишет сам рецепт: обёртка ему ничего не передаёт. Рецепт без отчёта валит «Go / test» — на pull request и на `main`. `coverage/` — в `.gitignore` вызывающего.
+- **Job `test`** отдаёт отчёт артефактом `go-coverage`: шаг «Coverage report» идёт только в нём, после рецепта, с `if-no-files-found: error`. Имя — обёртки. Имя артефакта в прогоне уникально, а у `spec` уже есть свой артефакт `coverage` (architecture 4). Поэтому своих артефактов `go-coverage` и `typescript-coverage` вызывающий не заводит. Отчёт хранится неделю: после сбоя Codecov job загрузки перезапускают.
+- **Job `coverage`** — проверка «Go / coverage», устроенная как job «Coverage» `ci.yml` `spec` (R48 spec и её поправки 2026-10-23; поправка 2026-10-23 к R30 spec):
+  - `needs: check` — он ждёт все четыре проверки, как загрузка `spec` ждёт всех своих. Красная «lint» или «vuln» мерж держит и так, а матрица и имена проверок не меняются;
+  - `id-token: write` — только у него, правом job, а не workflow. Job матрицы исполняют код pull request, а он — нет: он берёт checkout без подмодуля, отчёт из артефакта, CLI Codecov и `codecov/codecov-action` v7.1.1;
+  - право ему даёт job вызывающего: вызываемый workflow права только понижает (architecture 4). Поэтому вызывающий даёт `contents: read` и `id-token: write` (architecture 3.3);
+  - CLI Codecov — v11.3.2, по sha256 в самом шаге, как инструменты `self-ci.yml` (R08). Сумма — из `codecov.SHA256SUM` релиза CLI, а подпись этого файла сверена gpg ключом с отпечатком, который называет страница Codecov Uploader (architecture 4). Action получает готовый файл входом `binary` и ничего не качает. Версию и сумму поднимают руками, вместе и в обеих обёртках, а SHA actions двигает Dependabot;
+  - входы action — `use_oidc`, `files` с одним отчётом, `disable_search`, `plugins: noop`, `disable_telem` и `fail_ci_if_error`, как у `spec`;
+  - `continue-on-error` — вне pull request. Сбой загрузки валит pull request, чтобы у пропавшего `codecov/patch` была видна причина, а прогон `main` не валит, и релиз вызывающего он не держит.
+- **Что держит мерж** — `codecov/patch`, а не «Go / coverage»: без загрузки статуса нет, и мерж ждёт и так. Проверку в ruleset `main` вызывающего ставит автор после первого pull request Dependabot с загрузкой, как у `spec` (поправка 2026-10-23 к R30 spec; Д10 в RUN.md `spec`). Как переходит вызывающий — architecture 3.3.
+- **Проба** — сказанное выше, «Правку проверяет pull request репозитория на Go, который зовёт `go.yml` по SHA ветки», читается теперь шире: или пробный pull request `.github`, который зовёт `go.yml` по локальному пути, как `typescript.yml` (R19). Так проверена и эта правка — pull request #80, без мержа (architecture 4):
+  - обе загрузки прошли по OIDC, и `codecov/patch` пришёл от приложения Codecov;
+  - job вызывающего без `id-token: write` не дал прогону стартовать — «The nested job 'coverage' is requesting 'id-token: write', but is only allowed 'id-token: none'»;
+  - `ci-test` без профиля сделал «Go / test» красной, а «Go / coverage» пропустил.
+
+  Вызова из другого репозитория проба не показала: его покажет первый переход вызывающего.
+- **Случаи** — в наборе R28: строение job `coverage` и его права, шаг «Coverage report», входы actions и шаг «Codecov CLI», запущенный с подменой curl. Подмена теперь знает `-fsSL` и при `-f` и коде от 400 ничего не пишет и выходит с 22, как curl.
+- **Отвергнуто:**
+  - секрет `CODECOV_TOKEN` — общие workflow секретов не берут (R05), и R48 spec его отверг;
+  - CLI, который action качает сам и сверяет ключом с Keybase, — его отверг R48 spec: отпечатка ключа action не сверяет;
+  - отдельный job `test` с загрузкой после одного его: шаги checkout, образа и рецепта стояли бы дважды;
+  - `if: !cancelled()` у job загрузки: упавший `ci-test` давал бы ещё и красную загрузку без своей причины;
+  - `id-token: write` у job матрицы — право получил бы код pull request.
+
+— architecture 1, 3.1, 3.3, 3.5, 3.6, 4; RUN.md, T34; `go.yml`; `tests/`.
+
 ## Тег `spec` после обёртки Go
 
 **R17. `.github` стоит на `spec` v0.2.13: подмодуль `spec/` — на этом теге, ссылки на `spec`, закреплённые на теге, называют его, а то, что пришло из заготовки, — как в заготовке v0.2.13.**
@@ -839,6 +866,15 @@
 — architecture 2.7, 3.1, 3.4, 4; RUN.md, T29, Д6; `typescript.yml`; `self-ci.yml`.
 
 — *Поправка 2026-10-22:* релиз вышел — `v0.1.10`, коммит f3addb7, неизменяемый и Latest; `gh release verify` его подтверждает. Вызывающий job в architecture 3.3 зовёт `typescript.yml` по этому SHA, и `ALLOWED_LICENSES` обёртка с него не передаёт. — architecture 3.3; RUN.md, T29.
+
+— *Поправка 2026-11-01:* по Д29 в RUN.md `spec`, задача T34. `typescript.yml` отправляет покрытие тестов в Codecov по OIDC так же, как `go.yml` (поправка 2026-11-01 к R16): job `test` отдаёт отчёт артефактом, а job `coverage` — проверка «TypeScript / coverage» — с правом `id-token: write` отправляет его. Job вызывающего даёт `contents: read` и `id-token: write`. Своё у неё вот что.
+- **Договор `ci-test`:** отчёт lcov — `coverage/lcov.info`, как его называет репортёр `lcov` и `lcovonly` istanbul (architecture 4). Модуль, которого не загружает ни один тест, в отчёте с нулями или валит рецепт. Vitest такой модуль сам не показывает: «By default Vitest will show only files that were imported during test run», — и нужен `coverage.include` с исходниками (architecture 4). Или рецепт падает на таком модуле, как `just coverage` `spec` (поправка 2026-10-23 к R30 spec).
+- **`coverage/` чистит Vitest:** с `coverage.clean`, по умолчанию, он удаляет папку отчёта перед тестами (architecture 4). Репозиторий с Go и TypeScript, как проба, пишет профиль Go после Vitest.
+- **Провайдер покрытия** — пакет lock-файла, например `@vitest/coverage-v8`, и `ci-licenses` проверяет его, как всё. Своего исключения ему не нужно: в пробе рецепт `spec` прошёл с одним прежним исключением, `lightningcss`.
+- **Артефакт** — `typescript-coverage`, а job `coverage` — тот же, что у `go.yml`, кроме имени артефакта и файла отчёта. Это держит случай набора R28, и шаги загрузки проверены там случаями `go.yml`.
+- **Проба** — тот же pull request #80, что для `go.yml` (RUN.md, T34; architecture 4). Пакет — с коммитов #65, без браузера: к загрузке он отношения не имеет. Модуль, которого не загружает ни один тест, по `coverage.include` лёг в отчёт с нулём.
+
+— architecture 3.1, 3.3, 4; RUN.md, T34; `typescript.yml`; `tests/`.
 
 ## Тег `spec` v0.2.14
 
