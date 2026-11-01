@@ -4,7 +4,7 @@ This policy holds in every repository of [altnovatrail](https://github.com/altno
 
 ## Supported versions
 
-No part of NovaTrail has released code yet, and fixes go to each repository's default branch: report against it. Once there are releases of code, this section will name the versions that get fixes.
+Fixes go to each repository's default branch, `main`. A repository that publishes releases ships a fix in its next release, and its earlier releases get none: only its latest release is supported, and the repository's **Releases** page names it. Report against the default branch, and if you found the vulnerability in a release, name that release.
 
 ## Reporting a vulnerability
 
@@ -23,4 +23,4 @@ NovaTrail is built for learners of any age, children among them. If a vulnerabil
 
 ## What happens next
 
-The maintainer answers in the advisory that the report opens, works out the fix with you there, and publishes the advisory once the fix is out, crediting you if you wish. NovaTrail has a single maintainer, so it promises no response time. There is no bug bounty.
+The maintainer gives a first response within 14 days of the report, in the advisory that the report opens: that the report has arrived and is being looked into. The 14 days are for that response, not for the fix. The maintainer then works out the fix with you there and publishes the advisory once the fix is out, crediting you if you wish. There is no bug bounty.
