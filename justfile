@@ -12,7 +12,7 @@ ci-lint:
 ci-test:
     npm ci --no-audit --no-fund
     npx vitest run --coverage
-    go test -race -count=1 -coverprofile=coverage/go.out ./...
+    go test -race -count=1 ./...
 
 ci-vuln:
     npm audit --audit-level=high
