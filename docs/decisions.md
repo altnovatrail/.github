@@ -718,6 +718,8 @@
 
 Вызывающий без `npm-package` ничего нового не видит. — architecture 3.1, 3.3, 4; RUN.md, T33, В29, Д7.
 
+— *Поправка 2026-11-01:* релиз вышел — `v0.1.11`, коммит c1b8487, неизменяемый и Latest; `gh release verify` его подтверждает. Из общих workflow от `v0.1.10` в нём отличается только `release.yml` (`git diff v0.1.10 v0.1.11`), а остальные семь — те же. Pull request Dependabot поднимут у вызывающих ссылку на каждый общий workflow, а не только на `release.yml`. Вызывающий текст в architecture 3.3 зовёт общий `release.yml` по этому SHA. — architecture 3.3; RUN.md, T33.
+
 ## Обёртка TypeScript
 
 **R19. Обёртка TypeScript — общий `typescript.yml`, по образцу `go.yml`: те же четыре рецепта вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его devcontainer, тот же список лицензий, а контейнер — с `--init` и `--ipc=host`, для тестов в браузере. Это договор: по нему `canvas` пишет рецепты своего первого кода (T08 canvas), а сам файл пишет T22, вместе с этим кодом.**
