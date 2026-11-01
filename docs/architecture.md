@@ -1,6 +1,6 @@
 # .github — архитектура
 
-> Статус: 2026-10-22, эпики E1 (T01–T05), E2 (T06–T10), E4 (T11), E3 (T12–T20), E5 (T21–T23), E6 (T24–T26, T28 и T29), E7 (T27) и E8 (T30) закончены, их задачи — в архивах `docs/plan/`. `.github` стоит на `spec` v0.2.23 (R24, T30), оба его релиза запускают рецепты `spec` скриптом `spec` (T25) в копии checkout (T28; поправки к R10 и R18), а рецепты лицензий взяла T26 (поправки к R16 и R19). С T29 у `typescript.yml` нет своей копии списка: Д6 закрыт. E7 — публикация в npm в общем релизе: шаг есть с T27 (поправка к R18), а первую настоящую публикацию сделает T24 canvas (Д7 в [RUN.md](../RUN.md)). Обёртку TypeScript проверил первый код `canvas`, T08 canvas, и её проверки стоят в его ruleset `main`. Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: 2.7 решён и для списка лицензий (R16); 2.2 решён, оба шага пройдены (R09, R13); у 2.8 вызов работает, а подъём ссылки Dependabot покажет `v0.1.1` (T14); 2.3 — подпись решена (R18) и проверена на первом релизе `module-kit`, а что проверяет потребитель — Т-27, T37 `spec`; 2.10 решён (R23); 2.11 — T36 `spec`; 2.12 решён и сделан (T28). Общие проверки — секреты, DCO, документы, CodeQL и Scorecard — и релиз `.github` есть, первый релиз — `v0.1.0` (R10). `main` — под ruleset (R11): находки CodeQL держат мерж, а pull request вливается в `main` только merge-коммитом (R12). Тексты вызывающих файлов — раздел 3.3. Обёртка Go — `go.yml` (R16), общий релиз — `release.yml` (R18), обёртка TypeScript — `typescript.yml` (R19).
+> Статус: 2026-11-01, эпики E1 (T01–T05), E2 (T06–T10), E4 (T11), E3 (T12–T20), E5 (T21–T23), E6 (T24–T26, T28 и T29), E7 (T27) и E8 (T30) закончены, их задачи — в архивах `docs/plan/`. Идёт E9: T31 перевела `.github` на `spec` v0.4.1 (R25), T32 дала SECURITY.md срок первого ответа (R26), а T35 — набор тестов общих workflow (2.13) — идёт до T33 и T34 в [RUN.md](../RUN.md). Оба релиза `.github` запускают рецепты `spec` скриптом `spec` (T25) в копии checkout (T28; поправки к R10 и R18), а рецепты лицензий взяла T26 (поправки к R16 и R19). С T29 у `typescript.yml` нет своей копии списка: Д6 закрыт. E7 — публикация в npm в общем релизе: шаг есть с T27 (поправка к R18), а первую настоящую публикацию сделает T24 canvas (Д7 в [RUN.md](../RUN.md)). Обёртку TypeScript проверил первый код `canvas`, T08 canvas, и её проверки стоят в его ruleset `main`. Пункт, который карточка оставила детализации, решён — общие и свои workflow (R03–R05, раздел 3). Что ещё открыто — раздел 2: 2.7 решён и для списка лицензий (R16); 2.2 решён, оба шага пройдены (R09, R13); у 2.8 вызов работает, и Dependabot ссылку поднимает (Д10 в RUN.md `spec`); 2.3 — подпись решена (R18) и проверена на первом релизе `module-kit`, а что проверяет потребитель — Т-27, T37 `spec`; 2.10 решён (R23); 2.11 — T36 `spec`; 2.12 решён и сделан (T28), а с поправкой к R31 spec так же устроен и релиз `spec`; 2.13 — решён автором, его делает T35. Общие проверки — секреты, DCO, документы, CodeQL и Scorecard — и релиз `.github` есть, первый релиз — `v0.1.0` (R10). `main` — под ruleset (R11): находки CodeQL держат мерж, а pull request вливается в `main` только merge-коммитом (R12). Тексты вызывающих файлов — раздел 3.3. Обёртка Go — `go.yml` (R16), общий релиз — `release.yml` (R18), обёртка TypeScript — `typescript.yml` (R19).
 >
 > Что делает компонент, чего не делает и что о нём ещё предстоит решить. Это подробности его карточки — architecture 3.11 spec. Карточка остаётся сводкой: если подробности меняют то, что в ней сказано, она правится в `spec` тем же путём, что и вопросы в его реестры (RULES.md, Across repositories).
 >
@@ -13,7 +13,7 @@
 - держит файлы сообщества по умолчанию — CONTRIBUTING, SECURITY и кодекс поведения. GitHub показывает их в каждом репозитории организации, у которого нет своих, если `.github` публичный; публичны и все репозитории организации (architecture 3.11 spec, architecture 8 spec; R18 spec; R22 spec);
 - получает общие workflow CI, с actions, закреплёнными по SHA (architecture 3.11 spec; R03, раздел 3.1):
   - общие проверки — поиск секретов, DCO, CodeQL, Scorecard и проверку документов. Их берут все репозитории, и `spec` тоже, ещё до своего кода (repositories 1, 2.1 spec; R30 spec); проверка документов у `spec` своя, `just docs-check`. Scorecard общий: сервер Scorecard принял результат общего workflow (2.2; architecture 3.11 spec). Подключили их T17 `spec` — в `spec` и `module-kit`, — T16 `spec` — в `tutor` — и T21 `spec` — в девяти остальных, после перехода каждого на тег `spec`. Так их зовут `spec` и все одиннадцать репозиториев компонентов (поправка к R30 spec);
-  - для кода — Go и TypeScript, обёртки над рецептами репозитория с проверкой лицензий внутри, и релиз с подписью. Каждый приходит с кодом, на котором проверяется: обёртка Go и релиз — с первым кодом `module-kit`, с которого начинается код платформы, а обёртка TypeScript — с первым кодом на TypeScript, у `canvas` (R03; architecture 3.11 spec; repositories 6 spec). Список лицензий и проверку lock-файла npm обёртки берут рецептами `spec` (R39 spec; T26), а релиз зовёт рецепты релиза `spec` его скриптом `tools/toolchain/toolchain.sh` (поправка к R31 spec; T25);
+  - для кода — Go и TypeScript, обёртки над рецептами репозитория с проверкой лицензий внутри, и релиз с подписью. Каждый приходит с кодом, на котором проверяется: обёртка Go и релиз — с первым кодом `module-kit`, с которого начинается код платформы, а обёртка TypeScript — с первым кодом на TypeScript, у `canvas` (R03; architecture 3.11 spec; repositories 6 spec). Список лицензий и проверку lock-файла npm обёртки берут рецептами `spec` (R39 spec; T26), а релиз зовёт рецепты релиза `spec` его скриптом `tools/toolchain/toolchain.sh` (поправка к R31 spec; T25). `spec` общий релиз позвать не может — тот берёт рецепты из подмодуля `spec` вызывающего, — и его `release.yml` свой: подписывает файлы тем же cosign без ключей и публикует пакет типов `@altnovatrail/spec` в npm шагами общего релиза, перенесёнными в него, а обёртку Go `spec` берёт с T50 `spec` (architecture 3.11 spec; R64 spec; вторая поправка 2026-10-29 к R37 spec);
 - общий workflow релиза подписывает и пакеты модулей, а проверяет подпись `module-kit` (architecture 3.7 spec; R17 spec). Пакет интерфейса из подписанного релиза тот же workflow публикует в npm, в области `@altnovatrail`, — тем же файлом, через trusted publishing, когда вызывающий назвал пакет входом `npm-package` (R37 spec; поправка к R18, T27).
 
 **Не делает:**
@@ -26,7 +26,7 @@
 - данных учеников и секретов нет, как ни в одном репозитории (RULES.md, Hard rules);
 - при сборке ни от чего не зависит, кроме `spec`, как все (repositories 2.1 spec);
 - общие проверки CI будут брать все репозитории, и `spec` тоже, ещё до кода (repositories 1, 2.1, 3 spec; R30 spec). В репозиторий из заготовки проверки языка, justfile и подписанные релизы приходят вместе с его кодом (repositories 1 spec). Первыми общие workflow подключили `spec` и `module-kit` (T17 `spec`), за ними `tutor` (T16 `spec`), а затем девять остальных (T21 `spec`);
-- его сервисы — GitHub и Sigstore: CI, релизы, подписи без ключей, — и реестр npm, куда общий релиз публикует пакеты интерфейса (architecture 3.12 spec; R37 spec);
+- его сервисы — GitHub и Sigstore: CI, релизы, подписи без ключей, — и реестр npm, куда общий релиз публикует пакеты интерфейса (architecture 3.12 spec; R37 spec). Значки README берут картинки у shields.io, API Scorecard и SonarCloud (R48 spec; R25), а Codecov придёт с загрузкой покрытия в обёртках (Д29 в RUN.md `spec`; T34);
 - этап 0, вместе со `spec` (repositories 2.1 spec).
 
 ## 2. Решить при детализации
@@ -56,6 +56,7 @@
 - **Как решится:** с первым релизом `module-kit` (E2 `spec`), вместе с общим workflow релиза: что именно проверяют `module-kit` и `infra` — идентичность общего workflow, репозиторий и workflow вызывающего или то и другое. Вызывающий закрепляет общий workflow по SHA (R04), так что SAN кончается на `@<sha>`, а не на теге, и проверка должна убедиться, что этот SHA — релиз `.github`. Варианты и рекомендация — Т-27: `spec` записал вопрос и рекомендацию `.github` — проверять то и другое, SAN по SHA одного из релизов `.github`.
 - **Решено:** R18, задача T16 — подпись и её проверка самим релизом. Каждый файл подписан cosign без ключей, и до публикации bundle сверяется с идентичностью общего `release.yml`, `https://github.com/<job.workflow_ref>`, и с репозиторием вызывающего. Проба #33 показала, что SAN называет общий `release.yml`, а Build Config URI — workflow вызывающего (раздел 4). Первый релиз `module-kit`, `v0.1.0`, подписан так же, и сверка его файлов прошла (раздел 4). Что проверяет потребитель, остаётся Т-27.
 - **Задача:** эпик E3, с первым релизом `module-kit`; сам вопрос — Т-27, его решают вместе с `module-kit` и `infra`, которые проверяют подпись. В `spec` его решает T37 `spec` — после T16 этого репозитория и первого релиза `module-kit`. Она же решит, откуда проверяющий берёт список релизов `.github` (RUN.md `spec`, T37).
+- **Дополнено в Т-27** (2026-10-22, по В23; R25): SHA релиза `.github` в SAN закрепляет не весь код, который шёл с правом подписи. Скрипт `spec` общий релиз запускает на раннере, из подмодуля вызывающего (поправка к R18), поэтому условие проверки — ещё и неизменяемые релизы `spec` с ruleset его тегов `v*`. Что из этого проверяет потребитель, решает та же T37 `spec`.
 
 ### 2.4. Какие коммиты `main` получают релиз
 
@@ -71,6 +72,7 @@
 
 - **Суть:** Dependabot ждёт три дня после выхода версии, прежде чем её предложить, — так записано в `dependabot.yml` `spec` для каждой экосистемы (R30 spec). Ссылки на общие workflow он поднимает в той же экосистеме `github-actions`; что пауза действует и на них, документация отдельно не говорит.
 - **Решено:** R10, задача T09: три дня, как для всего. Устройство — разделы 3.3 и 3.5. Ссылки на `.github` пауза тоже держит. Для dependabot-core ссылка на reusable workflow — зависимость экосистемы `github-actions`, и паузу для неё проверяет тот же код, что и для action (поправка к R10, задача T11; раздел 4). Отсчёт идёт от даты тега, с точностью до дня, а тег релиза GitHub — лёгкий, и его дата — дата коммита. Поэтому после релиза, который вышел через минуты после мержа, пауза длится от двух до трёх суток. Релиз, который вышел позже своего коммита, получает паузу короче — это 2.10.
+- **На деле** (Д10 в RUN.md `spec`; R25): pull request Dependabot `spec` #40–#42 от 2026-10-23 подняли ссылки на `.github` с v0.1.0 до v0.1.3, а не до v0.1.10: v0.1.4–v0.1.10 вышли позже, с 2026-10-21T15:30Z, и пауза их ещё держала. Коммит v0.1.3 датирован 2026-10-20T23:49:54-05:00, а сам релиз вышел 2026-10-21T04:50Z (раздел 4). #49–#51 от 2026-10-26 поднимают те же ссылки до v0.1.10 (API GitHub, 2026-11-01).
 
 ### 2.7. Как общий workflow читает файлы `.github` своей версии
 
@@ -91,6 +93,7 @@
 - **Рекомендация:** оставить в `.github`: пример работает, и Dependabot поднимает его ссылку (issue #12489 dependabot-core, раздел 4), а карточка 3.11 spec кладёт общие workflow сюда. Подтвердит первый вызов по полному пути — из `spec` в T17 `spec`. Если он не пройдёт — отдельный репозиторий, «в реестр spec».
 - **Вызов работает** (T17 и T16 `spec`; R13). `spec`, `module-kit` и `tutor` зовут общие workflow по полному пути, `altnovatrail/.github/.github/workflows/<файл>@<sha>`, и их проверки идут.
 - **Задача:** вызов — T17 `spec`, сделан. Поднимет ли Dependabot такую ссылку, покажет первый релиз после `v0.1.0` — T14 (Д10 в RUN.md `spec`).
+- **Dependabot ссылку поднимает** (Д10 в RUN.md `spec`; R25). У `spec` его pull request #40–#42 подняли ссылки на `scorecard.yml`, `secrets.yml` и `dco.yml` — каждую своим pull request, — и слиты 2026-10-23. «DCO / sign-off» на них прошла: подпись `dependabot[bot]` приняло исключение из 3.1. Пауза их держала — 2.6.
 
 ### 2.9. Кто ставит ruleset `main` самого `.github`
 
@@ -134,6 +137,23 @@
 - **Решено автором (2026-10-22):** копия checkout, по рекомендации, — ответ на В24.
 - **Решено:** поправки к R10 и R18, задача T28. Рецепты `spec` в обоих релизах идут в копии checkout, а `git` раннера читает только сам checkout, которого не монтирует ни один контейнер. T28 нашла и четвёртый такой путь — post-шаг `actions/checkout`: в конце job он запускает `git config` и `git submodule foreach` в checkout (раздел 4). Копия закрывает и его. Устройство — разделы 3.1 и 3.4.
 - **Задача:** T28, сделана.
+- **Релиз `spec`** устроен так же с поправки 2026-10-22 к R31 spec — ответа на В25 (R25): шаг номера снимает копию checkout до первого контейнера, а `release-refusal` после отказа идёт в новой копии, снятой после `git fetch`. Сумму скрипта `spec` не сверяет: из копии после её контейнера скрипт больше не запускается.
+
+### 2.13. Тесты общих workflow
+
+- **Суть:** с `spec` v0.2.35 RULES.md, How we work, требует: «Code comes with its tests: a pull request that adds or changes what code does adds or changes the tests of its automated suite too» (поправка 2026-10-26 к R48 spec). Код `.github` — общие workflow, YAML и шаги на bash, а автоматического набора тестов у них нет.
+- **Что известно:**
+  - каждый pull request `.github` прогоняет по локальному пути `secrets.yml`, `dco.yml`, `documents.yml` и `codeql.yml` — на самом `.github` и только в случае, где проверка проходит, — и actionlint с shellcheck по всем workflow (3.4). `scorecard.yml` идёт на `main`;
+  - `go.yml`, `typescript.yml` и `release.yml` в CI `.github` не идут вовсе. Каждую их правку проверяли пробный pull request без мержа и шаги, вынутые из файла дословно и прогнанные локально с подменами `docker`, `gh`, cosign и npm (R16, R18, R19 и поправки к ним). Следующий pull request ни того, ни другого не повторяет;
+  - покрытия шагов на bash Codecov не мерит, так что `codecov/patch` у `.github` не будет, и правило держится только словами;
+  - первые правки общих workflow после правила — T33 и T34 в [RUN.md](../RUN.md).
+- **Варианты:**
+  1. **набор тестов шагов**: шаги общих workflow, вынутые из файла дословно, идут в своём job `self-ci.yml` с подменами — то, что пробы делали руками, на каждом pull request, и отрицательные случаи тоже. Правка шага приходит со своими случаями. Цена — свой код тестов и способ вынуть шаг из YAML: у `.github` нет ни пакетов, ни разборщика YAML. Его можно скачивать по версии и сумме, как actionlint (R08);
+  2. **постоянные пробы**: `self-` workflow на каждом pull request зовут `go.yml`, `typescript.yml` и `release.yml` с `publish: false` по локальному пути, на пробном коде в самом `.github`. Обёртки берут рецепты и стадию `toolchain` из корня вызывающего, так что `.github` стал бы репозиторием на Go и TypeScript, с их проверками CodeQL, Dependabot и SonarCloud. Отрицательные случаи так не прогнать;
+  3. **пробы как прежде**: пробный pull request и локальный прогон шагов, записанные в решении. Это тесты, но не набор: следующая правка их не повторит. Читать так правило RULES.md может только `spec` — «в реестр spec».
+- **Рекомендация:** 1, своей задачей до T33 и T34: обе правки тогда придут со своими тестами, как велит правило, а отрицательные случаи проб станут частью набора.
+- **Решено автором (2026-11-01):** набор тестов шагов, по рекомендации, — ответ на В27.
+- **Задача:** T35 в [RUN.md](../RUN.md), до T33 и T34: чем вынимать шаг и на чём писать тесты, решает её план.
 
 ## 3. Устройство
 
@@ -173,7 +193,7 @@ Dependabot подписывает коммит не тем адресом, ка�
 
 | Репозиторий | Свои workflow и проверки |
 |---|---|
-| `spec` | `ci.yml` — «Documents and tools»: `docs-check`, тесты `tools/`, проверка лицензий `tools/`, номер релиза (R30 spec); `release.yml` — свой релиз (R31 spec); позже валидатор схем (E2 `spec`) |
+| `spec` | `ci.yml` — «Documents and tools»: `docs-check`, `format-check`, `types-check`, `go-check`, проверка лицензий `tools/`, номер и файлы релиза и тесты `tools/` с покрытием — и «Coverage», загрузка покрытия в Codecov по OIDC (R30, R48 spec). `release.yml` — свой релиз: файлы формата и пакет типов, подпись cosign и публикация `@altnovatrail/spec` в npm шагами общего релиза (R31, R64, R73 spec; вторая поправка 2026-10-29 к R37 spec). Общий `go.yml` — с T50 `spec` |
 | `.github` | `self-ci.yml`, `self-release.yml`, `self-codeql.yml` и `self-scorecard.yml` — раздел 3.4 |
 | `modules` | проверка пакетов CLI `module-kit` и стенд `sim` по тегам; с этапа 2 — eval с ключом платформы (R24 spec), по правилу R05 (repositories 4 spec) |
 | `learner-model`, `engine` | гейт `sim` по тегу через `go.work` (repositories 1, 4 spec) |
@@ -362,7 +382,7 @@ sonar.exclusions=spec/**
         update-types: ["version-update:semver-major"]
 ```
 
-Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. С `v0.1.6`, коммит `630924eeb673272d634120b054d1ae93ca33a70c`, он запускает рецепты `spec` скриптом `spec/tools/toolchain/toolchain.sh` из подмодуля вызывающего. Подмодуль должен быть `altnovatrail/spec` на теге v0.2.17 или новее: иначе прогон Release на `main` останавливается и называет причину (поправка к R18). Поэтому вызывающий переходит на v0.2.17 раньше, чем поднимает ссылку на `.github`. С `v0.1.7`, коммит `0acbf75e5c8362b649924bf1abdae973ce71085e`, рецепты `spec` идут в копии checkout, а `git` раннера читает только сам checkout (поправка к R18); от вызывающего это ничего нового не требует. С `v0.1.9`, коммит `41d5144e304cfad05c681de6934405c08a7435db`, у общего релиза есть вход `npm-package` — о нём ниже, — а вызывающему без него ничего нового не нужно. Текст ниже закрепляет `v0.1.9`. Список `paths` — из чего собран релиз: обычно всё, кроме документов, CI и подмодуля `spec`, так что релиз дают и код библиотеки, и версия Go в Dockerfile. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
+Репозиторий с релизами добавляет `.github/workflows/release.yml`, который зовёт общий `release.yml` (R18). `release.yml` есть в релизах `.github` с `v0.1.4`. С `v0.1.6`, коммит `630924eeb673272d634120b054d1ae93ca33a70c`, он запускает рецепты `spec` скриптом `spec/tools/toolchain/toolchain.sh` из подмодуля вызывающего. Подмодуль должен быть `altnovatrail/spec` на теге v0.2.17 или новее: иначе прогон Release на `main` останавливается и называет причину (поправка к R18). Поэтому вызывающий переходит на v0.2.17 раньше, чем поднимает ссылку на `.github`. С `v0.1.7`, коммит `0acbf75e5c8362b649924bf1abdae973ce71085e`, рецепты `spec` идут в копии checkout, а `git` раннера читает только сам checkout (поправка к R18); от вызывающего это ничего нового не требует. С `v0.1.9`, коммит `41d5144e304cfad05c681de6934405c08a7435db`, у общего релиза есть вход `npm-package` — о нём ниже, — а вызывающему без него ничего нового не нужно. Текст ниже закрепляет `v0.1.9`. Список `paths` — перечень того, из чего собран выпуск, по виду репозитория, а не всё, кроме исключений (поправка 2026-10-22 к R31 spec; поправка к R18). Ниже — перечень вида go: код Go без тестов, `go.mod`, `go.sum`, `justfile`, `LICENSE`, весь `.devcontainer/Dockerfile` — в нём закреплён Go — и сам `release.yml`, чтобы смена линии давала релиз. `*.go` в pathspec git без магии `glob` берёт файлы на любой глубине, а `**/*.go` пропустил бы файл Go в корне (раздел 4). Файлы, которые код встраивает через `//go:embed`, вызывающий добавляет в перечень сам, а код в `testdata/`, который в сборку не входит, сам исключает: в перечне то, что получит потребитель. Перечень вида typescript `.github` пишет с первым релизом на TypeScript, у `canvas`, по тому же правилу. Job вызывающего своей `concurrency` не задаёт: общий job стоит в очереди `release` сам:
 
 ```yaml
 # NovaTrail's shared release (R18 .github), pinned to a release of .github by SHA with its version
@@ -392,22 +412,25 @@ jobs:
     uses: altnovatrail/.github/.github/workflows/release.yml@41d5144e304cfad05c681de6934405c08a7435db # v0.1.9
     with:
       paths: |
-        .
-        :(exclude)docs/**
-        :(exclude)*.md
-        :(exclude).github/**
-        :(exclude)spec
+        *.go
+        :(exclude)*_test.go
+        go.mod
+        go.sum
+        justfile
+        LICENSE
+        .devcontainer/Dockerfile
+        .github/workflows/release.yml
 ```
 
 До первого релиза у репозитория включают неизменяемые релизы (`PUT repos/altnovatrail/<репозиторий>/immutable-releases`) и ставят ruleset тегов `v*`: `update`, `deletion` и `non_fast_forward`, без обхода, как ruleset `.github` 25452244 (R10). Без них Т-27 не может положиться на тег. Обе настройки — правило 4. У `module-kit` они стоят с T16, его ruleset тегов — 25559103.
 
-Одна правка `RELEASE_LINE` релиза не даёт: файл вызывающего лежит в `.github/**`, вне `paths`, и новая линия выйдет с первой правкой в `paths`. Заменить ли исключения перечнем того, из чего собран релиз, — В6 module-kit «в реестр spec».
+Правка `RELEASE_LINE` даёт релиз сама: `release.yml` вызывающего — в перечне. Релиз дают и правки, от которых выпуск может не меняться: инструменты стадии `devcontainer` в Dockerfile, подъём ссылки на общий `release.yml` и новый базовый образ — в нём собирается стадия `toolchain`. Подъём ссылки и образ приходят pull request Dependabot, раз в неделю, а образ — ещё и без паузы (3.5). Первые две правки назвала поправка к R31 spec, а образ она не называет.
 
 Репозиторий с пакетом интерфейса добавляет в `with:` строку `npm-package: "@altnovatrail/<имя>"` — с `v0.1.9` (R37 spec; поправка к R18). Тогда тот же архив, что подписан в релизе, `<область>-<имя>-<X.Y.Z>.tgz`, как его называет `npm pack`, уходит в npm через trusted publishing. Шаги автора — по правилу 4, в задаче репозитория, которая выпускает пакет:
 1. первый релиз выходит без `npm-package`: trusted publisher настраивается только у пакета, который уже есть в реестре;
 2. архив из этого релиза автор проверяет — `gh release verify-asset` и подпись — и публикует руками из пустой папки, с 2FA: `npm publish ./<архив>.tgz --access public`. Provenance у этой версии нет;
 3. trusted publisher: `npm trust github @altnovatrail/<имя> --file <файл workflow релиза> --repository altnovatrail/<репозиторий> --allow-publish` или то же на сайте npm. Окружения нет, а прямая публикация разрешена: новая настройка по умолчанию разрешает только staged publishing;
-4. за 2 дня после настройки должна пройти первая публикация по ней — pull request, который добавляет `npm-package` и правит пути `paths`: одна правка `.github/**` релиза не даёт.
+4. за 2 дня после настройки должна пройти первая публикация по ней — pull request, который добавляет `npm-package`. Правка `release.yml` сама даёт релиз, если файл — в перечне `paths`, как выше.
 
 Если npm откажет, когда релиз GitHub уже вышел, прогон перезапускают: повтор берёт архив из релиза, сверяет аттестацию и подпись и публикует его. Кнопка делает то же, если выпущенный коммит — всё ещё вершина `main`. Иначе автор публикует руками тот же, проверенный, файл: следующий релиз старую версию не публикует. В `package.json` пакета — `repository` объектом с url репозитория, без `private`, `publishConfig` и своего `tag`: иначе прогон останавливается ещё до релиза и называет причину.
 
@@ -422,7 +445,7 @@ jobs:
 Первый вызов сделала T17 `spec` (R13; RUN.md `spec`, T17):
 - `spec` и `module-kit` зовут общие workflow по полному пути (2.8), и сервер Scorecard принял результат (2.2). Политика actions вызову не мешает: у `.github`, `spec`, module-kit и `tutor` — `allowed_actions: all` и `sha_pinning_required: true` (раздел 4), и ссылки по SHA её держат;
 - Dangerous-Workflow у `release.yml` `spec` после поправки к R31 spec — 10;
-- поднимает ли Dependabot ссылку на `.github`, держит ли её пауза и как DCO примет подпись его коммита, покажут его первые pull request после `v0.1.1` (T14; Д10 в RUN.md `spec`).
+- поднимает ли Dependabot ссылку на `.github`, держит ли её пауза и как DCO примет подпись его коммита, покажут его первые pull request после `v0.1.1` (T14; Д10 в RUN.md `spec`). Показали — у `spec`, #40–#42 2026-10-23: ссылку он поднимает, каждый файл своим pull request, пауза держит, а подпись его коммита DCO принимает (2.6, 2.8; R25).
 
 Вызывающие файлы, общие для всех, пишет сессия `spec` — через `.repos/<имя>`, при заведении репозитория и правками у всех сразу (R30 spec). То, что добавляет код репозитория, — job языка, вход CodeQL, экосистему Dependabot, `release.yml`, — пишет сессия самого репозитория, по текстам этого раздела (поправка 2026-10-21 к R30 spec). Обязательные проверки в ruleset, неизменяемые релизы и ruleset тегов по-прежнему ставит автор или исполнитель с его подтверждения. До поправки исключением была T10 `module-kit`: по поручению автора её сделала сессия `.github` (поправка к R03).
 
@@ -704,6 +727,18 @@ Ruleset `main` пускает в `main` только pull request с зелён�
   - **окружение пробы:** у пробного прогона npm нет ни переменных OIDC, ни `npm_config_*`, ни `NODE_OPTIONS`. npm идёт в пустой папке, а файлы проверки лежат отдельно. Packument без `versions` шаг не роняет;
   - **повтор:** архив и bundle из релиза, отказ `verify-asset` и cosign;
   - **публикация:** версия уже есть; вышла; выход 0 без версии — «probably staged»; отказ без версии — с настройкой, которая нужна, после трёх попыток, а выход 0 без версии — после тридцати; отказ, но версия есть — предупреждение; другая `integrity`; нет provenance; тег `previous`; архив не с `registry.npmjs.org`.
+
+**Переход на `spec` v0.4.1** (R25, T31; прочитано 2026-11-01):
+- **тег** — v0.4.1, коммит 23000f3, вышел 2026-10-29: `gh release view` — неизменяемый, а `gh release verify v0.4.1 -R altnovatrail/spec` — «Release v0.4.1 verified!», с файлами `format-0.1.tar.gz` и `altnovatrail-spec-0.4.1.tgz` и их bundle. Между v0.2.23 и ним — 76 коммитов (`git log --oneline v0.2.23..v0.4.1`). `tools/toolchain/` и `tools/licenses/` не изменились (`git diff --quiet`);
+- **Go в стадии `toolchain`** — `.devcontainer/Dockerfile` из `editDevcontainer` v0.4.1 для `.github`: Go 1.27.3. Суммы архивов совпадают со списком go.dev, `https://go.dev/dl/?mode=json&include=all`: `go1.27.3.linux-amd64.tar.gz` — `65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40`, `go1.27.3.linux-arm64.tar.gz` — `a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49`. `devcontainer.json` и `host-network.sh` рецепт отдаёт те же, что здесь. docker в devcontainer нет, и образ здесь не собирался: стадию `toolchain` соберёт CI pull request;
+- **значки README** — каждый адрес ответил 200 и значением: CI, Release и CodeQL — «passing», номер релиза — «v0.1.10», Scorecard — 6.8, лицензия — «Apache-2.0»; у SonarCloud code smells — 0, reliability, security и maintainability — A, vulnerabilities — 0;
+- **pathspec `paths`** — git 2.56.0, проба во временном репозитории: `git diff --name-only` с `'*.go' ':(exclude)*_test.go'` и остальным перечнем вида go нашёл `main.go` в корне и `cmd/x/a.go`, без `*_test.go`, `docs/` и `ci.yml`. С `'**/*.go'` — только `cmd/x/a.go`: без магии `glob` `*` в pathspec совпадает и с `/`, а `**/` требует косой черты;
+- **публикация `spec` в npm** — `https://registry.npmjs.org/@altnovatrail%2fspec`: `latest` — 0.4.1, вышла 2026-10-29T20:31:01Z, с `dist.attestations`, provenance `https://slsa.dev/provenance/v1`; у 0.4.0, которую автор `spec` опубликовал руками, provenance нет. Шаги npm `release.yml` `spec` — шаги общего `release.yml` v0.1.10 с отличиями, которые называет T51 `spec`;
+- **неизменяемый subject OIDC** — API GitHub, `repos/altnovatrail/<репозиторий>/actions/oidc/customization/sub`: у `spec` и у `canvas` — `"use_immutable_subject":true`, префиксы `repo:altnovatrail@344507087/spec@1424771727` и `repo:altnovatrail@344507087/canvas@1425820257`. npm/cli#9969 — «OIDC trusted publishing fails with "package not found" for GitHub repos that use immutable OIDC subject claims» — открыт, обновлён 2026-10-28; npm/cli#9889 открыт тоже (API GitHub);
+- **trusted publishing и reusable workflow** — страница [npm Docs, Trusted publishing](https://docs.npmjs.com/trusted-publishers) говорит то же, что npm/documentation на 7e98ab4: «validation checks the calling workflow's name instead of the workflow that actually contains the publish command»;
+- **Dependabot у `spec`** — pull request #40–#42, «Bump altnovatrail/.github/.github/workflows/<файл>.yml from 0.1.0 to 0.1.3», открыты и слиты 2026-10-23, а #49–#51, «from 0.1.3 to 0.1.10», открыты 2026-10-26. У коммита #40 автор — `dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>`, коммиттер — `GitHub <noreply@github.com>`, подпись — `Signed-off-by: dependabot[bot] <support@github.com>`, а «DCO / sign-off» — success. Релизы `.github`: v0.1.3 — 2026-10-21T04:50:54Z, коммит его тега — 2026-10-20T23:49:54-05:00; v0.1.4 — 2026-10-21T15:30:24Z; v0.1.10 — 2026-10-22T18:09:38Z (`gh release list`, `git log -1 --format=%cI <тег>`);
+- **вызывающие `documents.yml`** (Д5 в RUN.md) — `ci.yml` и подмодуль `spec` на `main` каждого, API GitHub: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` и `skill-map` — v0.2.9; `module-kit` — v0.2.13; `canvas` — v0.2.42; `tutor` — v0.3.3. `documents.yml` они зовут по SHA v0.1.0, а `tutor` — v0.1.5 и `canvas` — v0.1.10;
+- **`canvas` и npm** (Д7 в RUN.md) — у `canvas` нет ни релизов, ни `release.yml` (API GitHub), а `@altnovatrail/canvas` в реестре — 404 «Not found». Его T24 — в эпике E5, который стоит в таблице 2 RUN.md `canvas`, среди эпиков на потом, а его текущий эпик E7 релиза не несёт: «первый релиз — T24 в E5 или своя задача» (RUN.md `canvas`, `main`).
 
 **Go в CodeQL** (поправка к R09, T19; прочитано 2026-10-21):
 - **явный режим сборки** — [`src/codeql.ts`](https://github.com/github/codeql-action/blob/6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee/src/codeql.ts) codeql-action на коммите 6f2ac81, v4.39.0: `extractUsingBuildMode` запускает `codeql database trace-command --use-build-mode`, а при `autobuild` и неудаче отвечает «We were unable to automatically build your code». Отдельного шага `autobuild` не нужно: [`src/analyze-action.ts`](https://github.com/github/codeql-action/blob/6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee/src/analyze-action.ts) того же коммита старый автосбор Go пропускает — «Skipping legacy Go autobuild since a build mode has been specified»;
