@@ -104,6 +104,10 @@ jobs:
         run: wget -q https://example.invalid/ || true
       - name: curl -f
         run: curl -fsS https://example.invalid/ || true
+      - name: download
+        run: |
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors -o "$RUNNER_TEMP/got" https://example.invalid/
+          cat "$RUNNER_TEMP/got"
       - name: error
         run: |
           echo "::error::boom"
@@ -321,6 +325,23 @@ test_harness_fails_a_test_that_would_pass_for_no_reason() {
     failed ':' "the test asserts nothing"
     failed 'select_step j name=plain; run_step; assert_line "top job"' "the test never asserts the exit status of what it ran"
     failed 'if x=$(assert_eq a b); then :; fi; assert_eq "$x" ""' "the value is a, not b"
+}
+
+test_harness_stands_in_for_curl_with_fail_as_curl_would_answer() {
+    workflow
+    use_workflow "$state/fixtures/w.yml"
+    select_step j name=download
+    stub curl
+    printf 'not found\n' | curl_answer 404
+    run_step
+    assert_status 22
+    assert_line "curl: (22) The requested URL returned error: 404"
+    assert_eq "$(if [ -e "$step_temp/got" ]; then echo written; else echo none; fi)" none "what curl wrote to -o"
+    printf 'a body\n' | curl_answer 200
+    run_step
+    assert_status 0
+    assert_line "a body"
+    assert_call curl 1 -fsSL --proto =https --proto-redir =https --retry 3 --retry-all-errors -o "$step_temp/got" https://example.invalid/
 }
 
 test_harness_keeps_the_output_of_a_failed_test_from_the_runner() {
