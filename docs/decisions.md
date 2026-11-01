@@ -1039,6 +1039,7 @@
 
 — *Проба* (RUN.md, T35; architecture 4):
 - локально в devcontainer — 53 теста, все `ok`, за 9 секунд; shellcheck 0.11.0 по `tests/` и actionlint 1.7.12 по всем workflow — чисто;
+- на раннере — pull request #77: «53 tests, 0 failed», шаг набора — 11 секунд. Проба #76, без мержа, с `--ipc=host` у всех job `typescript.yml`: «53 tests, 1 failed», и назван её случай;
 - 21 порча шагов, каждая в своей копии. Все 21 сделали набор красным, и каждая назвала свой случай:
   - `--ipc=host` у всех job или без `--init` в `typescript.yml`;
   - `go.yml` без `--env ALLOWED_LICENSES`, с лишним `--env CI`, с другим тегом образа, с пятой проверкой в матрице;

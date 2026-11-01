@@ -777,6 +777,7 @@ Ruleset `main` пускает в `main` только pull request с зелён�
   - GNU tar 1.35 на файле не gzip — выход 2.
 - **переменные по умолчанию** — github/docs на 33b1f4a, `data/reusables/actions/environment-variables-are-fixed.md`: «You can't overwrite the value of the default environment variables named `GITHUB_*` and `RUNNER_*`. Currently you can overwrite the value of the `CI` variable. However, it's not guaranteed that this will always be possible».
 - **локальный прогон** — 53 теста, все `ok`, за 9 секунд; shellcheck 0.11.0 по `tests/` и actionlint 1.7.12 по всем workflow — чисто. Из 21 порчи шагов каждая дала красный прогон (R28).
+- **на раннере** — прогон 41337182817, pull request #77: «53 tests, 0 failed». Шаг «Test the workflows» шёл 11 секунд, job «Workflows» — 42, а `id -u` и `id -g` раннера — 1001. Прогон 41337180022, проба #76 без мержа: с `--ipc=host` у всех job `typescript.yml` — «53 tests, 1 failed». Упал `test_typescript_runs_each_recipe_with_ci_and_the_test_job_alone_with_the_hosts_ipc`, а следующие шаги job пропущены.
 
 **Шаблоны issue и pull request** (R29, T37; прочитано 2026-11-01):
 - **где GitHub их берёт** — [GitHub Docs, Creating a default community health file](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file):
