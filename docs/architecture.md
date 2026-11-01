@@ -813,7 +813,8 @@ Ruleset `main` пускает в `main` только pull request с зелён�
   - `ua-parser-js` 0.7.28 — «… is in the npm registry with the integrity sha512-6Gurc1n…», с той же просьбой о `RELEASE_LINE`;
   - `asdasd` 1.0.0 с `publish: false` — снятый номер, а вслед — то, что пакет снят целиком;
   - `asdasd` 2.0.0 — «… was unpublished from the npm registry as a whole …» с `publish: true`, а с `false` — notice и пробный прогон, `action=publish`;
-  - `@altnovatrail/spec` 0.4.2 — `--tag previous`. 0.5.5 в 19:05 UTC — `publish` без тега, а в 19:12 — другая `integrity`: в 19:06:53 `spec` выпустил 0.5.5 сам. 0.9.0 тогда же — `publish` без тега.
+  - `@altnovatrail/spec` 0.4.2 — `--tag previous`. 0.5.5 в 19:05 UTC — `publish` без тега, а в 19:12 — другая `integrity`: в 19:06:53 `spec` выпустил 0.5.5 сам. 0.9.0 тогда же — `publish` без тега;
+- **на раннере** — прогон 41340770056, pull request #78: «63 tests, 0 failed». Шаг «Test the workflows» шёл 10 секунд, job «Workflows» — 43. У SonarCloud на #78 — 0 находок.
 
 **Шаблоны issue и pull request** (R29, T37; прочитано 2026-11-01):
 - **где GitHub их берёт** — [GitHub Docs, Creating a default community health file](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file):
