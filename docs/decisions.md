@@ -578,6 +578,8 @@
 
 — architecture 1, 3.1, 3.3, 3.5, 3.6, 4; RUN.md, T34; `go.yml`; `tests/`.
 
+— *Поправка 2026-11-01:* релиз вышел — `v0.1.12`, коммит 4225639, неизменяемый и Latest; `gh release verify` его подтверждает. Вызывающий job в architecture 3.3 зовёт `go.yml` по этому SHA и даёт ему `id-token: write`. — architecture 3.3; RUN.md, T34.
+
 ## Тег `spec` после обёртки Go
 
 **R17. `.github` стоит на `spec` v0.2.13: подмодуль `spec/` — на этом теге, ссылки на `spec`, закреплённые на теге, называют его, а то, что пришло из заготовки, — как в заготовке v0.2.13.**
@@ -876,6 +878,8 @@
 - **Проба** — тот же pull request #80, что для `go.yml` (RUN.md, T34; architecture 4). Пакет — с коммитов #65, без браузера: к загрузке он отношения не имеет. Модуль, которого не загружает ни один тест, по `coverage.include` лёг в отчёт с нулём.
 
 — architecture 3.1, 3.3, 4; RUN.md, T34; `typescript.yml`; `tests/`.
+
+— *Поправка 2026-11-01:* релиз вышел — `v0.1.12`, коммит 4225639, неизменяемый и Latest; `gh release verify` его подтверждает. Вызывающий job в architecture 3.3 зовёт `typescript.yml` по этому SHA и даёт ему `id-token: write`. — architecture 3.3; RUN.md, T34.
 
 ## Тег `spec` v0.2.14
 
