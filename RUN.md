@@ -258,6 +258,10 @@
 
     Не приняты: двойной dry run у вызывающего с двумя входами и общий скрипт с шагом повтора — почему, говорит «Отвергнуто» поправки к R18; помощник `assert_absent` — набор уже проверяет отсутствие так же в `go.test.sh`.
 - **Открыто:**
-  - после мержа `self-release.yml` выпускает релиз `.github`: его версия с SHA — в architecture 3.3;
   - настоящий прогон с прошлым файлом — второй релиз `modules` (строка 3.7 COORDINATION.md). Его рецепт `release-files` с двумя параметрами пишет `modules` по architecture 3.3;
   - В34 — вопрос автору.
+- **Итог после мержа (2026-11-02):**
+  - T40 и T41 слиты одним pull request [88](https://github.com/altnovatrail/.github/pull/88), merge-коммитом 96dadfe. До мержа были зелёными все восемь проверок, и на раннере набор дал «98 tests, 0 failed»;
+  - на `main` прошли CI, CodeQL, Scorecard и Release. `self-release.yml` выпустил `v0.1.14` на 96dadfe: неизменяемый и Latest, `gh release verify v0.1.14` — «Release v0.1.14 verified!». От `v0.1.13` он отличается только `release.yml`;
+  - architecture 3.3 закрепляет `v0.1.14`, и actionlint 1.7.12 принял вызывающий текст; поправка к R18 записывает релиз;
+  - правило 12: у SonarCloud на 96dadfe 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard, #1, #2, #4, #5, #6 и #7.

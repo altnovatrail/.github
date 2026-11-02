@@ -803,6 +803,8 @@
 
 — architecture 3.1, 3.3, 4; RUN.md, T41; R31.
 
+— *Поправка 2026-11-02:* релиз вышел — `v0.1.14`, коммит 96dadfe, неизменяемый и Latest; `gh release verify` его подтверждает. Из общих workflow от `v0.1.13` в нём отличается только `release.yml` (`git diff v0.1.13 v0.1.14`). Вызывающий текст в architecture 3.3 зовёт общий `release.yml` по этому SHA, а вход `previous-file` — с него. — architecture 3.3; RUN.md, T41.
+
 ## Обёртка TypeScript
 
 **R19. Обёртка TypeScript — общий `typescript.yml`, по образцу `go.yml`: те же четыре рецепта вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его devcontainer, тот же список лицензий, а контейнер — с `--init` и `--ipc=host`, для тестов в браузере. Это договор: по нему `canvas` пишет рецепты своего первого кода (T08 canvas), а сам файл пишет T22, вместе с этим кодом.**
