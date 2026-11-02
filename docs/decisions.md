@@ -775,6 +775,8 @@
 
 Вызывающий без `npm-package`, который закрепил общий `release.yml` по SHA из своего `.github/workflows/release.yml`, — а так делают все, по шаблону architecture 3.3, — ничего нового не видит. — architecture 2.3, 3.1, 3.3, 4; RUN.md, T39, В31; R30.
 
+— *Поправка 2026-11-02:* релиз вышел — `v0.1.13`, коммит 09443e1, неизменяемый и Latest; `gh release verify` его подтверждает. Из общих workflow от `v0.1.12` в нём отличается только `release.yml` (`git diff v0.1.12 v0.1.13`). Вызывающий текст в architecture 3.3 зовёт общий `release.yml` по этому SHA. — architecture 3.3; RUN.md, T39.
+
 ## Обёртка TypeScript
 
 **R19. Обёртка TypeScript — общий `typescript.yml`, по образцу `go.yml`: те же четыре рецепта вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его devcontainer, тот же список лицензий, а контейнер — с `--init` и `--ipc=host`, для тестов в браузере. Это договор: по нему `canvas` пишет рецепты своего первого кода (T08 canvas), а сам файл пишет T22, вместе с этим кодом.**
