@@ -292,3 +292,8 @@
     - ShellCheck 0.11.0 и actionlint 1.7.12 — чисто; `just -f spec/justfile docs-check-repo` — ok;
   - ревью не было: правка кода — одна проверка jq, перенесённая из `spec`, и заготовка набора.
 - **Открыто:** В35 «в реестр spec» — комментарий шага `spec` о том, где лежит номер пакета, снятого целиком.
+- **Итог после мержа (2026-11-02):**
+  - T42 слита pull request [90](https://github.com/altnovatrail/.github/pull/90), merge-коммитом 89d3cee. До мержа были зелёными все восемь проверок;
+  - на `main` прошли CI, CodeQL, Scorecard и Release. `self-release.yml` выпустил `v0.1.15` на 89d3cee: неизменяемый и Latest, `gh release verify v0.1.15` — «Release v0.1.15 verified!». От `v0.1.14` он отличается только `release.yml`;
+  - architecture 3.3 закрепляет `v0.1.15`, и actionlint 1.7.12 принял вызывающий текст; поправка к R18 записывает релиз;
+  - правило 12: у SonarCloud на 89d3cee 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard.
