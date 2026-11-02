@@ -25,13 +25,23 @@
 # publisher names it, and npm gets a short-lived token by the job's OIDC. The first version of a
 # package is published by hand, since a trusted publisher is set on a package the registry has.
 #
+# With previous-file, the caller's release-files recipe also gets a file of the release before
+# this one: module-index.json, say, the cumulative index of modules, which a release builds from
+# the index of the release before it (R63 in spec). The run downloads that file with its bundle
+# from the newest release, which the number step names as the previous one, and checks it before
+# anything is built: the release's attestation here on the runner, the signature by spec's
+# release-verify. The recipe gets the version and, as its second argument, the path of the checked
+# file, mounted read-only; the first release, which has none, gets an empty second argument. A
+# file the run cannot download or check stops it (the 2026-11-02 amendment to R63 in spec). The
+# release's own files hold a file of that name, for the release after it to take.
+#
 # The caller's release workflow runs on the workflow_run of its CI and on the button, gives this
 # job contents: write, id-token: write and actions: read, and sets RELEASE_LINE in its own env.
 # Its repository keeps its releases immutable and its tags v* under a ruleset (architecture 3.3),
 # and its spec submodule is at v0.2.17 or newer: spec's recipes run by the script that spec ships
 # from that tag (R31 in spec). The caller's workflow is .github/workflows/release.yml, and it pins
-# this one by the SHA of a release. With npm-package, the spec submodule is at v0.6.0 or newer,
-# whose release-verify a run again checks the release's archive by.
+# this one by the SHA of a release. With npm-package or previous-file, the spec submodule is at
+# v0.6.0 or newer, whose release-verify checks the file a run takes from a release.
 # With publish: false a run builds, signs and checks the signatures and publishes nothing, which
 # lets a pull request try a change here.
 
@@ -57,6 +67,15 @@ on:
           The npm package the release also publishes, by its name in the @altnovatrail scope:
           @altnovatrail/canvas, say, whose archive among the files is altnovatrail-canvas-X.Y.Z.tgz,
           as npm pack names it. Empty publishes nothing to npm.
+        type: string
+        required: false
+        default: ""
+      previous-file:
+        description: >-
+          A file of the release before this one that the caller's release-files recipe gets,
+          checked, as its second argument: module-index.json, say. The first release gets an
+          empty second argument, and the release's own files hold a file of that name. Empty
+          gives the recipe the version alone.
         type: string
         required: false
         default: ""
@@ -120,6 +139,19 @@ jobs:
           fi
           name="${NPM_PACKAGE#@}"
           echo "stem=${name/\//-}" >> "$GITHUB_OUTPUT"
+
+      # The file previous-file names is checked on every run too, whether or not it releases: a
+      # name a file of a release takes, as Build the files holds the files of dist/ to, and no
+      # bundle, which is the release's own.
+      - name: The name of previous-file
+        if: inputs.previous-file != ''
+        env:
+          PREVIOUS_FILE: ${{ inputs.previous-file }}
+        run: |
+          if ! [[ "$PREVIOUS_FILE" =~ ^[A-Za-z0-9_+][A-Za-z0-9._+-]*$ ]] || [[ "$PREVIOUS_FILE" == *.sigstore.json ]]; then
+              echo "::error::previous-file is \"${PREVIOUS_FILE}\": a file of a release is named with letters, digits, . _ + -, and a bundle .sigstore.json is the release's own."
+              exit 1
+          fi
 
       # Asked before anything of the repository is fetched: a run on another branch publishes
       # nothing, and neither does a commit whose CI on main has not finished green. The caller's
@@ -340,25 +372,103 @@ jobs:
               exit 1
           fi
 
+      # The file of the release before this one that the caller names by previous-file, which its
+      # release-files recipe builds on: the cumulative index of modules builds on the index of the
+      # release before it (R63 in spec). The recipe runs with no network, token or spec/, so the
+      # file is downloaded and checked here, before anything is built (the 2026-11-02 amendment to
+      # R63 in spec): from the newest release, which the number step names as the previous one,
+      # with its bundle. The release's attestation is checked on the runner, and the signature by
+      # spec's release-verify, the one way a file of a NovaTrail release enters CI (R77 in spec), as
+      # a run again checks its archive (below): from a new copy of spec/ alone, and without the
+      # token. The checked file alone goes into a folder of its own, which the build mounts
+      # read-only. A file the previous release lacks, or one a check refuses, stops the run: an
+      # index that cannot be read is a refusal (R63 in spec). The first release has no previous one,
+      # and just's dry run asks for the recipe all the same, with the arguments the release after it
+      # will give it: a caller on a tag of spec without it stops at its first release, not at its
+      # second. The output handed says what the build gets, file or none, and the build goes by it.
+      - id: previous
+        name: The previous release's file
+        if: inputs.previous-file != '' && steps.version.outputs.version != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS_FILE: ${{ inputs.previous-file }}
+          PREVIOUS: ${{ steps.version.outputs.previous }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          folder="$RUNNER_TEMP/previous-release"
+          mkdir "$RUNNER_TEMP/previous-verify"
+          cp -a spec "$RUNNER_TEMP/previous-verify/spec"
+          if [ -z "$PREVIOUS" ]; then
+              cd "$RUNNER_TEMP/previous-verify"
+              if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec --dry-run release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
+                  "$VERSION" "$folder/$PREVIOUS_FILE"; then
+                  echo "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${PREVIOUS_FILE}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+                  exit 1
+              fi
+              echo "::notice::${VERSION} is the first release, with no ${PREVIOUS_FILE} before it: release-files gets an empty second argument."
+              echo "handed=none" >> "$GITHUB_OUTPUT"
+              exit 0
+          fi
+          mkdir "$folder"
+          gh release download "$PREVIOUS" --repo "$GITHUB_REPOSITORY" --dir "$folder" \
+              --pattern "$PREVIOUS_FILE" --pattern "${PREVIOUS_FILE}.sigstore.json" || true
+          if [ ! -f "$folder/$PREVIOUS_FILE" ] || [ ! -f "$folder/${PREVIOUS_FILE}.sigstore.json" ]; then
+              echo "::error::${PREVIOUS} holds no ${PREVIOUS_FILE} with its bundle ${PREVIOUS_FILE}.sigstore.json, or gh could not download them; the lines above say which. release-files builds ${VERSION} on that file, and one that cannot be read stops the release (R63 in spec)."
+              exit 1
+          fi
+          if ! gh release verify-asset "$PREVIOUS" "$folder/$PREVIOUS_FILE" --repo "$GITHUB_REPOSITORY"; then
+              echo "::error::The attestation of ${PREVIOUS} does not hold for its ${PREVIOUS_FILE}; the lines above say why, and nothing is built on it (R63 in spec)."
+              exit 1
+          fi
+          cd "$RUNNER_TEMP/previous-verify"
+          if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
+              "$PREVIOUS" "$folder/$PREVIOUS_FILE"; then
+              echo "::error::spec's release-verify refused ${PREVIOUS_FILE} of ${PREVIOUS}; the lines above say why, and nothing is built on it (R63, R77 in spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
+              exit 1
+          fi
+          mkdir "$RUNNER_TEMP/previous"
+          cp "$folder/$PREVIOUS_FILE" "$RUNNER_TEMP/previous/$PREVIOUS_FILE"
+          echo "handed=file" >> "$GITHUB_OUTPUT"
+
       # TARGET's own tree, without its history, its submodules or what .gitattributes keeps out of
       # an archive, and its own toolchain stage: what is built is the commit the checks passed on,
       # with the Go and tools it pins. The caller's release-files recipe gets the version, has no
       # git to ask, and writes the files into dist/: plain files, named with letters, digits, dots,
-      # dashes, pluses and underscores, none a bundle of its own. Nothing of the step's
-      # environment, no token among it, goes into the container. The step builds and runs the
-      # stage itself rather than by spec's script: the caller's own code sees its tree alone and no
-      # token, whatever a later tag of the script comes to mount or hand in (R18).
+      # dashes, pluses and underscores, none a bundle of its own. With previous-file it gets a
+      # second argument too, as the step above says by handed: the path of the file it checked, in
+      # a folder of its own mounted read-only, or an empty one at the first release. Its files then hold a file of that
+      # name, which the release after this one takes. Nothing of the step's environment, no token
+      # among it, goes into the container. The step builds and runs the stage itself rather than by
+      # spec's script: the caller's own code sees its tree alone and no token, whatever a later tag
+      # of the script comes to mount or hand in (R18).
       - name: Build the files
         if: steps.version.outputs.version != ''
         env:
           VERSION: ${{ steps.version.outputs.version }}
+          PREVIOUS_FILE: ${{ inputs.previous-file }}
+          HANDED: ${{ steps.previous.outputs.handed }}
         run: |
           tree="$RUNNER_TEMP/tree"
           mkdir "$tree"
           git archive "$TARGET" | tar -x -C "$tree"
           docker build --target toolchain --tag release-toolchain - < "$tree/.devcontainer/Dockerfile"
-          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$tree:/work" \
-              --workdir /work release-toolchain just release-files "$VERSION"
+          mount=()
+          arguments=("$VERSION")
+          if [ -n "$PREVIOUS_FILE" ]; then
+              case $HANDED in
+                  file)
+                      mount=(--volume "$RUNNER_TEMP/previous:/previous:ro")
+                      arguments+=("/previous/$PREVIOUS_FILE")
+                      ;;
+                  none) arguments+=("") ;;
+                  *)
+                      echo "::error::The previous release's file handed release-files nothing, though previous-file names ${PREVIOUS_FILE}: nothing is built without it."
+                      exit 1
+                      ;;
+              esac
+          fi
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$tree:/work" "${mount[@]}" \
+              --workdir /work release-toolchain just release-files "${arguments[@]}"
           if [ -L "$tree/dist" ] || [ ! -d "$tree/dist" ] || [ -z "$(ls -A "$tree/dist")" ]; then
               echo "::error::release-files wrote nothing into dist/, or dist/ is a link."
               exit 1
@@ -374,6 +484,10 @@ jobs:
                   exit 1
               fi
           done
+          if [ -n "$PREVIOUS_FILE" ] && [ ! -f "$tree/dist/$PREVIOUS_FILE" ]; then
+              echo "::error::release-files wrote no ${PREVIOUS_FILE} into dist/, which previous-file names: the release after this one builds on it, and a release's files are immutable."
+              exit 1
+          fi
           mv "$tree/dist" "$RUNNER_TEMP/dist"
           ls -l "$RUNNER_TEMP/dist"
 

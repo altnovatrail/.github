@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of release.yml's steps. Those of T39 come last, under their own heading. First come those
+# The tests of release.yml's steps. Those of T39 and of T41 come last, each under its own heading. First come those
 # of the step "Check the npm package" (the amendments to R18 for T27 and T33): the archive a release
 # would publish to npm, checked before the GitHub release exists — which is immutable — against the
 # registry's packument, then by npm's own dry run. The registry is the stand-in curl, the dry run
@@ -753,4 +753,260 @@ test_npm_again_of_an_archive_whose_attestation_fails_stops_before_the_signature(
     assert_status 1
     assert_calls gh 2
     assert_calls docker 0
+}
+
+# The tests of the steps T41 brings and changes, by the 2026-11-02 amendment to R63 in spec: "The
+# name of previous-file", checked on every run; "The previous release's file", which downloads the
+# file previous-file names from the release before this one, with its bundle, checks it by
+# release-verify before anything is built, and says by handed what the build gets; and "Build the
+# files", which hands release-files that file, read-only, or an empty second argument at the first
+# release, and holds the release's own files to one of that name. The recipe runs by the real
+# toolchain.sh, as in the tests of T39. The build gets a git repository of its own, whose archive is
+# what it builds, and the stand-in docker writes into dist/ what stub/docker-dist holds.
+
+index=module-index.json
+
+# The name step, for previous-file as given.
+previous_name() {
+    use_workflow release.yml
+    select_step release "name=The name of previous-file"
+    set_env TARGET "$target"
+    ctx inputs.previous-file "$1"
+}
+
+# The step for altnovatrail/modules with previous-file module-index.json, in the run that releases
+# v0.1.9 after the release given, v0.1.8 by default and none when "".
+previous_step() {
+    use_workflow release.yml
+    select_step release id=previous
+    runner_env GITHUB_REPOSITORY altnovatrail/modules
+    set_env TARGET "$target"
+    ctx github.token a-stand-in-github-token
+    ctx inputs.previous-file "$index"
+    ctx steps.version.outputs.previous "${1-v0.1.8}"
+    ctx steps.version.outputs.version v0.1.9
+    spec_script
+    stub gh
+    stub docker
+}
+
+assert_previous_downloaded() {
+    assert_call gh 1 release download v0.1.8 --repo altnovatrail/modules --dir "$step_temp/previous-release" \
+        --pattern "$index" --pattern "$index.sigstore.json"
+}
+
+assert_nothing_for_the_build() {
+    assert_eq "$(if [ -e "$step_temp/previous" ]; then echo there; else echo none; fi)" none "the folder the build mounts"
+}
+
+# The step "Build the files" of altnovatrail/modules, releasing v0.1.9, with previous-file as given,
+# module-index.json by default and none when "", after a previous step that handed what is given:
+# file by default, none at the first release, nothing when "". TARGET is the commit of a repository of its own in the workspace, a Dockerfile alone,
+# which git archive hands the build. The stand-in docker writes module-index.json and modules.tar
+# into dist/, unless dist_files says otherwise.
+build() {
+    use_workflow release.yml
+    select_step release 'name=Build the files'
+    ctx inputs.previous-file "${1-$index}"
+    ctx steps.previous.outputs.handed "${2-file}"
+    ctx steps.version.outputs.version v0.1.9
+    if [ ! -d "$step_workspace/.git" ]; then
+        mkdir -p "$step_workspace/.devcontainer"
+        printf 'FROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
+        git -C "$step_workspace" init -q
+        git -C "$step_workspace" add .devcontainer/Dockerfile
+        git -C "$step_workspace" -c user.name=test -c user.email=test@example.invalid -c commit.gpgsign=false \
+            commit -q -m tree
+    fi
+    set_env TARGET "$(git -C "$step_workspace" rev-parse HEAD)"
+    stub docker
+    dist_files "$index" modules.tar
+}
+
+dist_files() {
+    rm -rf "$state/stub/docker-dist"
+    mkdir -p "$state/stub/docker-dist"
+    local name
+    for name in "$@"; do
+        printf 'the bytes of %s\n' "$name" > "$state/stub/docker-dist/$name"
+    done
+}
+
+# The calls of docker a build makes: the toolchain stage of the tree, then release-files in it, with
+# the volumes and the arguments of just given after the tree's.
+assert_built() {
+    assert_calls docker 2
+    assert_call docker 1 build --target toolchain --tag release-toolchain -
+    assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
+    local -a volumes=()
+    while [ "$1" != -- ]; do
+        volumes+=("$1")
+        shift
+    done
+    shift
+    assert_call docker 2 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$step_temp/tree:/work" \
+        "${volumes[@]}" --workdir /work release-toolchain just release-files "$@"
+}
+
+test_previous_runs_when_a_release_with_previous_file_comes_out() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.name == "The name of previous-file") | .if')" \
+        "inputs.previous-file != ''" "the if of The name of previous-file"
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.id == "previous") | .if')" \
+        "inputs.previous-file != '' && steps.version.outputs.version != ''" "the if of The previous release's file"
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.name == "Build the files") | .if')" \
+        "steps.version.outputs.version != ''" "the if of Build the files"
+}
+
+test_previous_hands_the_build_the_file_release_verify_lets_in() {
+    previous_step
+    release_files "$index" "$index.sigstore.json"
+    run_step
+    assert_status 0
+    assert_calls gh 2
+    assert_previous_downloaded
+    assert_call gh 2 release verify-asset v0.1.8 "$step_temp/previous-release/$index" --repo altnovatrail/modules
+    assert_recipe_call previous-verify release-verify modules v0.1.8 "$step_temp/previous-release/$index"
+    # The token is the step's, for gh: the script that starts the container never has it.
+    assert_call_record docker 1 token "GH_TOKEN unset"
+    assert_eq "$(ls -A "$step_temp/previous")" "$index" "what the folder the build mounts holds"
+    assert_eq "$(cat "$step_temp/previous/$index")" "the bytes of $index" "the file release-files gets"
+    assert_output handed file
+}
+
+test_previous_of_a_file_release_verify_refuses_stops_before_the_build() {
+    previous_step
+    release_files "$index" "$index.sigstore.json"
+    stub_exit docker 1
+    run_step
+    assert_status 1
+    assert_line "::error::spec's release-verify refused ${index} of v0.1.8; the lines above say why, and nothing is built on it (R63, R77 in spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
+    assert_recipe_call previous-verify release-verify modules v0.1.8 "$step_temp/previous-release/$index"
+    assert_nothing_for_the_build
+    refute_output handed
+}
+
+test_previous_of_a_release_without_the_file_or_its_bundle_stops_before_any_check() {
+    local name
+    for name in "$index" "$index.sigstore.json" ""; do
+        previous_step
+        rm -rf "$state/stub/gh-release" "$step_temp/previous-verify" "$step_temp/previous-release"
+        if [ -n "$name" ]; then release_files "$name"; fi
+        run_step
+        assert_status 1
+        assert_line "::error::v0.1.8 holds no ${index} with its bundle ${index}.sigstore.json, or gh could not download them; the lines above say which. release-files builds v0.1.9 on that file, and one that cannot be read stops the release (R63 in spec)."
+        assert_calls gh 1
+        assert_previous_downloaded
+        assert_calls docker 0
+        assert_nothing_for_the_build
+        refute_output handed
+    done
+}
+
+test_previous_of_a_file_whose_attestation_fails_stops_before_the_signature() {
+    previous_step
+    release_files "$index" "$index.sigstore.json"
+    stub_exit gh-verify-asset 1
+    run_step
+    assert_status 1
+    assert_line "::error::The attestation of v0.1.8 does not hold for its ${index}; the lines above say why, and nothing is built on it (R63 in spec)."
+    assert_calls gh 2
+    assert_calls docker 0
+    assert_nothing_for_the_build
+    refute_output handed
+}
+
+test_previous_at_the_first_release_asks_just_for_the_recipe_and_nothing_of_github() {
+    previous_step ""
+    run_step
+    assert_status 0
+    assert_line "::notice::v0.1.9 is the first release, with no ${index} before it: release-files gets an empty second argument."
+    assert_calls gh 0
+    assert_recipe_call previous-verify --dry-run release-verify modules v0.1.9 "$step_temp/previous-release/$index"
+    assert_call_record docker 1 token "GH_TOKEN unset"
+    assert_nothing_for_the_build
+    assert_output handed none
+}
+
+test_previous_at_the_first_release_of_a_spec_without_the_recipe_stops_the_release() {
+    previous_step ""
+    stub_exit docker 1
+    run_step
+    assert_status 1
+    assert_line "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${index}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+    assert_calls gh 0
+    refute_output handed
+}
+
+test_previous_name_of_a_file_of_a_release_lets_the_run_go_on() {
+    local name
+    for name in "$index" SHA256SUMS modules_0.1+x.tar.gz; do
+        previous_name "$name"
+        run_step
+        assert_status 0
+        refute_has "::error::"
+    done
+}
+
+test_previous_name_no_file_of_a_release_takes_stops_the_run() {
+    local name
+    for name in index/module-index.json .module-index.json -module-index.json "module index.json" \
+        "$index.sigstore.json"; do
+        previous_name "$name"
+        run_step
+        assert_status 1
+        assert_line "::error::previous-file is \"${name}\": a file of a release is named with letters, digits, . _ + -, and a bundle .sigstore.json is the release's own."
+    done
+}
+
+test_build_without_previous_file_hands_release_files_the_version_alone() {
+    build "" ""
+    run_step
+    assert_status 0
+    assert_built -- v0.1.9
+    assert_eq "$(ls -A "$step_temp/dist")" "$(printf '%s\n' "$index" modules.tar)" "the files of the release"
+}
+
+test_build_hands_release_files_the_previous_file_read_only() {
+    build
+    run_step
+    assert_status 0
+    assert_built --volume "$step_temp/previous:/previous:ro" -- v0.1.9 "/previous/$index"
+    assert_eq "$(ls -A "$step_temp/dist")" "$(printf '%s\n' "$index" modules.tar)" "the files of the release"
+}
+
+test_build_at_the_first_release_hands_release_files_an_empty_second_argument() {
+    build "$index" none
+    run_step
+    assert_status 0
+    assert_built -- v0.1.9 ""
+}
+
+test_build_with_previous_file_but_nothing_handed_stops_before_release_files() {
+    build "$index" ""
+    run_step
+    assert_status 1
+    assert_line "::error::The previous release's file handed release-files nothing, though previous-file names ${index}: nothing is built without it."
+    assert_calls docker 1
+}
+
+test_build_whose_files_hold_no_file_of_previous_files_name_stops_the_release() {
+    local handed
+    for handed in file none; do
+        build "$index" "$handed"
+        rm -rf "$step_temp/tree" "$step_temp/dist"
+        dist_files modules.tar
+        run_step
+        assert_status 1
+        assert_line "::error::release-files wrote no ${index} into dist/, which previous-file names: the release after this one builds on it, and a release's files are immutable."
+        assert_eq "$(if [ -e "$step_temp/dist" ]; then echo there; else echo none; fi)" none "the files of the release"
+    done
+}
+
+test_build_that_writes_nothing_stops_the_release() {
+    build "" ""
+    rm -rf "$state/stub/docker-dist"
+    run_step
+    assert_status 1
+    assert_line "::error::release-files wrote nothing into dist/, or dist/ is a link."
 }
