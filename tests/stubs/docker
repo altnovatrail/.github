@@ -2,7 +2,9 @@
 # A stand-in for docker. Besides its arguments, it writes down what it read on stdin when its last
 # argument is -, as docker build reads a Dockerfile, and, for every bare --env NAME, the value NAME
 # had: what docker would hand the container, which the arguments alone do not show. It also writes
-# down whether GH_TOKEN reached it at all, as token. It exits as the case says, 0 unless stub_exit
+# down whether GH_TOKEN reached it at all, as token. A docker run with a --volume <folder>:/work
+# copies into <folder>/dist/ what the case put in stub/docker-dist/, when it put anything: the
+# files the caller's release-files recipe would write. It exits as the case says, 0 unless stub_exit
 # says otherwise.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
@@ -13,7 +15,11 @@ if [ "$#" -gt 0 ] && [ "${!#}" = - ]; then
     cat > "$call.stdin"
 fi
 previous=""
+work=""
 for argument in "$@"; do
+    if [ "$previous" = --volume ] && [[ $argument == *:/work ]]; then
+        work=${argument%:/work}
+    fi
     if [ "$previous" = --env ] && [[ $argument != *=* ]]; then
         if [ -n "${!argument+x}" ]; then
             printf '%s=%s\n' "$argument" "${!argument}"
@@ -28,4 +34,8 @@ if [ -n "${GH_TOKEN+x}" ]; then
 else
     echo "GH_TOKEN unset"
 fi > "$call.token"
+if [ "${1-}" = run ] && [ -n "$work" ] && [ -d "$state/stub/docker-dist" ]; then
+    mkdir -p "$work/dist"
+    cp -a "$state/stub/docker-dist/." "$work/dist/"
+fi
 exit "$(cat "$state/stub/docker.exit" 2> /dev/null || echo 0)"
