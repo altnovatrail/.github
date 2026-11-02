@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# A stand-in for gh, for the two calls release.yml's step "The npm package of the release" makes and
+# no other. gh release download <tag> --repo <repository> --dir <folder> --pattern <name>... copies
+# into the folder each file release_files put in the release whose name a pattern names, as gh
+# downloads the assets a pattern matches: the step names whole names, not globs. When no pattern
+# names any file, it fails, as gh does with "no assets match the file pattern". gh release
+# verify-asset checks nothing. Each exits as the case says, by stub_exit gh-download or
+# gh-verify-asset, 0 unless told otherwise.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record gh "$@"
+unexpected() {
+    printf 'gh: %s\n' "$1" >> "$state/unexpected"
+    echo "gh: the stand-in $1" >&2
+    exit 2
+}
+[ "$#" -ge 3 ] && [ "$1" = release ] || unexpected "knows no call gh $*"
+what=$2
+shift 3
+case $what in
+    download)
+        folder=""
+        patterns=()
+        while [ "$#" -gt 0 ]; do
+            [ "$#" -gt 1 ] || unexpected "got $1 without its value"
+            case $1 in
+                --repo) ;;
+                --dir) folder=$2 ;;
+                --pattern) patterns+=("$2") ;;
+                *) unexpected "knows no option $1 of gh release download" ;;
+            esac
+            shift 2
+        done
+        [ -n "$folder" ] || unexpected "got no --dir"
+        found=0
+        for pattern in "${patterns[@]}"; do
+            if [ -f "$state/stub/gh-release/$pattern" ]; then
+                cp "$state/stub/gh-release/$pattern" "$folder/"
+                found=1
+            fi
+        done
+        if [ "$found" = 0 ]; then
+            echo "no assets match the file pattern" >&2
+            exit 1
+        fi
+        ;;
+    verify-asset) ;;
+    *) unexpected "knows no call gh release $what" ;;
+esac
+exit "$(cat "$state/stub/gh-$what.exit" 2> /dev/null || echo 0)"

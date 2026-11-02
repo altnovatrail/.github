@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # A stand-in for docker. Besides its arguments, it writes down what it read on stdin when its last
 # argument is -, as docker build reads a Dockerfile, and, for every bare --env NAME, the value NAME
-# had: what docker would hand the container, which the arguments alone do not show. It exits as
-# the case says, 0 unless stub_exit says otherwise.
+# had: what docker would hand the container, which the arguments alone do not show. It also writes
+# down whether GH_TOKEN reached it at all, as token. It exits as the case says, 0 unless stub_exit
+# says otherwise.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh
@@ -22,4 +23,9 @@ for argument in "$@"; do
     fi
     previous=$argument
 done
+if [ -n "${GH_TOKEN+x}" ]; then
+    echo "GH_TOKEN set"
+else
+    echo "GH_TOKEN unset"
+fi > "$call.token"
 exit "$(cat "$state/stub/docker.exit" 2> /dev/null || echo 0)"

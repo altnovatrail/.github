@@ -11,7 +11,12 @@
 #
 # The signature is cosign's, keyless. Its certificate names this workflow, at the ref the caller
 # pins, as what signed, and the caller's repository and workflow as the run that signed
-# (architecture 2.3). What a consumer checks of it is Т-27, which T37 in spec decides.
+# (architecture 2.3). What a consumer checks of it is R77 in spec, by spec's recipe
+# release-verify: this workflow at the SHA of a release of .github, v0.1.7 or newer, at the call of
+# the caller's .github/workflows/release.yml on main, of the commit of the tag. A run that
+# publishes stops before anything else when the caller's workflow is not that file on main, or
+# when it pins this workflow by anything but a commit's SHA; whether that SHA is a release of
+# .github, v0.1.7 or newer, the consumer's check asks.
 #
 # With npm-package, the release also publishes that package to npm, in the @altnovatrail scope:
 # the archive npm pack names for it, one of the files the run signs and puts in the release, the
@@ -24,7 +29,9 @@
 # job contents: write, id-token: write and actions: read, and sets RELEASE_LINE in its own env.
 # Its repository keeps its releases immutable and its tags v* under a ruleset (architecture 3.3),
 # and its spec submodule is at v0.2.17 or newer: spec's recipes run by the script that spec ships
-# from that tag (R31 in spec).
+# from that tag (R31 in spec). The caller's workflow is .github/workflows/release.yml, and it pins
+# this one by the SHA of a release. With npm-package, the spec submodule is at v0.6.0 or newer,
+# whose release-verify a run again checks the release's archive by.
 # With publish: false a run builds, signs and checks the signatures and publishes nothing, which
 # lets a pull request try a change here.
 
@@ -131,6 +138,29 @@ jobs:
               --jq '.total_count')
           if [ "$passed" = 0 ]; then
               echo "::error::CI has not passed on ${GITHUB_SHA}. A release waits for its checks, and follows them by itself once they pass."
+              exit 1
+          fi
+
+      # What the certificate of this run's signature will name, asked before anything else when the
+      # run publishes. R77 in spec lets in no file whose certificate names another workflow of the
+      # caller than its .github/workflows/release.yml on main, or this workflow at anything but a
+      # commit's SHA, and a release's files are immutable. The job's condition and the step above
+      # keep the run on main; the file and the pin nothing else holds. Whether the SHA is a release
+      # of .github, v0.1.7 or newer, the consumer's release-verify asks, and Dependabot offers the
+      # SHAs of releases alone (R04).
+      - name: The identity the signature will carry
+        if: inputs.publish
+        env:
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+          SHARED_WORKFLOW_REF: ${{ job.workflow_ref }}
+        run: |
+          wanted="${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/heads/main"
+          if [ "$CALLER_WORKFLOW_REF" != "$wanted" ]; then
+              echo "::error::The caller's workflow is ${CALLER_WORKFLOW_REF}, not ${wanted}. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 in spec): release from .github/workflows/release.yml on main."
+              exit 1
+          fi
+          if ! [[ "$SHARED_WORKFLOW_REF" =~ ^altnovatrail/\.github/\.github/workflows/release\.yml@[0-9a-f]{40}$ ]]; then
+              echo "::error::The caller pins this workflow as ${SHARED_WORKFLOW_REF}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 in spec): pin it by the SHA of a release, with its version beside it (R04)."
               exit 1
           fi
 
@@ -289,6 +319,27 @@ jobs:
               echo "released=${released}"
           } >> "$GITHUB_OUTPUT"
 
+      # spec's release-verify, which a run again checks the release's archive by (below), asked
+      # here, before anything is built, by just's dry run with the arguments that call would get:
+      # it parses the call, prints the recipe and runs nothing. spec ships the recipe from v0.6.0,
+      # so a caller with npm-package on an older tag stops at its release, not at a rare run again.
+      # The script runs from a new copy of spec/ alone, which is all the recipe reads, taken from the
+      # checkout, which no container has had: so the script is the one the tag holds.
+      - name: spec's release-verify, asked ahead
+        if: inputs.npm-package != '' && steps.version.outputs.version != ''
+        env:
+          STEM: ${{ steps.npm-name.outputs.stem }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir "$RUNNER_TEMP/release-verify-probe"
+          cp -a spec "$RUNNER_TEMP/release-verify-probe/spec"
+          cd "$RUNNER_TEMP/release-verify-probe"
+          if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
+              "$VERSION" "$RUNNER_TEMP/dist/${STEM}-${VERSION#v}.tgz"; then
+              echo "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+              exit 1
+          fi
+
       # TARGET's own tree, without its history, its submodules or what .gitattributes keeps out of
       # an archive, and its own toolchain stage: what is built is the commit the checks passed on,
       # with the Go and tools it pins. The caller's release-files recipe gets the version, has no
@@ -327,12 +378,10 @@ jobs:
           ls -l "$RUNNER_TEMP/dist"
 
       # cosign at an exact version, checked against the sum in cosign_checksums.txt of its
-      # release, as gitleaks is (R08). Signing needs it, and so does a run again that takes the npm
-      # package from a release to publish it.
+      # release, as gitleaks is (R08). Signing needs it; a run again checks a signature by spec's
+      # release-verify instead.
       - name: cosign
-        if: >-
-          steps.version.outputs.version != '' ||
-          (inputs.npm-package != '' && inputs.publish && steps.version.outputs.released != '')
+        if: steps.version.outputs.version != ''
         env:
           COSIGN_VERSION: "3.1.4"
           COSIGN_SHA256: 424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa
@@ -392,12 +441,16 @@ jobs:
           chmod +x "$RUNNER_TEMP/npm-isolated"
 
       # A run again of a commit released already publishes the archive its release holds, not one
-      # built anew. It downloads that file with its bundle, and checks both before npm sees them:
-      # the release's attestation, and the signature of this workflow for this repository at
-      # TARGET. The identity is this workflow at any commit or ref of .github, since the button may
-      # run with another ref of it pinned than the run that released; which ones count is Т-27's.
-      # Only this step has the token, and npm, which reads an archive the caller's code built,
-      # never sees it.
+      # built anew. It downloads that file with its bundle, and checks both before npm sees them.
+      # The release's attestation is checked here on the runner. The signature is checked by
+      # spec's release-verify, the one way a file of a NovaTrail release enters CI (R77 in spec;
+      # RULES.md, Hard rules). It wants this workflow at the SHA of a release of .github, v0.1.7
+      # or newer — whichever the run that released pinned, since the button may run with another —
+      # at the call of this repository's release.yml on main, of the commit of the tag. The recipe
+      # runs in the caller's toolchain stage, as the number does, from a new copy of spec/ alone,
+      # and reads Sigstore, GitHub and the npm registry: when one cannot be read, it refuses, and
+      # the job is run again. Of the npm steps only this one has the token, which neither the
+      # recipe's container nor npm, which reads an archive the caller's code built, ever sees.
       - name: The npm package of the release
         if: inputs.npm-package != '' && inputs.publish && steps.version.outputs.released != ''
         env:
@@ -414,12 +467,14 @@ jobs:
               exit 1
           fi
           gh release verify-asset "$RELEASED" "$RUNNER_TEMP/dist/$file" --repo "$GITHUB_REPOSITORY"
-          "$RUNNER_TEMP/cosign" verify-blob --bundle "$RUNNER_TEMP/dist/${file}.sigstore.json" \
-              --certificate-identity-regexp '^https://github\.com/altnovatrail/\.github/\.github/workflows/release\.yml@([0-9a-f]{40}|refs/(heads|tags)/.+)$' \
-              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-              --certificate-github-workflow-repository "$GITHUB_REPOSITORY" \
-              --certificate-github-workflow-sha "$TARGET" \
-              "$RUNNER_TEMP/dist/$file"
+          mkdir "$RUNNER_TEMP/release-verify"
+          cp -a spec "$RUNNER_TEMP/release-verify/spec"
+          cd "$RUNNER_TEMP/release-verify"
+          if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
+              "$RELEASED" "$RUNNER_TEMP/dist/$file"; then
+              echo "::error::spec's release-verify refused ${file} of ${RELEASED}; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 in spec)."
+              exit 1
+          fi
 
       # The archive npm would publish, checked before the GitHub release exists, which is
       # immutable, so that a package that fails here leaves no release behind:
@@ -573,8 +628,8 @@ jobs:
       # workflow made it, and every bundle is checked before anything is published: the identity
       # is this workflow at the ref the caller pins, job.workflow_ref, issued to GitHub Actions, in
       # the caller's repository, at TARGET. The certificate of the first file is printed, its
-      # extensions among it, for whoever checks the signatures later (T37 in spec); a print that
-      # fails says so and holds nothing up.
+      # extensions among it, for whoever checks the signatures later, as spec's release-verify does
+      # by R77 in spec; a print that fails says so and holds nothing up.
       - name: Sign every file
         if: steps.version.outputs.version != ''
         env:

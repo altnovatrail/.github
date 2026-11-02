@@ -1,10 +1,10 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of release.yml's step "Check the npm package" (the amendments to R18 for T27 and
-# T33): the archive a release would publish to npm, checked before the GitHub release exists —
-# which is immutable — against the registry's packument, then by npm's own dry run. The registry
-# is the stand-in curl, the dry run the stand-in npm-isolated; the archives are made here with
-# tar, laid out as npm pack lays one out, and their integrity worked out without openssl, which
-# the step uses.
+# The tests of release.yml's steps. Those of T39 come last, under their own heading. First come those
+# of the step "Check the npm package" (the amendments to R18 for T27 and T33): the archive a release
+# would publish to npm, checked before the GitHub release exists — which is immutable — against the
+# registry's packument, then by npm's own dry run. The registry is the stand-in curl, the dry run
+# the stand-in npm-isolated; the archives are made here with tar, laid out as npm pack lays one out,
+# and their integrity worked out without openssl, which the step uses.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 
@@ -550,4 +550,207 @@ test_npm_a_dry_run_that_reads_another_file_or_integrity_stops_the_release() {
     run_step
     assert_status 1
     assert_line "::error::npm's dry run did not read altnovatrail-canvas-0.1.9.tgz with the integrity ${integrity}."
+}
+
+# The tests of the steps T39 changed, by R77 in spec: "The identity the signature will carry", which
+# stops a run that publishes when the caller's workflow or its pin of this one would give the files
+# a signature a consumer's release-verify refuses; "spec's release-verify, asked ahead", just's dry
+# run of the recipe before anything is built; and "The npm package of the release", whose run again
+# checks the release's archive by that recipe. The recipe runs by the real toolchain.sh of the spec
+# submodule, which starts the stand-in docker: what a case holds is the call that would reach the
+# container.
+
+shared_pin=altnovatrail/.github/.github/workflows/release.yml@c1b848779d9f1d73817ca078a7cba3664632f03b
+
+# The identity step of altnovatrail/canvas: the caller's workflow and this one's pin as given, by
+# default release.yml on main and the SHA of v0.1.11.
+identity() {
+    use_workflow release.yml
+    select_step release 'name=The identity the signature will carry'
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    ctx github.workflow_ref "${1:-altnovatrail/canvas/.github/workflows/release.yml@refs/heads/main}"
+    ctx job.workflow_ref "${2:-$shared_pin}"
+}
+
+# spec's script where the steps run it from, spec/tools/toolchain/toolchain.sh of the checkout, which
+# copy spec/ of: the submodule's own, byte for byte, beside an empty justfile, which the stand-in
+# docker never reads. A README.md beside spec/ is what the copy must leave out.
+spec_script() {
+    mkdir -p "$step_workspace/spec/tools/toolchain"
+    install -m 755 "$HARNESS_ROOT/spec/tools/toolchain/toolchain.sh" "$step_workspace/spec/tools/toolchain/toolchain.sh"
+    : > "$step_workspace/spec/justfile"
+    : > "$step_workspace/README.md"
+}
+
+# The call toolchain.sh makes of docker for spec's recipe, run from the copy of the checkout in
+# RUNNER_TEMP named first: the arguments of just after it.
+assert_recipe_call() {
+    local copy
+    copy=$(cd -- "$step_temp/$1" && pwd -P)
+    assert_eq "$(ls -A "$copy")" spec "what the copy of $1 holds"
+    shift
+    assert_calls docker 1
+    assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --volume "$copy:/work" \
+        --volume "$step_temp:$step_temp:ro" --workdir /work novatrail-toolchain just -f spec/justfile "$@"
+}
+
+# The probe of the release that is about to come out as v0.1.9.
+probe() {
+    use_workflow release.yml
+    select_step release "name=spec's release-verify, asked ahead"
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    ctx steps.npm-name.outputs.stem altnovatrail-canvas
+    ctx steps.version.outputs.version v0.1.9
+    spec_script
+    stub docker
+}
+
+# The run again of v0.1.9, released already, whose release holds the files release_files gives.
+npm_again() {
+    use_workflow release.yml
+    select_step release 'name=The npm package of the release'
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    ctx github.token a-stand-in-github-token
+    ctx steps.npm-name.outputs.stem altnovatrail-canvas
+    ctx steps.version.outputs.released v0.1.9
+    spec_script
+    stub gh
+    stub docker
+}
+
+release_files() {
+    mkdir -p "$state/stub/gh-release"
+    local name
+    for name in "$@"; do
+        printf 'the bytes of %s\n' "$name" > "$state/stub/gh-release/$name"
+    done
+}
+
+assert_downloaded() {
+    assert_call gh 1 release download v0.1.9 --repo altnovatrail/canvas --dir "$step_temp/dist" \
+        --pattern altnovatrail-canvas-0.1.9.tgz --pattern altnovatrail-canvas-0.1.9.tgz.sigstore.json
+}
+
+again_archive=altnovatrail-canvas-0.1.9.tgz
+
+test_identity_runs_only_when_the_run_publishes() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.name == "The identity the signature will carry") | .if')" \
+        inputs.publish "the if of The identity the signature will carry"
+}
+
+test_identity_of_release_yml_on_main_at_a_sha_lets_the_run_go_on() {
+    identity
+    run_step
+    assert_status 0
+    refute_has "::error::"
+}
+
+test_identity_of_another_workflow_of_the_caller_stops_the_run() {
+    local ref
+    for ref in altnovatrail/canvas/.github/workflows/publish.yml@refs/heads/main \
+        altnovatrail/canvas/.github/workflows/release.yml@refs/heads/next \
+        altnovatrail/canvas/.github/workflows/release.yaml@refs/heads/main; do
+        identity "$ref"
+        run_step
+        assert_status 1
+        assert_line "::error::The caller's workflow is ${ref}, not altnovatrail/canvas/.github/workflows/release.yml@refs/heads/main. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 in spec): release from .github/workflows/release.yml on main."
+    done
+}
+
+test_identity_of_this_workflow_pinned_by_a_branch_a_tag_a_short_sha_or_from_elsewhere_stops_the_run() {
+    local pin
+    for pin in someone/.github/.github/workflows/release.yml@c1b848779d9f1d73817ca078a7cba3664632f03b \
+        altnovatrail/.github/.github/workflows/go.yml@c1b848779d9f1d73817ca078a7cba3664632f03b \
+        altnovatrail/.github/.github/workflows/release.yml@refs/heads/main \
+        altnovatrail/.github/.github/workflows/release.yml@refs/tags/v0.1.11 \
+        altnovatrail/.github/.github/workflows/release.yml@c1b8487 \
+        altnovatrail/.github/.github/workflows/release.yml@C1B848779D9F1D73817CA078A7CBA3664632F03B; do
+        identity "" "$pin"
+        run_step
+        assert_status 1
+        assert_line "::error::The caller pins this workflow as ${pin}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 in spec): pin it by the SHA of a release, with its version beside it (R04)."
+    done
+}
+
+test_probe_runs_when_a_release_with_an_npm_package_comes_out() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw ".jobs.release.steps[] | select(.name == \"spec's release-verify, asked ahead\") | .if")" \
+        "inputs.npm-package != '' && steps.version.outputs.version != ''" "the if of spec's release-verify, asked ahead"
+}
+
+test_probe_asks_just_to_parse_the_call_a_run_again_makes() {
+    probe
+    run_step
+    assert_status 0
+    assert_recipe_call release-verify-probe --dry-run release-verify canvas v0.1.9 "$step_temp/dist/$again_archive"
+}
+
+test_probe_of_a_spec_without_the_recipe_stops_the_release() {
+    probe
+    stub_exit docker 1
+    run_step
+    assert_status 1
+    assert_line "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+    assert_recipe_call release-verify-probe --dry-run release-verify canvas v0.1.9 "$step_temp/dist/$again_archive"
+}
+
+test_npm_again_runs_on_a_run_again_that_publishes_and_needs_no_cosign() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.name == "The npm package of the release") | .if')" \
+        "inputs.npm-package != '' && inputs.publish && steps.version.outputs.released != ''" "the if of The npm package of the release"
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.name == "cosign") | .if')" \
+        "steps.version.outputs.version != ''" "the if of cosign"
+}
+
+test_npm_again_hands_the_archive_release_verify_lets_in_to_npm() {
+    npm_again
+    release_files "$again_archive" "$again_archive.sigstore.json"
+    run_step
+    assert_status 0
+    assert_calls gh 2
+    assert_downloaded
+    assert_call gh 2 release verify-asset v0.1.9 "$step_temp/dist/$again_archive" --repo altnovatrail/canvas
+    assert_recipe_call release-verify release-verify canvas v0.1.9 "$step_temp/dist/$again_archive"
+    # The token is the step's, for gh: the script that starts the container never has it.
+    assert_call_record docker 1 token "GH_TOKEN unset"
+    assert_eq "$(cat "$step_temp/dist/$again_archive")" "the bytes of $again_archive" "the archive npm gets"
+}
+
+test_npm_again_of_an_archive_release_verify_refuses_stops_before_npm() {
+    npm_again
+    release_files "$again_archive" "$again_archive.sigstore.json"
+    stub_exit docker 1
+    run_step
+    assert_status 1
+    assert_line "::error::spec's release-verify refused ${again_archive} of v0.1.9; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 in spec)."
+    assert_recipe_call release-verify release-verify canvas v0.1.9 "$step_temp/dist/$again_archive"
+}
+
+test_npm_again_of_a_release_without_the_archive_or_its_bundle_stops_before_any_check() {
+    local name
+    for name in "$again_archive" "$again_archive.sigstore.json" ""; do
+        npm_again
+        rm -rf "$state/stub/gh-release" "$step_temp/dist"
+        if [ -n "$name" ]; then release_files "$name"; fi
+        run_step
+        assert_status 1
+        assert_line "::error::v0.1.9 holds no ${again_archive} with its bundle ${again_archive}.sigstore.json to publish to npm."
+        assert_calls gh 1
+        assert_downloaded
+        assert_calls docker 0
+    done
+}
+
+test_npm_again_of_an_archive_whose_attestation_fails_stops_before_the_signature() {
+    npm_again
+    release_files "$again_archive" "$again_archive.sigstore.json"
+    stub_exit gh-verify-asset 1
+    run_step
+    assert_status 1
+    assert_calls gh 2
+    assert_calls docker 0
 }
