@@ -38,14 +38,23 @@ gone_after="The next release, with a new number, publishes the package."
 # And of a package unpublished as a whole.
 whole="@altnovatrail/canvas was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3)."
 
-# A package unpublished as a whole, as the registry answers for one (asdasd, 2026-11-01): 200, and
-# no versions, but a time with every number it held — 0.1.7 among them, which unpublished.versions
-# leaves out, as a version unpublished before the rest — and unpublished.
+# A package unpublished as a whole, as the registry answers for one (asdasd, aaaaaaa and
+# test-unpublish, 2026-11-02; architecture 4): 200, and no versions, but a time with every number
+# it held — 0.1.7 among them, which unpublished.versions leaves out, as a version unpublished
+# before the rest — and unpublished.
 tombstone() {
     registry 200 '{_id: "@altnovatrail/canvas", name: "@altnovatrail/canvas", _rev: "5-0",
         time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-03T00:00:00.000Z",
             "0.1.7": "2026-10-01T00:00:00.000Z", "0.1.8": "2026-10-02T00:00:00.000Z",
             unpublished: {time: "2026-10-03T00:00:00.000Z", versions: ["0.1.8"]}}}'
+}
+
+# The same with a number under unpublished.versions alone, without its time, as none of the three
+# had it: spec's step looks there too, and the shared one with it (T42).
+tombstone_without_its_time() {
+    registry 200 '{_id: "@altnovatrail/canvas", name: "@altnovatrail/canvas", _rev: "5-0",
+        time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-03T00:00:00.000Z",
+            unpublished: {time: "2026-10-03T00:00:00.000Z", versions: ["0.1.6"]}}}'
 }
 
 # sha512- and the archive's SHA-512 in base64, as npm writes an integrity.
@@ -303,8 +312,9 @@ test_npm_a_package_unpublished_as_a_whole_is_read_by_the_dry_run_of_a_trial() {
     assert_dry_run
 }
 
-# Its numbers are gone like any other's: those its unpublished lists, and those unpublished before.
-# The error says both what the number needs and what the package needs.
+# Its numbers are gone like any other's: those its unpublished lists, those unpublished before, and
+# one its unpublished would list without a time. The error says both what the number needs and what
+# the package needs, in a trial, before the release and after it.
 test_npm_a_number_of_a_package_unpublished_as_a_whole_is_gone_too() {
     local version
     for version in 0.1.8 0.1.7; do
@@ -314,6 +324,18 @@ test_npm_a_number_of_a_package_unpublished_as_a_whole_is_gone_too() {
         run_step
         assert_refused_by_the_registry "::error::@altnovatrail/canvas@${version} was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_before} ${whole}"
     done
+    npm_check 0.1.6
+    package . 0.1.6
+    tombstone_without_its_time
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.6 was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_before} ${whole}"
+    npm_check_after_release
+    ctx steps.version.outputs.released v0.1.8
+    set_env VERSION v0.1.8
+    package . 0.1.8
+    tombstone
+    run_step
+    assert_refused_by_the_registry "::error::@altnovatrail/canvas@0.1.8 was in the npm registry and was unpublished, and npm never takes a number it has held. ${gone_after} ${whole}"
 }
 
 test_npm_a_version_below_the_highest_goes_out_as_previous() {
