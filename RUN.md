@@ -333,7 +333,7 @@ T47 берёт тот же вход, что T46, и после неё выход
 - **Сделано (2026-11-08):**
   - по правилу 12, перед задачей: у SonarCloud на `main` 0 находок, quality gate OK, а в code scanning — те же шесть находок Scorecard;
   - инструмент `tools/coderules/` — копия `rules_test.go` `engine` (`main` 28cbde9), ставшая командой: правила, разрешённое всем из `math`, `strings` и `strconv`, импортёр `source` — в инструменте, а `code-imports`, `test-imports`, `test-math`, `requires` и `nested-modules` — в списках. Пятое поле — сверх плана: обе копии освобождали `.devcontainer/gopls/go.mod`, а это частное у репозитория. Проверка вложенных модулей стала правилом `nested`;
-  - контроли — `testdata/coderules` обоих, со своими списками; тесты инструмента — ровно `// want`, каждое правило нарушено, списки решают, чтение списков, `run` и модули, которые не прочесть. Покрытие — 93,4 %;
+  - контроли — `testdata/coderules` обоих, со своими списками; тесты инструмента — ровно `// want`, каждое правило нарушено, списки решают, чтение списков, `run` и модули, которые не прочесть. Покрытие — 94,6 %;
   - «Go / rules» в `go.yml` под `same-bits` — второй checkout `.github` по `job.workflow_sha`, перенесённый в `RUNNER_TEMP`, сборка инструмента Go вызывающего и запуск со списками. Кейсы в наборе и кейсы шага «Work out the version» `self-release.yml`, где `tools/coderules/` теперь в перечне релиза;
   - свой CI: корневой `justfile`, job «Go» в `self-ci.yml`, `.github/codecov.yml`, `.gitignore`, `go` в `self-codeql.yml`, `gomod` в Dependabot. Решено в задаче: путь модуля — `github.com/altnovatrail/.github/tools/coderules`, `fixes` в Codecov не нужны; директива — `go 1.27`; второй checkout — в `.shared-github`, затем в `RUNNER_TEMP`;
   - что пришлось обойти, каждое — в R33: исключение actionlint для двух свойств контекста `job`, `--ignore` самого модуля у go-licenses, `sonar.cpd.exclusions` для контролей;
@@ -345,7 +345,10 @@ T47 берёт тот же вход, что T46, и после неё выход
     - actionlint 1.7.12 и ShellCheck 0.11.0 — чисто; `just -f spec/justfile docs-check-repo` — ok;
     - рецепты корневого `justfile` локально — все четыре зелёные;
     - pull request #103: «Go / lint», «Go / test», «Go / vuln», «Go / licenses», «Go / coverage», «CodeQL / analyze (go)» и `codecov/patch` — зелёные, SonarCloud — после `sonar.cpd.exclusions`;
-    - проба — pull request #104 без мержа: зелёная с кодом, который держит правила, а с нарушениями «Go / rules» красная ровно с четырьмя находками (architecture 4).
+    - проба — pull request #104 без мержа: зелёная с кодом, который держит правила, а с нарушениями «Go / rules» красная ровно с четырьмя находками (architecture 4);
+  - `/code-review high`, один круг, — 8 находок:
+    - приняты: ошибка типов выбрасывала собранные находки — теперь они печатаются с причиной; цикл импортов уводил в бесконечную рекурсию — теперь это ошибка; `require ()` читался как модуль; шапки `self-codeql.yml` и `self-release.yml` и уведомление о релизе не знали инструмента; комментарий `TestTheListsDecide` обещал проверку `code-imports`, которой в нём не было, — её делает новый `TestTheCodeImportsDecide`;
+    - не приняты, с причинами в R33: директива `ignore` `go.mod` и двойная проверка типов. Обе — от копий, у вызывающих `ignore` нет, а проверка их кода идёт секунду.
 - **Открыто:**
   - шаг автора: в ruleset `main` `.github` — «Go / lint», «Go / test», «Go / vuln», «Go / licenses», «CodeQL / analyze (go)» и `codecov/patch`, когда они пришли на `main`;
   - после мержа — релиз `.github`, его SHA в architecture 3.3, поправка к R16 о релизе и значок покрытия в README — по repositories 2.3 spec, с первой загрузкой на `main`;

@@ -38,12 +38,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	findings, err := checkModule(flags.Arg(0), "go.mod", lists)
+	for _, f := range findings {
+		fmt.Fprintln(stdout, f)
+	}
 	if err != nil {
 		fmt.Fprintf(stderr, "coderules: %v\n", err)
 		return 2
-	}
-	for _, f := range findings {
-		fmt.Fprintln(stdout, f)
 	}
 	if len(findings) > 0 {
 		fmt.Fprintf(stderr, "coderules: %d findings\n", len(findings))

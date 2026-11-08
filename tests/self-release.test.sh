@@ -59,7 +59,7 @@ assert_released() {
 
 assert_not_released() {
     assert_status 0
-    assert_line "::notice::No shared workflow has changed since v0.1.0: nothing to release."
+    assert_line "::notice::No shared workflow, nor the tool tools/coderules, has changed since v0.1.0: nothing to release."
     assert_output version ""
 }
 

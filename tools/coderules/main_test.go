@@ -82,8 +82,7 @@ func TestTheListsDecide(t *testing.T) {
 	for _, f := range found {
 		keys[f.key()] = true
 	}
-	// engine's lists allow no math.Exp in tests, no encoding/binary in code, and no folder of
-	// gopls nested.
+	// engine's lists allow no math.Exp in tests and no folder of gopls nested.
 	for _, key := range []string{
 		"control_test.go:17: math",
 		".devcontainer/gopls/go.mod:1: nested",
@@ -91,6 +90,38 @@ func TestTheListsDecide(t *testing.T) {
 		if !keys[key] {
 			t.Errorf("with engine's lists, no finding %s", key)
 		}
+	}
+}
+
+// The other way round, learner-model's lists allow engine's control encoding/binary and
+// unicode/utf8 in code, which engine's lists refuse: code-imports decide too.
+func TestTheCodeImportsDecide(t *testing.T) {
+	root := filepath.Join("testdata", "engine")
+	lists, err := readLists(filepath.Join("testdata", "learner-model", "coderules.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, err := checkModule(root, "go.mod.control", lists)
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(filepath.Join(root, "control.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := 0
+	for i, line := range strings.Split(string(data), "\n") {
+		if !strings.Contains(line, `"encoding/binary"`) && !strings.Contains(line, `"unicode/utf8"`) {
+			continue
+		}
+		lines++
+		key := fmt.Sprintf("control.go:%d: import", i+1)
+		if slices.ContainsFunc(found, func(f finding) bool { return f.key() == key }) {
+			t.Errorf("with learner-model's lists, %s", key)
+		}
+	}
+	if lines != 2 {
+		t.Fatalf("the control imports encoding/binary and unicode/utf8 on %d lines, not 2", lines)
 	}
 }
 
@@ -249,6 +280,7 @@ func TestUnreadableModules(t *testing.T) {
 		{"no type", map[string]string{"go.mod": "module example.com/a\n", "a.go": "package a\n\nvar _ = undefined\n"}, "type-checking example.com/a"},
 		{"no type in a test", map[string]string{"go.mod": "module example.com/a\n", "a.go": "package a\n", "a_test.go": "package a\n\nvar _ = undefined\n"}, "type-checking example.com/a"},
 		{"no type in an external test", map[string]string{"go.mod": "module example.com/a\n", "a.go": "package a\n", "x_test.go": "package a_test\n\nvar _ = undefined\n"}, "type-checking example.com/a_test"},
+		{"an import cycle", map[string]string{"go.mod": "module example.com/a\n", "b/b.go": "package b\n\nimport _ \"example.com/a/c\"\n", "c/c.go": "package c\n\nimport _ \"example.com/a/b\"\n"}, "an import cycle through example.com/a/"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := checkModule(module(t, tc.files), "go.mod", Lists{})
@@ -256,5 +288,43 @@ func TestUnreadableModules(t *testing.T) {
 				t.Errorf("the error is %v; want one that holds %q", err, tc.want)
 			}
 		})
+	}
+}
+
+// What the check found before a package stopped it still comes out, with the reason: two files
+// whose names constrain their builds declare the same function, so the host type-check fails.
+func TestFindingsBeforeAFailureComeOut(t *testing.T) {
+	dir := module(t, map[string]string{
+		"go.mod":       "module example.com/a\n",
+		"a_linux.go":   "package a\n\nfunc f() {}\n",
+		"a_windows.go": "package a\n\nfunc f() {}\n",
+	})
+	var stdout, stderr bytes.Buffer
+	lists := filepath.Join(dir, "lists.json")
+	if err := os.WriteFile(lists, []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if status := run([]string{"-lists", lists, dir}, &stdout, &stderr); status != 2 {
+		t.Errorf("exit status %d, want 2", status)
+	}
+	for _, want := range []string{"a_linux.go:1: buildtag", "a_windows.go:1: buildtag"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Errorf("stdout %q holds no %s", stdout.String(), want)
+		}
+	}
+	if !strings.Contains(stderr.String(), "type-checking example.com/a") {
+		t.Errorf("stderr %q gives no reason", stderr.String())
+	}
+}
+
+// go.mod with an empty block on one line requires nothing.
+func TestAnEmptyBlockRequiresNothing(t *testing.T) {
+	dir := module(t, map[string]string{
+		"go.mod": "module example.com/a\n\ngo 1.27\n\nrequire ()\n\nrequire(\n)\n",
+		"a.go":   "package a\n",
+	})
+	found, err := checkModule(dir, "go.mod", Lists{})
+	if err != nil || len(found) != 0 {
+		t.Errorf("findings %v, error %v; want none", found, err)
 	}
 }

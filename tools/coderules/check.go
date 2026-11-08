@@ -102,6 +102,7 @@ type checker struct {
 	std                 types.Importer         // of every package from outside the module
 	dirs                map[string]*packageDir // by import path
 	checked             map[string]*types.Package
+	importing           map[string]bool // the module's packages Import is checking now, for a cycle
 	findings            []finding
 }
 
@@ -111,12 +112,13 @@ type checker struct {
 // nested in it.
 func checkModule(root, goMod string, lists Lists) ([]finding, error) {
 	c := &checker{
-		root:    root,
-		goMod:   goMod,
-		lists:   lists,
-		fset:    token.NewFileSet(),
-		dirs:    map[string]*packageDir{},
-		checked: map[string]*types.Package{},
+		root:      root,
+		goMod:     goMod,
+		lists:     lists,
+		fset:      token.NewFileSet(),
+		dirs:      map[string]*packageDir{},
+		checked:   map[string]*types.Package{},
+		importing: map[string]bool{},
 	}
 	// Every package from outside the module is type-checked from its sources, for the host: the
 	// standard library's, and those of the modules go.mod may require, which go/build finds through
@@ -141,13 +143,21 @@ func checkModule(root, goMod string, lists Lists) ([]finding, error) {
 		paths = append(paths, path)
 	}
 	slices.Sort(paths)
+	// A package that does not type-check stops the check, but what it found by then — of the
+	// syntax of every file, as build constraints, which often keep the code from type-checking on
+	// the host — still comes out with the reason.
 	for _, path := range paths {
 		if err := c.checkPackage(c.dirs[path]); err != nil {
-			return nil, err
+			return c.sorted(), err
 		}
 	}
+	return c.sorted(), nil
+}
+
+// sorted gives the findings in the order of their text, each once.
+func (c *checker) sorted() []finding {
 	slices.SortFunc(c.findings, func(a, b finding) int { return strings.Compare(a.String(), b.String()) })
-	return slices.CompactFunc(c.findings, func(a, b finding) bool { return a.key() == b.key() }), nil
+	return slices.CompactFunc(c.findings, func(a, b finding) bool { return a.key() == b.key() })
 }
 
 func (c *checker) report(pos token.Pos, rule, format string, args ...any) {
@@ -188,6 +198,8 @@ func (c *checker) readGoMod() error {
 		case strings.HasSuffix(fields[0], "(") && len(fields) == 1:
 			block = strings.TrimSuffix(fields[0], "(")
 			continue
+		case len(fields) == 2 && fields[1] == "()", len(fields) == 1 && strings.HasSuffix(fields[0], "()"):
+			continue // an empty block
 		case len(fields) == 2 && fields[1] == "(":
 			block = fields[0]
 			continue
@@ -362,6 +374,12 @@ func (c *checker) Import(path string) (*types.Package, error) {
 	if !ok {
 		return c.std.Import(path)
 	}
+	// The go command refuses an import cycle; here one would recurse for good.
+	if c.importing[path] {
+		return nil, fmt.Errorf("an import cycle through %s", path)
+	}
+	c.importing[path] = true
+	defer delete(c.importing, path)
 	pkg, _, err := c.typeCheck(path, dir.code)
 	if err != nil {
 		return nil, err
