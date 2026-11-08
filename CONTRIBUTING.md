@@ -13,7 +13,7 @@ NovaTrail is in early design. Its documents are the product for now, and each re
 ## What every contribution keeps to
 
 - **No learners' data.** Never put a learner's name, work, handwriting, voice, photo, email or account identifier into an issue, a pull request, a screenshot, a test or an example. Examples are synthetic.
-- **No samples for eval sets yet.** Handwriting, voice and photo samples for eval sets are not accepted until the project decides how the people who make them consent to their publication. That is П-16, an open question of spec's privacy document.
+- **No samples for eval sets yet.** Handwriting, voice and photo samples for eval sets are not accepted until the project decides how the people who make them consent to their publication. That is П-16, an open question of spec's privacy document. Once they are, a volunteer hands the sample's file to the eval set's organizer, a maintainer of the [modules](https://github.com/altnovatrail/modules) repository, outside GitHub: never in an issue, a discussion or a pull request. Only the organizer adds a sample to an eval set.
 - **No secrets.** Keys and tokens never go into a commit.
 - **The devcontainer.** Work in the repository's devcontainer: it has every tool at the exact version the repository pins.
 - **Licenses.** Add only dependencies whose licenses are compatible with Apache-2.0. A development or CI tool that never ships, and puts none of its own code into what ships, may carry another OSI-approved license or free terms, for open source or for everyone, but only as a named exception and within the bounds RULES.md sets.
