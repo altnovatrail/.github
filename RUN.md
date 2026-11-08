@@ -120,7 +120,7 @@
 
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
-| [ ] | T46 | Вход same-bits: прогоны на целях и fma-diff | Claude | — | — |
+| [x] | T46 | Вход same-bits: прогоны на целях и fma-diff | Claude | — | — |
 | [ ] | T47 | Вход same-bits: прогон на ubuntu-24.04-arm | Claude | — | T46 |
 | [ ] | T48 | Тест правил кода — общим инструментом | я + Claude | да | T46 |
 
@@ -218,6 +218,21 @@ T47 берёт тот же вход, что T46, и после неё выход
 - **Как проверить:** `bash tests/run.sh`; actionlint и ShellCheck по `self-ci.yml`; проба на настоящем коде; `just -f spec/justfile docs-check-repo`; `/code-review high`.
 - **Разделы:** R16, R28; architecture 2.7, 3.1, 3.3, 4; R107 spec; Д114 и Д86 в RUN.md `spec`; R09 learner-model; R10 engine; `justfile` обоих на `main`.
 - **Стоимость:** $0.
+- **Сделано (2026-11-08):**
+  - по правилу 12, перед задачей: у SonarCloud на `main` quality gate OK, а в code scanning — те же шесть находок Scorecard;
+  - вход `same-bits` и job «Go / targets» и «Go / fma-diff» — по рецептам `learner-model` и `engine`, каждый со скриптом в одном контейнере на stdin. Контроль fma — три функции контроля `learner-model`, во временном модуле `fmacontrol`, через `go -C`; сообщение называет R107 spec;
+  - набор: стаб `go` и 10 кейсов — форма job, вызов контейнера, прогоны на amd64 по порядку, хост arm64, первая упавшая цель, `fma-diff` — чисто, свой контроль, объединение на одной цели, «fmahash triggered», контроль без объединения, пакет, который не собирается;
+  - проба на настоящем коде: локально на клоне `learner-model` 50f1b51 — оба скрипта зелёные, а с пакетом `a*b + c` и тестом 64-битного `uint` — красные. На GitHub — pull request #97 без мержа, по локальному пути: зелёные с чистым модулем, красные с испорченным, там, где ждали (architecture 4). Другие репозитории проба не трогала;
+  - поправка 2026-11-08 к R16; architecture 3.1, 3.3 — что вызывающий с входом убирает у себя, — и 4;
+  - проверено:
+    - `bash tests/run.sh` с yq 4.54.1 по сумме `self-ci.yml` — 124 теста, 0 упавших, 25 с;
+    - десять порч job — каждая красит набор (architecture 4);
+    - actionlint 1.7.12 и ShellCheck 0.11.0 по суммам `self-ci.yml` — чисто;
+    - `just -f spec/justfile docs-check-repo` — ok.
+- **Открыто:**
+  - после мержа — релиз `.github`, его SHA в тексте architecture 3.3 и поправка к R16 о релизе;
+  - `learner-model` и `engine` берут вход своим переходом на релиз (R107 spec). Их job «Go arm64» уходит с T47, а `rules_test.go` — с T48;
+  - после мержа — находки SonarCloud, CodeQL и Scorecard по правилу 12.
 
 #### T47. Вход same-bits: прогон на ubuntu-24.04-arm
 
