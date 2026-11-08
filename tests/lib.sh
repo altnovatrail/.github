@@ -162,7 +162,12 @@ select_step() {
     if harness_step -e '.jobs[$j] | has("container") or has("services")' > /dev/null; then
         harness_refuse "job $job runs in a container or with services, which the harness does not start"
     fi
-    [ "$(harness_step -r '.jobs[$j]["runs-on"]')" = ubuntu-24.04 ] || harness_refuse "job $job runs on another runner than ubuntu-24.04"
+    # Ubuntu 24.04 on amd64 or on arm64, whose run steps the stand-ins make the same: what reaches
+    # the processor runs in a container, which docker's stand-in stands for.
+    case $(harness_step -r '.jobs[$j]["runs-on"]') in
+        ubuntu-24.04 | ubuntu-24.04-arm) ;;
+        *) harness_refuse "job $job runs on another runner than ubuntu-24.04 or ubuntu-24.04-arm" ;;
+    esac
 }
 
 # The values of a key of a job's matrix, one a line; values that are no strings stop the test, as
