@@ -1,0 +1,19 @@
+# Trial (T47, never merged): the shared go.yml with same-bits, called by local path from this pull
+# request, on the trial module at the root, its arm64 job among the rest (R16; R107 in spec).
+name: Same-bits trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/go.yml
+    with:
+      same-bits: true
