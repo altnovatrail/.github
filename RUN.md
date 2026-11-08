@@ -122,9 +122,9 @@
 |---|---|---|---|---|---|
 | [x] | T46 | Вход same-bits: прогоны на целях и fma-diff | Claude | — | — |
 | [x] | T47 | Вход same-bits: прогон на ubuntu-24.04-arm | Claude | — | T46 |
-| [ ] | T48 | Тест правил кода — общим инструментом | я + Claude | да | T46 |
+| [ ] | T48 | Тест правил кода — общим инструментом | я + Claude | да | T46, T47 |
 
-T47 берёт тот же вход, что T46, и после неё выходит в релизе, с которым вызывающим уже есть что убрать. T46 и T47 сделаны: вход `same-bits` — с `v0.1.18`, а «Go / arm64» — с `v0.1.19`. T48 планируется своей сессией: при планировании решаются формат и место списков, место кода Go в `.github`, его CI и покрытие и как `go.yml` берёт инструмент своей версии (architecture 2.7). Она может разбиться на несколько задач (правило 11).
+T47 берёт тот же вход, что T46, и после неё выходит в релизе, с которым вызывающим уже есть что убрать. T46 и T47 сделаны: вход `same-bits` — с `v0.1.18`, а «Go / arm64» — с `v0.1.19`. T48 спланирована 2026-11-08: автор ответил на три вопроса — задача не делится, списки вызывающего — `.github/coderules.json`, а свой код Go `.github` проверяет общим `go.yml` (T48, «Решено автором»).
 
 ## Таблица 2. Эпики на потом
 
@@ -282,12 +282,50 @@ T47 берёт тот же вход, что T46, и после неё выход
 
 #### T48. Тест правил кода — общим инструментом
 
-- **Цель:** тест правил кода на `go/types` — общий инструмент `.github` со списками на репозиторий, вместо двух копий `rules_test.go`, и `go.yml` с `same-bits` его запускает. Вышел релиз `.github`.
-- **Почему:** R107 spec: «тест правил кода на `go/types` становится общим инструментом `.github` со списками на репозиторий, вместо двух копий `rules_test.go`».
-- **Решить при планировании:**
-  - где код инструмента — модуль Go в `.github`, его путь, — и что ему нужно: CI своего кода через свой вызов `go.yml`, покрытие в Codecov, CodeQL с `go` (R48 spec; R09);
-  - как `go.yml` берёт инструмент своей версии — второй checkout `.github` по `job.workflow_sha` (architecture 2.7) — и чем его собирает: Go стадии `toolchain` вызывающего;
-  - формат и место списков вызывающего — импорты кода и тестов, функции `math`, разрешённый модуль в `require`, номера правил — и что инструмент делает без них;
-  - как переносится `testdata/coderules`: контрольный модуль, на котором тест обязан сообщить ровно то, что называют его комментарии `// want`;
-  - разбить ли задачу (правило 11).
-- **Разделы:** R03, R09, R16; architecture 2.7, 3.1, 3.3; R48 и R107 spec; `rules_test.go` `learner-model` и `engine` на `main`.
+- **Цель:** тест правил кода на `go/types` — общий инструмент `.github`, `tools/coderules/`, вместо двух копий `rules_test.go`. Списки — у вызывающего, в `.github/coderules.json`. `go.yml` с `same-bits` запускает инструмент своей версии job «Go / rules». Свой код Go `.github` проверяет общим `go.yml`, с покрытием в Codecov. Вышел релиз `.github`.
+- **Почему:** R107 spec: «тест правил кода на `go/types` становится общим инструментом `.github` со списками на репозиторий, вместо двух копий `rules_test.go`»; Д114 в RUN.md `spec`.
+- **Решено автором (2026-11-08)** — при планировании T48:
+  - задача одна и не делится, хотя она больше одной проверки (правило 11): инструмент, его CI и job в `go.yml` вместе;
+  - списки вызывающего — JSON-файл в `.github/` вызывающего, `.github/coderules.json`, который инструмент читает `encoding/json`. Отвергнуты файл Go у вызывающего, который инструмент читал бы через `go/ast`, — он попал бы в сборку или жил бы в `testdata/`, — и многострочные входы `go.yml`: длинные списки в `ci.yml`, а их правка — правка workflow;
+  - свой код Go `.github` проверяет общим `go.yml`: `self-ci.yml` зовёт его локальным путём, а покрытие уходит в Codecov, как у всех вызывающих и как `spec` взял `go.yml` своей T50. Отвергнут свой job в `self-ci.yml` с `gofmt`, `go vet` и `go test` без Codecov: он расходился бы с R48 spec.
+- **Выяснилось при планировании** (прочитано 2026-11-08, `main` `learner-model` 50f1b51 и `engine` 33500ea):
+  - `rules_test.go` `engine` — «a port of learner-model's rules_test.go» и надмножество копии `learner-model`. В нём `go.mod` может требовать один модуль, `learner-model`, есть правило `replace`, а `go.mod` разбирается с блоками и кавычками. Импортёр — `importer.ForCompiler(fset, "source", nil)` вместо `"gc"`: ему нужны исходники зависимости. Внешние тесты проверяются с тем же набором `*types.Package`;
+  - различаются у копий только списки — `codeImports`, `testImports`, `mathTestFuncs`: у `learner-model` — `Exp` и `Log`, у `engine` — нет, — разрешённый модуль в `require` и имена в сообщениях. Номера правил — только в комментариях, а находка называет правило словом: `import`, `cgo`, `asm`, `linkname`, `buildtag`, `require`, `replace`, `math`, `fused`, `assignop`, `complex`, `typeparam`, `maprange`, `unicode`, `goroutine`;
+  - общее у копий — `mathFuncs`, `unicodeFuncs`, расширения не-Go файлов и `TestNoNestedModules`. Есть и контроль, `testdata/coderules` с `go.mod.control`: тест сверяет находки ровно с комментариями `// want <rule>`;
+  - тест идёт внутри `ci-test` на каждой цели, где тест может звать команду `go`, а на js/wasm и wasip1 его пропускают. Общий инструмент идёт один раз, на хосте: правила запрещают теги сборки, так что код на всех целях один;
+  - `ci-vuln` и `ci-licenses` у обоих — `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0` и `go run github.com/google/go-licenses/v2@v2.0.1`, без `require` в `go.mod`;
+  - у `.github` нет ни `justfile`, ни `go.mod`, а Go в devcontainer — 1.27.3, от `spec`. `self-codeql.yml` зовёт `codeql.yml` без `languages`, а `go` общий `codeql.yml` принимает с `v0.1.3` (поправка к R09);
+  - `self-release.yml` даёт релиз только по правке общего workflow, а его комментарий у `git diff` говорит: «A file that a shared workflow comes to read from .github joins this list with it»;
+  - свой репозиторий своей версии общий workflow берёт `actions/checkout` с `repository: ${{ job.workflow_repository }}` и `ref: ${{ job.workflow_sha }}` (architecture 2.7, 4).
+- **Решено при планировании** (исполнителем, по рекомендациям):
+  - **инструмент** — `tools/coderules/`, свой `go.mod` без `require`. Это порт `rules_test.go` `engine` в пакет и `main`: `coderules -lists <файл> <папка модуля>`. Он печатает `<файл>:<строка>: <правило>: <сообщение>` и выходит с 1, если нашёл хоть что-то. Правила, `mathFuncs`, `unicodeFuncs`, расширения файлов, проверка вложенных модулей и импортёр `source` — в инструменте, а сообщения — общие, без имён репозиториев;
+  - **списки** — `.github/coderules.json`: `code-imports`, `test-imports`, `test-math` и `requires` — модули, которые `go.mod` может требовать. Файл читается с `DisallowUnknownFields`. Без файла или с неизвестным полем «Go / rules» падает и называет причину;
+  - **тесты инструмента** — на контрольных модулях `tools/coderules/testdata/`, из `testdata/coderules` обоих, каждый со своим файлом списков. Находки сверяются с `// want`, и ослабленная проверка тест роняет;
+  - **«Go / rules»** — job `go.yml` под `same-bits`, вход прежний. Сначала checkout вызывающего, затем второй checkout `.github` по `job.workflow_repository` и `job.workflow_sha` — вне дерева модуля вызывающего, иначе его поймает проверка вложенных модулей. Затем стадия `toolchain` вызывающего и один контейнер: `go -C <инструмент> build -o /tmp/coderules .`, потом `/tmp/coderules -lists /work/.github/coderules.json /work`. Инструмент собирает тот же Go, что код вызывающего, поэтому `go` в его `go.mod` — не выше Go вызывающих;
+  - **свой CI** — корневой `justfile` `.github` с `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses` по `tools/coderules` через `go -C`. `ci-test` пишет `coverage/go.out`, а версии govulncheck и go-licenses — как у `engine`. Ещё: job «Go» в `self-ci.yml`, локальным путём, с `id-token: write`; `.github/codecov.yml` и `coverage/` в `.gitignore`; `languages: go` в `self-codeql.yml`; `gomod` в `dependabot.yml` для `/tools/coderules`;
+  - **релиз** — `tools/coderules/` встаёт в перечень `git diff` `self-release.yml`: инструмент читает общий workflow, и его правка даёт релиз.
+- **Сделать:**
+  - инструмент, его тесты и контрольные модули, по решениям выше;
+  - job `rules` в `go.yml` и его кейсы в наборе (R28); кейсы новых шагов `self-ci.yml` и правки `self-release.yml`;
+  - свой CI кода Go — по решениям выше;
+  - журнал — новая запись: у `.github` свой код Go — инструмент CI, а не код платформы, — его CI и что из этого следует. Поправки — к R16 (job `rules`), к R09 (CodeQL `go` у `.github`) и к R10 (перечень `self-release.yml`);
+  - architecture 1, 3.1 и 3.3. В 3.3 — что вызывающий с `same-bits` кладёт `.github/coderules.json`, убирает `rules_test.go` и `testdata/coderules` и ставит «Go / rules» в ruleset. Ещё 3.4, 3.5 и 4;
+  - README.md и CLAUDE.md — что у `.github` есть код инструмента CI. Если карточка 3.11 spec общего инструмента не знает, — строка таблицы 3 «В реестр spec».
+- **Решить в задаче:**
+  - путь модуля инструмента, с которым Codecov сопоставит профиль с путями репозитория. Элемент `.github` с точкой проверку пути модуля Go может не пройти — тогда `fixes` в `codecov.yml`;
+  - директиву `go` инструмента;
+  - куда класть второй checkout — например, перенести его в `$RUNNER_TEMP`.
+- **Не делать:** правки `learner-model` и `engine`. Свои копии они убирают и кладут `.github/coderules.json` своим переходом на релиз (R107 spec; RULES.md, Across repositories).
+- **Мой шаг (правило 4):** в ruleset `main` `.github` — «Go / lint», «Go / test», «Go / vuln», «Go / licenses», «CodeQL / analyze (go)» и `codecov/patch`, после их первого прогона: иначе мерж ждёт проверку, которой ещё нет. Приложение Codecov видит `.github` с пробы #80.
+- **Как проверить:**
+  - `go test` инструмента: на контроле — ровно `// want`;
+  - инструмент локально на клонах `learner-model` и `engine` во временной папке, со списками, переписанными из их `rules_test.go`: 0 находок. На их `testdata/coderules` — ровно их `// want`;
+  - `bash tests/run.sh`; actionlint и ShellCheck по `self-ci.yml`;
+  - проба — pull request `.github` без мержа: `go.yml` локально с `same-bits` на пробном модуле со списками, зелёная и с нарушением;
+  - `just -f spec/justfile docs-check-repo`; `/code-review high`.
+- **Разделы:** R03, R09, R10, R16, R28; architecture 1, 2.7, 3.1, 3.3, 3.4, 3.5, 4; R48 и R107 spec; Д114 в RUN.md `spec`; `rules_test.go`, `testdata/coderules` и `justfile` `learner-model` и `engine` на `main`.
+- **Стоимость:** $0.
+- **Риски:**
+  - задача больше одной проверки — так решил автор. Ревью и проба идут по частям, а мерж — один;
+  - импортёр `source` читает исходники стандартной библиотеки: время «Go / rules» замерить пробой;
+  - с кодом Go у `.github` появляются свои проверки в ruleset и `codecov/patch`, а pull request без правки кода Go проходит как «Coverage not affected» (architecture 3.3).
