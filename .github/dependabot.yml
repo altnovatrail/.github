@@ -23,6 +23,15 @@ updates:
     cooldown:
       default-days: 3
 
+  # The Go module of the tool of the rules of code, which requires nothing yet (R33): a require it
+  # comes to have is proposed like any other.
+  - package-ecosystem: gomod
+    directory: /tools/coderules
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+
   - package-ecosystem: docker
     directory: /.devcontainer
     schedule:

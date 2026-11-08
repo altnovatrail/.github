@@ -4,7 +4,9 @@
 #
 # The check names are what each repository's ruleset of main requires: "<job name> / <name of the
 # shared workflow's job>" — Secrets / gitleaks, DCO / sign-off, Documents / docs-check-repo — and
-# Workflows, which only .github runs: the code of the shared workflows lives here.
+# Workflows, which only .github runs: the code of the shared workflows lives here. Go / lint, Go /
+# test, Go / vuln and Go / licenses check .github's own Go code, the tool tools/coderules, by the
+# shared go.yml, as every Go repository checks its own (R33 in docs/decisions.md).
 # Renaming a job breaks those rules, and the release of .github follows this workflow by its
 # name, CI (R04).
 
@@ -37,6 +39,16 @@ jobs:
   documents:
     name: Documents
     uses: ./.github/workflows/documents.yml
+
+  # .github's Go code by the four recipes of its justfile, and the coverage of its tests, which the
+  # shared go.yml sends to Codecov (R16, R33). id-token: write is for its coverage job alone: a
+  # called workflow can only lower what this job gives it.
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/go.yml
 
   # actionlint over every workflow of the repository, with shellcheck over the scripts inside them.
   # Both come at exact versions, by the archive's SHA-256, as gitleaks does (R08): actionlint's from

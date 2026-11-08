@@ -1,10 +1,11 @@
 # .github's own release (R04, R10, R12), as spec's (R31 in spec): what a green main produces when a
-# shared workflow has changed. Nobody tags by hand: the version is the next patch of the line
+# shared workflow, or the tool one reads, has changed. Nobody tags by hand: the version is the next patch of the line
 # the releases are numbered in, and the tag is created with the release. The callers pin a
 # shared workflow by the SHA of a release, with its version beside it (R04).
 #
 # A commit gets a release only when a shared workflow — a file of .github/workflows/ without the
-# self- prefix — has changed since the release before it; the first release comes out always.
+# self- prefix — or the tool a shared workflow builds of its own version, tools/coderules/ (R33),
+# has changed since the release before it; the first release comes out always.
 # A release of a profile, a community file, a self- workflow or a document would only bring
 # every caller a pull request for a workflow that did not change (architecture 3.5).
 #
@@ -12,8 +13,8 @@
 # release with an attestation of its tag and commit, which `gh release verify` checks.
 #
 # The button runs the same for the tip of main — after a release run that failed, say: it
-# releases the tip when the tip has no release yet and a shared workflow has changed since the
-# last one. It works on main alone, and only once CI has passed on that commit.
+# releases the tip when the tip has no release yet and a shared workflow, or the tool, has changed
+# since the last one. It works on main alone, and only once CI has passed on that commit.
 #
 # The version is worked out on every green commit of main, released or not, with the toolchain
 # and spec of the tip the run checks out, in the line the commit was made in. A change that
@@ -188,13 +189,14 @@ jobs:
               fi
           done
           # A shared workflow is a file of .github/workflows/ without the self- prefix. A file
-          # that a shared workflow comes to read from .github joins this list with it. git diff
+          # that a shared workflow comes to read from .github joins this list with it: the tool
+          # of the rules of code, tools/coderules/, which go.yml builds of its own version (R33). git diff
           # --quiet exits 1 on a change and 0 on none; anything else is its own failure.
           if [ -n "$version" ] && [ -n "$previous" ]; then
               changed=0
-              git diff --quiet "$previous" "$TARGET" -- .github/workflows/ ':(exclude).github/workflows/self-*' || changed=$?
+              git diff --quiet "$previous" "$TARGET" -- .github/workflows/ ':(exclude).github/workflows/self-*' tools/coderules/ || changed=$?
               if [ "$changed" = 0 ]; then
-                  echo "::notice::No shared workflow has changed since ${previous}: nothing to release."
+                  echo "::notice::No shared workflow, nor the tool tools/coderules, has changed since ${previous}: nothing to release."
                   version=""
               elif [ "$changed" != 1 ]; then
                   echo "::error::git diff could not compare ${previous} with ${TARGET}."

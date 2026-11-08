@@ -1,0 +1,2 @@
+# The coverage of the tests, which ci-test writes and go.yml sends to Codecov.
+coverage/
