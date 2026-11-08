@@ -15,6 +15,12 @@
 # self-ci.yml holds it to spec's own list at the tag .github is on. A repository's exceptions are
 # its recipe's, each with its decision.
 #
+# With same-bits, two more jobs hold the caller's bits the same on every build (R107 in spec), as
+# learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
+# "Go / targets" runs the tests on the builds where the bits are most at risk, and builds and vets
+# wasip1; "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
+# control of its own here. Without the input the workflow is what it was.
+#
 # There is no Go code in .github, so a change here is tried from a Go repository's pull request
 # that calls this file by the SHA of the branch, or by a trial pull request of .github that calls
 # it by local path and is never merged, before the release (R16).
@@ -25,6 +31,11 @@ name: Go (shared)
 
 on:
   workflow_call:
+    inputs:
+      same-bits:
+        description: Hold the bits the same on every build, by "Go / targets" and "Go / fma-diff" (R107 in spec).
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -82,8 +93,9 @@ jobs:
   # Codecov takes the report by OIDC, with no secret (R48 in spec). This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
   # none of the repository's code. A pull request from a fork gets no token: the action then sends
-  # the report without one, as Codecov takes it from a fork's branch. The job waits for every check,
-  # as spec's upload does: a red one holds the merge anyway.
+  # the report without one, as Codecov takes it from a fork's branch. The job waits for the four
+  # checks of check, as spec's upload does — not for the jobs of same-bits, which hand it no report.
+  # A red one holds the merge anyway.
   #
   # Any failure of the job fails a pull request, so that a missing codecov/patch has its reason in
   # sight. Elsewhere, on main, it does not fail the run: the caller's release waits for CI to pass,
@@ -137,3 +149,131 @@ jobs:
           plugins: noop
           disable_telem: true
           fail_ci_if_error: true
+
+  # The caller's tests again, without the race detector and coverage, which Go does not have on 386
+  # and wasm: on amd64 with GOAMD64 v3, where the compiler fuses an addition; with v1 and
+  # GODEBUG=cpu.all=off, with no processor extension for the runtime and the standard library to
+  # pick their path by; on 386; and in js/wasm, in the Node of the toolchain stage. A host other
+  # than amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off.
+  # wasip1 is built and vetted alone: the toolchain stage has no WASI runtime. The list is
+  # learner-model's and engine's recipe test-targets (R107 in spec), and the script goes to the
+  # container on stdin, so that one container keeps the build cache from run to run.
+  targets:
+    name: targets
+    if: inputs.same-bits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      - name: Tests on the targets
+        run: |
+          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain bash -s - <<'SCRIPT'
+          set -euo pipefail
+          run() { echo "== $*" >&2; env "$@"; }
+          if [ "$(go env GOHOSTARCH)" = amd64 ]; then
+              run GOAMD64=v3 go test -count=1 ./...
+              run GOAMD64=v1 GODEBUG=cpu.all=off go test -count=1 ./...
+              run GOARCH=386 go test -count=1 ./...
+          else
+              run GODEBUG=cpu.all=off go test -count=1 ./...
+          fi
+          run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
+          run GOOS=wasip1 GOARCH=wasm go build ./...
+          run GOOS=wasip1 GOARCH=wasm go vet ./...
+          SCRIPT
+
+  # Each package of the caller's module with code is compiled for every target whose compiler fuses
+  # a multiplication with an addition or a subtraction, twice: as it is, and with -d=fmahash=n,
+  # which turns every rule of fusion off. The assembler must be the same, and the second build must
+  # report no place where a rule would have fired, "fmahash triggered". A control of three shapes
+  # the compiler fuses, one at least on every target, must differ on every target, or the check
+  # has stopped seeing fusion; it is a module of its own, written here, so that a caller keeps
+  # none. The output does not depend on the host. The check is learner-model's and engine's recipe
+  # fma-diff (R107 in spec).
+  fma-diff:
+    name: fma-diff
+    if: inputs.same-bits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      - name: The assembler with fusion and without it
+        run: |
+          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain bash -s - <<'SCRIPT'
+          set -euo pipefail
+          control="$(mktemp -d)"
+          printf 'module fmacontrol\n\ngo 1.21\n' > "$control/go.mod"
+          cat > "$control/control.go" <<'GO'
+          // Package fma is the control of fma-diff: the three shapes the compiler fuses, one of
+          // which at least it fuses on every target the check compiles for.
+          package fma
+
+          // MulAdd is a*b + c: a fused multiply-add on every target that fuses.
+          func MulAdd(a, b, c float64) float64 { return a*b + c }
+
+          // QuarterAdd is x/4 + y: a division by a constant whose reciprocal is exact becomes a
+          // multiplication, and fuses as one.
+          func QuarterAdd(x, y float64) float64 { return x/4 + y }
+
+          // MulSub is c - a*b: a fused multiply-subtract where the target has one; amd64 has none.
+          func MulSub(a, b, c float64) float64 { return c - a*b }
+          GO
+          # The assembler of a package, by its flags, in the caller's module or in the one named. The
+          # build writes no binary, a main package's neither, into the checkout. One that fails says
+          # why, and the target fails, but the other packages and targets are still checked.
+          asm() {
+              local out
+              local -a in=()
+              if [ -n "${3-}" ]; then in=(-C "$3"); fi
+              if ! out="$(go "${in[@]}" build -o /dev/null -gcflags="-S $1" "$2" 2>&1)"; then
+                  echo "fma-diff: $target: $2 does not build:" >&2
+                  echo "$out" >&2
+                  return 1
+              fi
+              echo "$out"
+          }
+          status=0
+          for target in arm64 ppc64le s390x riscv64 loong64 amd64/v3; do
+              export GOOS=linux GOARCH="${target%%/*}" GOAMD64=v1
+              if [ "$target" = amd64/v3 ]; then GOAMD64=v3; fi
+              ok=1
+              # The packages with code for this target: one of tests alone has nothing to build, and
+              # build constraints may leave a package out of a target.
+              pkgs="$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...)"
+              for pkg in $pkgs; do
+                  if ! fused="$(asm "" "$pkg")" || ! plain="$(asm -d=fmahash=n "$pkg")"; then
+                      ok=0
+                      continue
+                  fi
+                  if [ "$fused" != "$plain" ] || grep -q 'fmahash triggered' <<<"$plain"; then
+                      echo "fma-diff: $target: the compiler fuses in $pkg; put float64() round the * or / (R107 in spec):" >&2
+                      diff <(echo "$fused") <(echo "$plain") | head -n 40 >&2 || true
+                      ok=0
+                  fi
+              done
+              if ! fused="$(asm "" . "$control")" || ! plain="$(asm -d=fmahash=n . "$control")"; then
+                  ok=0
+              elif [ "$fused" = "$plain" ]; then
+                  echo "fma-diff: $target: the control was not caught: the check sees no fusion" >&2
+                  ok=0
+              fi
+              if [ "$ok" = 1 ]; then echo "fma-diff: $target: ok" >&2; else status=1; fi
+          done
+          exit "$status"
+          SCRIPT
