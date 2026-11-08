@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# A stand-in for sleep, for a step that waits between rounds: it writes down its call and returns at
+# once, so that a case runs twenty minutes of rounds in no time and counts the waits by the calls.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record sleep "$@"

@@ -1032,3 +1032,277 @@ test_build_that_writes_nothing_stops_the_release() {
     assert_status 1
     assert_line "::error::release-files wrote nothing into dist/, or dist/ is a link."
 }
+
+# The tests of the step T44 changes, by the amendments to R37 in spec of 2026-11-02 and of
+# 2026-11-03: "Publish to npm" waits for the registry in rounds, every ten seconds, until the
+# packument shows the version and the registry serves its archive, for twenty minutes or 120 rounds
+# at most, or three rounds while npm failed and the packument does not show it. The registry is
+# the stand-in curl, with answers of its own for the packument and for the archive, and sleep a
+# stand-in that only writes its calls down: the rounds run in no time, and the twenty minutes of
+# the clock are the 120 rounds here, since a stand-in cannot move SECONDS.
+
+publish_packument_url='https://registry.npmjs.org/@altnovatrail%2fcanvas?write=true'
+publish_archive_url='https://registry.npmjs.org/@altnovatrail/canvas/-/canvas-0.1.9.tgz'
+
+# The step for @altnovatrail/canvas 0.1.9, in a run that publishes the archive package makes, with
+# the action and the tag of the check before it, publish and none by default, and the registry and
+# npm as the case then gives them.
+publish_step() {
+    package
+    use_workflow release.yml
+    select_step release 'name=Publish to npm'
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    set_env VERSION v0.1.9
+    ctx inputs.npm-package @altnovatrail/canvas
+    ctx steps.npm.outputs.action "${1:-publish}"
+    ctx steps.npm.outputs.tag "${2:-}"
+    ctx steps.npm.outputs.integrity "$integrity"
+    ctx steps.npm.outputs.file "$archive"
+    ctx github.workflow_ref altnovatrail/canvas/.github/workflows/release.yml@refs/heads/main
+    stub curl
+    stub sleep
+    stub_in_temp npm-isolated
+}
+
+# One more answer of the packument: 404 without the version, or 200 with it, its integrity and its
+# tarball as given, the archive's and the registry's by default, and its provenance.
+packument_without() {
+    jq -n '{error: "Not found"}' | curl_answer_at "$publish_packument_url" 404
+}
+
+packument_with() {
+    jq -n --arg i "${1:-$integrity}" --arg t "${2:-$publish_archive_url}" \
+        '{name: "@altnovatrail/canvas", versions: {"0.1.9": {dist: {integrity: $i, tarball: $t,
+            attestations: {provenance: {predicateType: "https://slsa.dev/provenance/v1"}}}}}}' \
+        | curl_answer_at "$publish_packument_url" 200
+}
+
+# One more answer of the archive: 404, or 200 with the release's file or the text given.
+archive_missing() {
+    printf 'Not found' | curl_answer_at "$publish_archive_url" 404
+}
+
+archive_served() {
+    if [ "$#" = 0 ]; then
+        curl_answer_at "$publish_archive_url" 200 < "$archive"
+    else
+        printf '%s' "$1" | curl_answer_at "$publish_archive_url" 200
+    fi
+}
+
+assert_packument_asked() {
+    assert_call curl "$1" -sS --proto =https --retry 3 --max-time 30 -o "$step_temp/npm-files/packument.json" \
+        -w '%{http_code}' "$publish_packument_url"
+}
+
+assert_archive_asked() {
+    assert_call curl "$1" -sS --proto =https --proto-redir =https -L --max-time 60 \
+        -o "$step_temp/npm-files/registry.tgz" -w '%{http_code}' "$publish_archive_url"
+}
+
+assert_published() {
+    assert_status 0
+    assert_line "@altnovatrail/canvas@0.1.9 is published: $integrity"
+    assert_calls npm-isolated 1
+    assert_call npm-isolated 1 publish "$archive" --access public --loglevel verbose
+    # Trusted publishing: npm gets the OIDC variables, which the check before it keeps from it.
+    assert_call_record npm-isolated 1 oidc "ACTIONS_ID_TOKEN_REQUEST_URL set" "ACTIONS_ID_TOKEN_REQUEST_TOKEN set"
+}
+
+test_publish_a_version_out_at_once_is_checked_in_one_round() {
+    publish_step
+    packument_with
+    archive_served
+    run_step
+    assert_published
+    assert_calls curl 2
+    assert_packument_asked 1
+    assert_archive_asked 2
+    assert_calls sleep 0
+    refute_has '::warning::'
+}
+
+test_publish_waits_in_rounds_for_the_packument_to_show_the_version() {
+    publish_step
+    packument_without
+    packument_without
+    packument_with
+    archive_served
+    run_step
+    assert_published
+    assert_line "round 1: @altnovatrail/canvas@0.1.9 is not in the registry yet"
+    assert_line "round 2: @altnovatrail/canvas@0.1.9 is not in the registry yet"
+    refute_has "round 3:"
+    assert_calls curl 4
+    assert_packument_asked 3
+    assert_archive_asked 4
+    assert_calls sleep 2
+    assert_call sleep 1 10
+    assert_call sleep 2 10
+}
+
+# The race of spec's v0.7.2: the packument shows the version, and its archive answers 404 for a
+# while. The packument is not asked again once it shows the version.
+test_publish_waits_for_an_archive_the_registry_does_not_serve_yet() {
+    publish_step
+    packument_with
+    archive_missing
+    archive_missing
+    archive_served
+    run_step
+    assert_published
+    assert_line "round 1: the registry shows @altnovatrail/canvas@0.1.9, and does not serve its archive yet"
+    assert_line "round 2: the registry shows @altnovatrail/canvas@0.1.9, and does not serve its archive yet"
+    assert_calls curl 4
+    assert_packument_asked 1
+    assert_archive_asked 2
+    assert_archive_asked 4
+    assert_calls sleep 2
+}
+
+test_publish_a_registry_out_of_reach_for_a_round_is_asked_again() {
+    publish_step
+    : | curl_answer_at "$publish_packument_url" 000
+    packument_with
+    archive_served
+    run_step
+    assert_published
+    assert_line "round 1: @altnovatrail/canvas@0.1.9 is not in the registry yet"
+    assert_calls curl 3
+    assert_calls sleep 1
+}
+
+test_publish_a_version_that_never_shows_fails_after_the_rounds() {
+    publish_step
+    packument_without
+    run_step
+    assert_status 1
+    assert_line "round 120: @altnovatrail/canvas@0.1.9 is not in the registry yet"
+    assert_line "::error::npm publish ended well, but @altnovatrail/canvas@0.1.9 is not in the registry after twenty minutes. The registry may be processing it still, past its delay at peak times: run the job again later, and the check of the npm package finds it by its integrity. Or it may be only staged, by a trusted publisher that allows npm stage publish alone, or npm/cli#9889: then approve or reject it on npmjs.com, let the trusted publisher publish, and run the job again."
+    assert_calls curl 120
+    assert_calls sleep 119
+}
+
+test_publish_an_archive_never_served_fails_after_the_rounds() {
+    publish_step
+    packument_with
+    archive_missing
+    run_step
+    assert_status 1
+    assert_line "round 120: the registry shows @altnovatrail/canvas@0.1.9, and does not serve its archive yet"
+    assert_line "::error::The registry shows @altnovatrail/canvas@0.1.9, but did not serve its archive $publish_archive_url in twenty minutes. It may serve it later: run the job again later, and the check of the npm package finds the version by its integrity."
+    assert_calls curl 121
+    assert_packument_asked 1
+    assert_calls sleep 119
+}
+
+test_publish_a_version_out_although_npm_failed_passes_with_a_warning() {
+    publish_step
+    stub_exit npm-isolated 1
+    packument_without
+    packument_with
+    archive_served
+    run_step
+    assert_published
+    assert_line "::warning::npm publish failed with 1, but the registry holds @altnovatrail/canvas@0.1.9, the release's file byte for byte."
+    assert_calls sleep 1
+}
+
+test_publish_npm_failed_and_no_version_ends_after_three_rounds() {
+    publish_step
+    stub_exit npm-isolated 1
+    packument_without
+    run_step
+    assert_status 1
+    assert_line "round 3: @altnovatrail/canvas@0.1.9 is not in the registry yet"
+    refute_has "round 4:"
+    assert_line "::error::npm publish failed with 1, and @altnovatrail/canvas@0.1.9 is not in the registry; the lines above say why. The package's trusted publisher names the repository altnovatrail/canvas, the workflow release.yml, no environment, and allows npm publish."
+    assert_calls curl 3
+    assert_calls sleep 2
+}
+
+# Once the packument shows the version, its archive is waited for to the end, though npm failed.
+test_publish_npm_failed_and_the_version_shown_waits_for_its_archive() {
+    publish_step
+    stub_exit npm-isolated 1
+    packument_with
+    archive_missing
+    archive_missing
+    archive_missing
+    archive_missing
+    archive_served
+    run_step
+    assert_published
+    assert_line "round 4: the registry shows @altnovatrail/canvas@0.1.9, and does not serve its archive yet"
+    assert_calls sleep 4
+}
+
+test_publish_another_integrity_stops_the_step_without_asking_the_archive() {
+    publish_step
+    packument_with sha512-another
+    run_step
+    assert_status 1
+    assert_line "::error::@altnovatrail/canvas@0.1.9 is in the registry with the integrity sha512-another, and the release's file has $integrity."
+    assert_calls curl 1
+    assert_calls sleep 0
+}
+
+test_publish_an_archive_from_another_address_is_not_asked() {
+    publish_step
+    packument_with "$integrity" https://registry.example.invalid/canvas-0.1.9.tgz
+    run_step
+    assert_status 1
+    assert_line '::error::The registry serves @altnovatrail/canvas@0.1.9 from "https://registry.example.invalid/canvas-0.1.9.tgz", not from https://registry.npmjs.org/.'
+    assert_calls curl 1
+}
+
+test_publish_an_archive_that_is_not_the_releases_file_stops_the_step() {
+    publish_step
+    packument_with
+    archive_served 'another archive'
+    run_step
+    assert_status 1
+    assert_line "::error::The archive the registry serves for @altnovatrail/canvas@0.1.9 is not the release's file."
+}
+
+test_publish_a_version_npm_holds_already_publishes_nothing() {
+    publish_step skip
+    run_step
+    assert_status 0
+    assert_line "::notice::@altnovatrail/canvas@0.1.9 is in the npm registry already: nothing to publish."
+    assert_calls npm-isolated 0
+    assert_calls curl 0
+}
+
+test_publish_waits_twenty_minutes_in_a_job_that_has_the_time() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw '.jobs.release["timeout-minutes"]')" 45 "timeout-minutes of the job release"
+    # The stand-in cannot move SECONDS, so the cases end at the 120 rounds: the deadline and the
+    # line that ends the rounds by it are held here as the step has them.
+    local run
+    run=$(wf_raw '.jobs.release.steps[] | select(.name == "Publish to npm") | .run')
+    assert_eq "$(grep -cFx 'deadline=$((SECONDS + 1200))' <<< "$run")" 1 "the step's deadline"
+    assert_eq "$(grep -cFx '    if [ "$round" = 120 ] || [ "$SECONDS" -ge "$deadline" ]; then break; fi' <<< "$run")" 1 "the end of the rounds"
+}
+
+test_publish_a_version_of_an_older_line_goes_out_with_its_tag() {
+    publish_step publish previous
+    packument_with
+    archive_served
+    run_step
+    assert_status 0
+    assert_line "@altnovatrail/canvas@0.1.9 is published with the tag previous: $integrity"
+    assert_call npm-isolated 1 publish "$archive" --access public --tag previous --loglevel verbose
+}
+
+test_publish_a_version_without_provenance_passes_with_a_warning() {
+    publish_step
+    jq -n --arg i "$integrity" --arg t "$publish_archive_url" \
+        '{name: "@altnovatrail/canvas", versions: {"0.1.9": {dist: {integrity: $i, tarball: $t}}}}' \
+        | curl_answer_at "$publish_packument_url" 200
+    archive_served
+    run_step
+    assert_published
+    assert_line "::warning::@altnovatrail/canvas@0.1.9 has no provenance in the registry."
+}

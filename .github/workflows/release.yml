@@ -105,7 +105,10 @@ jobs:
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # The step "Publish to npm" waits for the registry twenty minutes, and three more at most for
+    # the round under way, and the rest of a run took five and a half at most at the callers by
+    # 2026-11-08 (architecture 4): 45 holds both, with room for a slower build.
+    timeout-minutes: 45
     # bash with pipefail, as in .github's own release.
     defaults:
       run:
@@ -837,12 +840,23 @@ jobs:
       # trusted publisher of the package names the caller's repository and release workflow, and
       # makes its provenance itself. npm-isolated runs it as in the check above, but with the OIDC
       # variables. Its exit status is not the verdict, the registry is: npm may end well with a
-      # version only staged, or fail on a version that went out (npm/cli#9889). So the step asks
-      # the packument, with write=true, until the version is there — for five minutes at most, or
-      # half a minute after npm failed — and then the archive the registry serves has to be this
-      # file, byte for byte. A version npm holds already is not published
-      # again, and a refusal release-refusal lets pass leaves the step out, as publish false does.
-      # If npm fails after the release is out, running the job again publishes the release's file.
+      # version only staged, or fail on a version that went out (npm/cli#9889). And a version npm
+      # took is not readable at once: the registry answers the upload with 202 and "Your package is
+      # being processed and may take a few minutes to become available" (its notice in the run of
+      # spec's v0.6.7, 2026-11-02), since it scans the package first, with "a short delay between
+      # publishing and availability, typically around five minutes. It may take longer, up to 15
+      # minutes or more, at peak times" (GitHub Changelog, npm publish-time malware scanning,
+      # 2026-07-28, read 2026-11-02; the 2026-11-02 amendment to R37 in spec). Nor does a version the packument shows have its archive at once: the archive of
+      # @altnovatrail/spec 0.7.2 answered 404 for five minutes after its packument showed it (the
+      # second 2026-11-03 amendment to R37 in spec). So the step asks the packument, with
+      # write=true, until the version is there, and then the archive, until the registry serves
+      # it — a round every ten seconds, for twenty minutes, as spec's step does, or three rounds
+      # while npm failed and the packument does not show the version — and the archive has to be
+      # this file, byte for byte. A version npm holds already is not published again, and a
+      # refusal release-refusal lets pass leaves the step out, as publish false does. If npm fails
+      # after the release is out, running the job again publishes the release's file, and if the
+      # registry is slower still, the check of the npm package finds the version by its integrity:
+      # the integrity in the packument holds the archive's bytes, which npm checks on install.
       - name: Publish to npm
         if: >-
           inputs.npm-package != '' &&
@@ -867,25 +881,57 @@ jobs:
           if [ -n "$TAG" ]; then tag_args=(--tag "$TAG"); fi
           status=0
           "$RUNNER_TEMP/npm-isolated" publish "$FILE" --access public "${tag_args[@]}" --loglevel verbose || status=$?
-          # A publish npm reports as done may take a while to show; one npm reports as failed is
-          # looked for briefly, in case it went out all the same.
-          attempts=30
-          if [ "$status" != 0 ]; then attempts=3; fi
+          # The rounds end once twenty minutes of the clock are past, however long the registry
+          # takes to answer: a read of the packument tries four times, half a minute at most each,
+          # and of the archive once, a minute at most, since the next round tries it again. So the
+          # round under way may add three minutes at most. An archive of
+          # another integrity, or from another address, is not asked for at all: the checks after
+          # the rounds refuse it.
           packument="$files/packument.json"
+          served_file="$files/registry.tgz"
           published=""
-          for attempt in $(seq 1 "$attempts"); do
-              code=$(curl -sS --proto "=https" --retry 3 -o "$packument" -w '%{http_code}' \
-                  "https://registry.npmjs.org/${NPM_PACKAGE/\//%2f}?write=true") || code=""
-              if [ "$code" = 200 ]; then
-                  published=$(jq -r --arg v "$version" '(.versions // {})[$v].dist.integrity // ""' "$packument")
-                  if [ -n "$published" ]; then break; fi
+          tarball=""
+          served=""
+          deadline=$((SECONDS + 1200))
+          for round in $(seq 1 120); do
+              if [ -z "$published" ]; then
+                  code=$(curl -sS --proto "=https" --retry 3 --max-time 30 -o "$packument" -w '%{http_code}' \
+                      "https://registry.npmjs.org/${NPM_PACKAGE/\//%2f}?write=true") || code=""
+                  if [ "$code" = 200 ]; then
+                      published=$(jq -r --arg v "$version" '(.versions // {})[$v].dist.integrity // ""' "$packument") || published=""
+                  fi
               fi
-              echo "attempt ${attempt}: ${NPM_PACKAGE}@${version} is not in the registry yet"
+              if [ -n "$published" ] && [ "$published" != "$INTEGRITY" ]; then
+                  break
+              elif [ -n "$published" ]; then
+                  tarball=$(jq -r --arg v "$version" '.versions[$v].dist.tarball // ""' "$packument")
+                  case "$tarball" in
+                      https://registry.npmjs.org/*)
+                          code=$(curl -sS --proto "=https" --proto-redir "=https" -L --max-time 60 \
+                              -o "$served_file" -w '%{http_code}' "$tarball") || code=""
+                          if [ "$code" = 200 ]; then
+                              served=true
+                              break
+                          fi
+                          ;;
+                      *)
+                          served=no
+                          break
+                          ;;
+                  esac
+              fi
+              if [ -z "$published" ]; then
+                  echo "round ${round}: ${NPM_PACKAGE}@${version} is not in the registry yet"
+              else
+                  echo "round ${round}: the registry shows ${NPM_PACKAGE}@${version}, and does not serve its archive yet"
+              fi
+              if [ "$round" = 120 ] || [ "$SECONDS" -ge "$deadline" ]; then break; fi
+              if [ "$status" != 0 ] && [ -z "$published" ] && [ "$round" -ge 3 ]; then break; fi
               sleep 10
           done
           workflow="${CALLER_WORKFLOW_REF%@*}"
           if [ -z "$published" ] && [ "$status" = 0 ]; then
-              echo "::error::npm publish ended well, but ${NPM_PACKAGE}@${version} is not in the registry after five minutes: it may be only staged, by a trusted publisher that allows npm stage publish alone, or npm/cli#9889. Approve or reject it on npmjs.com, let the trusted publisher publish, and run the job again."
+              echo "::error::npm publish ended well, but ${NPM_PACKAGE}@${version} is not in the registry after twenty minutes. The registry may be processing it still, past its delay at peak times: run the job again later, and the check of the npm package finds it by its integrity. Or it may be only staged, by a trusted publisher that allows npm stage publish alone, or npm/cli#9889: then approve or reject it on npmjs.com, let the trusted publisher publish, and run the job again."
               exit 1
           elif [ -z "$published" ]; then
               echo "::error::npm publish failed with ${status}, and ${NPM_PACKAGE}@${version} is not in the registry; the lines above say why. The package's trusted publisher names the repository ${GITHUB_REPOSITORY}, the workflow ${workflow##*/}, no environment, and allows npm publish."
@@ -893,17 +939,14 @@ jobs:
           elif [ "$published" != "$INTEGRITY" ]; then
               echo "::error::${NPM_PACKAGE}@${version} is in the registry with the integrity ${published}, and the release's file has ${INTEGRITY}."
               exit 1
+          elif [ "$served" = no ]; then
+              echo "::error::The registry serves ${NPM_PACKAGE}@${version} from \"${tarball}\", not from https://registry.npmjs.org/."
+              exit 1
+          elif [ "$served" != true ]; then
+              echo "::error::The registry shows ${NPM_PACKAGE}@${version}, but did not serve its archive ${tarball} in twenty minutes. It may serve it later: run the job again later, and the check of the npm package finds the version by its integrity."
+              exit 1
           fi
-          tarball=$(jq -r --arg v "$version" '.versions[$v].dist.tarball' "$packument")
-          case "$tarball" in
-              https://registry.npmjs.org/*) ;;
-              *)
-                  echo "::error::The registry serves ${NPM_PACKAGE}@${version} from \"${tarball}\", not from https://registry.npmjs.org/."
-                  exit 1
-                  ;;
-          esac
-          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 -o "$files/registry.tgz" "$tarball"
-          if ! cmp "$FILE" "$files/registry.tgz"; then
+          if ! cmp "$FILE" "$served_file"; then
               echo "::error::The archive the registry serves for ${NPM_PACKAGE}@${version} is not the release's file."
               exit 1
           fi

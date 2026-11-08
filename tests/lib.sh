@@ -224,6 +224,19 @@ curl_offline() {
     : > "$state/stub/curl.offline"
 }
 
+# One more answer to that URL alone, in the order the step will ask it: the code, 000 for no
+# connection, and the body from stdin. The last answer comes again once the step has had them all.
+curl_answer_at() {
+    local queue count
+    queue="$state/stub/curl.at/$(printf %s "$1" | sha256sum | cut -c1-16)"
+    mkdir -p "$queue"
+    count=$(cat "$queue/count" 2> /dev/null || echo 0)
+    count=$((count + 1))
+    printf "%s\n" "$2" > "$queue/$count.code"
+    cat > "$queue/$count.body"
+    echo "$count" > "$queue/count"
+}
+
 # One variable of env, worked out into harness_value; notes in harness_used what it took.
 harness_resolve() {
     local name=$1 rest=$2 out="" inner path plain=1
