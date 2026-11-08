@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# A stand-in for go, for the scripts go.yml hands its toolchain container: the case runs the
+# script a docker call read on stdin with this stand-in first on PATH. It writes down its arguments
+# and, as env, the build variables it got — GOOS, GOARCH, GOAMD64 and GODEBUG, a value or unset.
+# It answers go env GOHOSTARCH by stub/go.hostarch, amd64 by default, and go env GOROOT with
+# /usr/local/go; go list with stub/go.packages, one import path a line. A build with -gcflags=-S
+# prints a stand-in for the assembler: "TEXT <package> fused" where stub/go.fuses names the package
+# with the target, "<package> <GOARCH>/<GOAMD64>", or with "*" for every target, and "TEXT
+# <package> plain" otherwise or with -d=fmahash=n. A package stub/go.triggered names prints "TEXT
+# <package> plain" and "fmahash triggered" in both builds: the same assembler, so that only the
+# message tells. The control, the package . of a module named by -C, fuses on every
+# target unless stub/go.control-unfused is there. A package stub/go.broken names does not build.
+# Any other call — go test, go vet, a plain go build — ends with 1 when a line of stub/go.fails is
+# a word of the call's build variables, as GOARCH=386, and with 0 otherwise.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record go "$@"
+build=""
+for variable in GOOS GOARCH GOAMD64 GODEBUG; do
+    if [ -n "${!variable+x}" ]; then
+        printf '%s=%s\n' "$variable" "${!variable}"
+        build+=" $variable=${!variable}"
+    else
+        printf '%s unset\n' "$variable"
+    fi
+done > "$call.env"
+listed() {
+    [ -f "$state/stub/$1" ] && grep -Fxq -- "$2" "$state/stub/$1"
+}
+module=""
+if [ "${1-}" = -C ]; then
+    module=$2
+    shift 2
+fi
+case "${1-} ${2-}" in
+    "env GOHOSTARCH")
+        cat "$state/stub/go.hostarch" 2> /dev/null || echo amd64
+        exit 0
+        ;;
+    "env GOROOT")
+        echo /usr/local/go
+        exit 0
+        ;;
+    "list -f")
+        cat "$state/stub/go.packages" 2> /dev/null || true
+        exit 0
+        ;;
+esac
+if [ "${1-}" = build ] && [[ ${2-} == -gcflags=-S* ]]; then
+    flags=${2#-gcflags=}
+    package=${3-}
+    target="${GOARCH-}/${GOAMD64-}"
+    if [ -n "$module" ]; then
+        if [ "$flags" != "-S -d=fmahash=n" ] && [ ! -e "$state/stub/go.control-unfused" ]; then
+            echo "TEXT control fused"
+        else
+            echo "TEXT control plain"
+        fi
+        exit 0
+    fi
+    if listed go.broken "$package"; then
+        echo "$package: a stand-in build error" >&2
+        exit 1
+    fi
+    if listed go.triggered "$package"; then
+        echo "TEXT $package plain"
+        echo "$package: fmahash triggered"
+    elif [ "$flags" = "-S -d=fmahash=n" ]; then
+        echo "TEXT $package plain"
+    elif listed go.fuses "$package $target" || listed go.fuses "$package *"; then
+        echo "TEXT $package fused"
+    else
+        echo "TEXT $package plain"
+    fi
+    exit 0
+fi
+if [ -f "$state/stub/go.fails" ]; then
+    while IFS= read -r word; do
+        if [[ " $build " == *" $word "* ]]; then
+            echo "go: a stand-in failure under $word" >&2
+            exit 1
+        fi
+    done < "$state/stub/go.fails"
+fi
