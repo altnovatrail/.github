@@ -263,3 +263,8 @@ T44 и T45 друг от друга не зависят. Порядок — T44 
 - **Открыто:**
   - группу у вызывающих вносит сессия `spec` (поправка 2026-10-21 к R30 spec; Д88 в RUN.md `spec`). Нового у `spec` `.github` не просит: Д88 называет и группу, и того, кто её вносит;
   - шаблон 3.3 по-прежнему закрепляет `v0.1.15`. Новый релиз и его SHA придут с мержем T44 (#94). Пришли: `v0.1.16` закрепляет итог T44 после мержа.
+- **Итог после мержа (2026-11-08):**
+  - T45 слита pull request [95](https://github.com/altnovatrail/.github/pull/95), merge-коммитом d726fd7, вместе с итогом T44 после мержа и подъёмом `github/codeql-action` до v4.39.3 (итог T44). До мержа были зелёными все восемь проверок, CodeQL — уже на v4.39.3;
+  - на `main` прошли CI, CodeQL, Scorecard и Release. `self-release.yml` выпустил `v0.1.17` на d726fd7: неизменяемый и Latest, `gh release verify v0.1.17` — «Release v0.1.17 verified!». От `v0.1.16` он отличается только `codeql.yml` и `scorecard.yml`. `release.yml` в нём тот же, и architecture 3.3 закрепляет по-прежнему `v0.1.16`;
+  - #73 Dependabot закрыл сам: «Looks like github/codeql-action/upload-sarif is up-to-date now, so this is no longer needed»;
+  - правило 12: у SonarCloud на d726fd7 0 находок, quality gate OK. В code scanning — те же шесть находок Scorecard.
