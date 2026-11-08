@@ -1,0 +1,9 @@
+{
+  "code-imports": ["math"],
+  "test-imports": ["testing"],
+  "nested-modules": [
+    "tools/coderules",
+    "tools/coderules/testdata/engine/nested",
+    "tools/coderules/testdata/learner-model/.devcontainer/gopls"
+  ]
+}
