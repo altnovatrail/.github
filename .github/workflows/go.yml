@@ -93,8 +93,9 @@ jobs:
   # Codecov takes the report by OIDC, with no secret (R48 in spec). This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
   # none of the repository's code. A pull request from a fork gets no token: the action then sends
-  # the report without one, as Codecov takes it from a fork's branch. The job waits for every check,
-  # as spec's upload does: a red one holds the merge anyway.
+  # the report without one, as Codecov takes it from a fork's branch. The job waits for the four
+  # checks of check, as spec's upload does — not for the jobs of same-bits, which hand it no report.
+  # A red one holds the merge anyway.
   #
   # Any failure of the job fails a pull request, so that a missing codecov/patch has its reason in
   # sight. Elsewhere, on main, it does not fail the run: the caller's release waits for CI to pass,
@@ -233,36 +234,42 @@ jobs:
           // MulSub is c - a*b: a fused multiply-subtract where the target has one; amd64 has none.
           func MulSub(a, b, c float64) float64 { return c - a*b }
           GO
-          # The assembler of a package, by its flags, in the caller's module or in the one named; a
-          # build that fails says why, rather than stopping the script with nothing printed.
+          # The assembler of a package, by its flags, in the caller's module or in the one named. The
+          # build writes no binary, a main package's neither, into the checkout. One that fails says
+          # why, and the target fails, but the other packages and targets are still checked.
           asm() {
               local out
               local -a in=()
               if [ -n "${3-}" ]; then in=(-C "$3"); fi
-              if ! out="$(go "${in[@]}" build -gcflags="-S $1" "$2" 2>&1)"; then
-                  echo "fma-diff: $GOARCH: $2 does not build:" >&2
+              if ! out="$(go "${in[@]}" build -o /dev/null -gcflags="-S $1" "$2" 2>&1)"; then
+                  echo "fma-diff: $target: $2 does not build:" >&2
                   echo "$out" >&2
                   return 1
               fi
               echo "$out"
           }
-          # The packages with code: one of tests alone has nothing to build.
-          pkgs="$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...)"
           status=0
           for target in arm64 ppc64le s390x riscv64 loong64 amd64/v3; do
               export GOOS=linux GOARCH="${target%%/*}" GOAMD64=v1
               if [ "$target" = amd64/v3 ]; then GOAMD64=v3; fi
               ok=1
+              # The packages with code for this target: one of tests alone has nothing to build, and
+              # build constraints may leave a package out of a target.
+              pkgs="$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...)"
               for pkg in $pkgs; do
-                  fused="$(asm "" "$pkg")"
-                  plain="$(asm -d=fmahash=n "$pkg")"
+                  if ! fused="$(asm "" "$pkg")" || ! plain="$(asm -d=fmahash=n "$pkg")"; then
+                      ok=0
+                      continue
+                  fi
                   if [ "$fused" != "$plain" ] || grep -q 'fmahash triggered' <<<"$plain"; then
                       echo "fma-diff: $target: the compiler fuses in $pkg; put float64() round the * or / (R107 in spec):" >&2
                       diff <(echo "$fused") <(echo "$plain") | head -n 40 >&2 || true
                       ok=0
                   fi
               done
-              if [ "$(asm "" . "$control")" = "$(asm -d=fmahash=n . "$control")" ]; then
+              if ! fused="$(asm "" . "$control")" || ! plain="$(asm -d=fmahash=n . "$control")"; then
+                  ok=0
+              elif [ "$fused" = "$plain" ]; then
                   echo "fma-diff: $target: the control was not caught: the check sees no fusion" >&2
                   ok=0
               fi

@@ -164,7 +164,8 @@ run_container_script() {
     [ -f "$call.stdin" ] || fail "the docker run read no script on stdin"
     stub go
     script_status=0
-    (cd -- "$step_workspace" && /usr/bin/env -i "PATH=$state/bin:/usr/bin:/bin" "HOME=$state/home" \
+    mkdir -p "$state/tmp"
+    (cd -- "$step_workspace" && /usr/bin/env -i "PATH=$state/bin:/usr/bin:/bin" "HOME=$state/home" "TMPDIR=$state/tmp" \
         /usr/bin/bash "$call.stdin") > "$state/script.out" 2>&1 || script_status=$?
 }
 
@@ -268,14 +269,17 @@ test_go_fma_diff_passes_when_no_package_fuses_and_the_control_does() {
     for target in "${fma_targets[@]}"; do
         assert_script_line "fma-diff: $target: ok"
     done
-    # go list, then for each target each package and the control, with fusion and without it.
-    assert_calls go 37
+    # For each target: go list, each package and the control, with fusion and without it.
+    assert_calls go 42
     assert_call go 1 list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...
-    assert_call go 2 build "-gcflags=-S " example.com/m
+    assert_call_record go 1 env "GOOS=linux" "GOARCH=arm64" "GOAMD64=v1" "GODEBUG unset"
+    assert_call go 2 build -o /dev/null "-gcflags=-S " example.com/m
     assert_call_record go 2 env "GOOS=linux" "GOARCH=arm64" "GOAMD64=v1" "GODEBUG unset"
-    assert_call go 3 build "-gcflags=-S -d=fmahash=n" example.com/m
-    assert_call go 37 -C "$(harness_argv "$(harness_call go 36).argv" | awk '{print $2}')" build "-gcflags=-S -d=fmahash=n" .
-    assert_call_record go 37 env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
+    assert_call go 3 build -o /dev/null "-gcflags=-S -d=fmahash=n" example.com/m
+    assert_call go 36 list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...
+    assert_call_record go 36 env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
+    assert_call go 42 -C "$(harness_argv "$(harness_call go 41).argv" | awk '{print $2}')" build -o /dev/null "-gcflags=-S -d=fmahash=n" .
+    assert_call_record go 42 env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
 }
 
 test_go_fma_diff_writes_its_own_control_and_builds_it_as_a_module_of_its_own() {
@@ -284,7 +288,7 @@ test_go_fma_diff_writes_its_own_control_and_builds_it_as_a_module_of_its_own() {
     assert_script_status 0
     local control
     control=$(harness_argv "$(harness_call go 2).argv" | awk '{print $2}')
-    assert_call go 2 -C "$control" build "-gcflags=-S " .
+    assert_call go 2 -C "$control" build -o /dev/null "-gcflags=-S " .
     assert_eq "$(cat "$control/go.mod")" $'module fmacontrol\n\ngo 1.21' "the control's go.mod"
     assert_eq "$(grep -c '^func ' "$control/control.go")" 3 "the control's functions"
     assert_eq "$(grep -cF 'return a*b + c' "$control/control.go")" 1 "the multiply-add of the control"
@@ -333,6 +337,25 @@ test_go_fma_diff_says_which_package_does_not_build() {
     echo example.com/m/sub > "$state/stub/go.broken"
     run_container_script
     assert_script_status 1
-    assert_script_line "fma-diff: arm64: example.com/m/sub does not build:"
     assert_script_line "example.com/m/sub: a stand-in build error"
+    # The other package and the other targets are still checked.
+    local target
+    for target in "${fma_targets[@]}"; do
+        assert_script_line "fma-diff: $target: example.com/m/sub does not build:"
+        refute_script_has "fma-diff: $target: ok"
+    done
+    assert_calls go 36
+}
+
+# A package that build constraints leave out of a target is not built for it: go list is asked
+# again for every target.
+test_go_fma_diff_builds_each_target_s_own_packages() {
+    run_same_bits_step fma-diff 'The assembler with fusion and without it'
+    two_packages
+    echo example.com/m > "$state/stub/go.packages.arm64"
+    run_container_script
+    assert_script_status 0
+    # arm64: one package; the five others: two. Each with the control, twice, and a go list.
+    assert_calls go $((1 + 2 + 2 + 5 * (1 + 4 + 2)))
+    refute_script_has "does not build"
 }

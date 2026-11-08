@@ -3,7 +3,8 @@
 # script a docker call read on stdin with this stand-in first on PATH. It writes down its arguments
 # and, as env, the build variables it got — GOOS, GOARCH, GOAMD64 and GODEBUG, a value or unset.
 # It answers go env GOHOSTARCH by stub/go.hostarch, amd64 by default, and go env GOROOT with
-# /usr/local/go; go list with stub/go.packages, one import path a line. A build with -gcflags=-S
+# /usr/local/go; go list with stub/go.packages.<GOARCH>, or else stub/go.packages, one import
+# path a line. A build with -o /dev/null and -gcflags=-S
 # prints a stand-in for the assembler: "TEXT <package> fused" where stub/go.fuses names the package
 # with the target, "<package> <GOARCH>/<GOAMD64>", or with "*" for every target, and "TEXT
 # <package> plain" otherwise or with -d=fmahash=n. A package stub/go.triggered names prints "TEXT
@@ -44,13 +45,13 @@ case "${1-} ${2-}" in
         exit 0
         ;;
     "list -f")
-        cat "$state/stub/go.packages" 2> /dev/null || true
+        cat "$state/stub/go.packages.${GOARCH-}" 2> /dev/null || cat "$state/stub/go.packages" 2> /dev/null || true
         exit 0
         ;;
 esac
-if [ "${1-}" = build ] && [[ ${2-} == -gcflags=-S* ]]; then
-    flags=${2#-gcflags=}
-    package=${3-}
+if [ "${1-}" = build ] && [ "${2-}" = -o ] && [ "${3-}" = /dev/null ] && [[ ${4-} == -gcflags=-S* ]]; then
+    flags=${4#-gcflags=}
+    package=${5-}
     target="${GOARCH-}/${GOAMD64-}"
     if [ -n "$module" ]; then
         if [ "$flags" != "-S -d=fmahash=n" ] && [ ! -e "$state/stub/go.control-unfused" ]; then
