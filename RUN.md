@@ -236,6 +236,11 @@ T47 берёт тот же вход, что T46, и после неё выход
   - после мержа — релиз `.github`, его SHA в тексте architecture 3.3 и поправка к R16 о релизе;
   - `learner-model` и `engine` берут вход своим переходом на релиз (R107 spec). Их job «Go arm64» уходит с T47, а `rules_test.go` — с T48;
   - после мержа — находки SonarCloud, CodeQL и Scorecard по правилу 12.
+- **Итог после мержа (2026-11-08):**
+  - T46 слита pull request [98](https://github.com/altnovatrail/.github/pull/98), merge-коммитом 6f77496. До мержа были зелёными все восемь проверок;
+  - на `main` прошли CI, CodeQL, Scorecard и Release. `self-release.yml` выпустил `v0.1.18` на 6f77496: неизменяемый и Latest, `gh release verify v0.1.18` — «Release v0.1.18 verified!». От `v0.1.17` он отличается только `go.yml`;
+  - architecture 3.3 закрепляет `go.yml` на `v0.1.18`, а вход `same-bits` — с него; поправка к R16 записывает релиз;
+  - правило 12: у SonarCloud на 6f77496 0 находок, quality gate OK. В code scanning — те же шесть находок Scorecard.
 
 #### T47. Вход same-bits: прогон на ubuntu-24.04-arm
 
