@@ -15,11 +15,12 @@
 # self-ci.yml holds it to spec's own list at the tag .github is on. A repository's exceptions are
 # its recipe's, each with its decision.
 #
-# With same-bits, two more jobs hold the caller's bits the same on every build (R107 in spec), as
+# With same-bits, three more jobs hold the caller's bits the same on every build (R107 in spec), as
 # learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
 # "Go / targets" runs the tests on the builds where the bits are most at risk, and builds and vets
 # wasip1; "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
-# control of its own here. Without the input the workflow is what it was.
+# control of its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
+# runner. Without the input the workflow is what it was.
 #
 # There is no Go code in .github, so a change here is tried from a Go repository's pull request
 # that calls this file by the SHA of the branch, or by a trial pull request of .github that calls
@@ -33,7 +34,7 @@ on:
   workflow_call:
     inputs:
       same-bits:
-        description: Hold the bits the same on every build, by "Go / targets" and "Go / fma-diff" (R107 in spec).
+        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff" and "Go / arm64" (R107 in spec).
         type: boolean
         default: false
 
@@ -276,4 +277,50 @@ jobs:
               if [ "$ok" = 1 ]; then echo "fma-diff: $target: ok" >&2; else status=1; fi
           done
           exit "$status"
+          SCRIPT
+
+  # ci-test and the tests on the targets again, on an arm64 host, a free runner of a public repository
+  # (architecture 4): the caller's tests with the race detector and coverage, whose report goes
+  # nowhere — the test job sends the one report — then the script of targets, which on a host other
+  # than amd64 runs its own build with cpu.all=off, js/wasm and wasip1. fma-diff does not depend on
+  # the host and does not run again. learner-model and engine ran this as a job of their own, "Go
+  # arm64" (R107 in spec).
+  arm64:
+    name: arm64
+    if: inputs.same-bits
+    runs-on: ubuntu-24.04-arm
+    # ci-test, which check gives 20 minutes, and the targets, which targets gives 30, one after the
+    # other.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      - name: ci-test
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain just ci-test
+
+      - name: Tests on the targets
+        run: |
+          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "$PWD:/work" --workdir /work \
+              toolchain bash -s - <<'SCRIPT'
+          set -euo pipefail
+          run() { echo "== $*" >&2; env "$@"; }
+          if [ "$(go env GOHOSTARCH)" = amd64 ]; then
+              run GOAMD64=v3 go test -count=1 ./...
+              run GOAMD64=v1 GODEBUG=cpu.all=off go test -count=1 ./...
+              run GOARCH=386 go test -count=1 ./...
+          else
+              run GODEBUG=cpu.all=off go test -count=1 ./...
+          fi
+          run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
+          run GOOS=wasip1 GOARCH=wasm go build ./...
+          run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT

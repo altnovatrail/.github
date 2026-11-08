@@ -6,9 +6,9 @@
 # the OIDC token, and its step "Codecov CLI", run with a stand-in curl. The steps that use an
 # action the harness does not run: their inputs are read as text, and the actions are named
 # without their SHAs, which Dependabot moves.
-# The tests of same-bits (T46, R107 in spec) come last, under their own heading: the jobs "Go /
-# targets" and "Go / fma-diff", and the scripts they hand the toolchain container, run here with
-# bash and the stand-in go.
+# The tests of same-bits (T46 and T47, R107 in spec) come last, under their own headings: the jobs
+# "Go / targets", "Go / fma-diff" and "Go / arm64", and the scripts they hand the toolchain
+# container, run here with bash and the stand-in go.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 
@@ -17,7 +17,7 @@ test_go_is_called_with_same_bits_alone_no_secrets_and_gives_the_token_to_the_cov
     assert_eq "$(wf '.on.workflow_call | keys')" '["inputs"]' "what the call takes"
     assert_eq "$(wf '.on.workflow_call.inputs | map_values({type, default})')" '{"same-bits":{"type":"boolean","default":false}}' "the inputs"
     assert_eq "$(wf '.permissions')" '{"contents":"read"}' "the workflow's permissions"
-    assert_eq "$(wf '.jobs | keys')" '["check","coverage","fma-diff","targets"]' "the jobs"
+    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","targets"]' "the jobs"
     assert_eq "$(wf '[.jobs | to_entries[] | select(.value | has("permissions")) | .key]')" '["coverage"]' "the jobs with permissions of their own"
     assert_eq "$(wf '.jobs.coverage.permissions')" '{"contents":"read","id-token":"write"}' "the coverage job's permissions"
 }
@@ -358,4 +358,39 @@ test_go_fma_diff_builds_each_target_s_own_packages() {
     # arm64: one package; the five others: two. Each with the control, twice, and a go list.
     assert_calls go $((1 + 2 + 2 + 5 * (1 + 4 + 2)))
     refute_script_has "does not build"
+}
+
+# The tests of the job T47 adds to same-bits: "Go / arm64", ci-test and the targets of its host on
+# an arm64 runner (R107 in spec).
+
+test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
+    use_workflow go.yml
+    assert_eq "$(wf '.jobs.arm64 | {name, if, "runs-on", "timeout-minutes", permissions}')" \
+        '{"name":"arm64","if":"inputs.same-bits","runs-on":"ubuntu-24.04-arm","timeout-minutes":45,"permissions":null}' "the job arm64"
+    assert_eq "$(wf '[.jobs.arm64.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
+        '["actions/checkout@<sha>","Toolchain image","ci-test","Tests on the targets"]' "its steps"
+    assert_eq "$(wf '.jobs.arm64.steps[0].with')" '{"persist-credentials":false}' "its checkout"
+    assert_eq "$(wf '.jobs.arm64.steps[1].run')" "$(wf '.jobs.check.steps[1].run')" "its toolchain stage"
+    # The targets as the job targets has them, word for word: one script for both hosts.
+    assert_eq "$(wf '.jobs.arm64.steps[3].run')" "$(wf '.jobs.targets.steps[2].run')" "its tests on the targets"
+}
+
+test_go_arm64_runs_ci_test_in_the_toolchain_stage_without_the_license_list() {
+    use_workflow go.yml
+    select_step arm64 name=ci-test
+    stub docker
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+        --volume "$step_workspace:/work" --workdir /work toolchain just ci-test
+}
+
+test_go_arm64_fails_with_ci_test() {
+    use_workflow go.yml
+    select_step arm64 name=ci-test
+    stub docker
+    stub_exit docker 3
+    run_step
+    assert_status 3
 }

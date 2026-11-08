@@ -284,7 +284,7 @@ test_harness_refuses_a_step_it_cannot_take_as_it_is() {
     refused "select_step j 'name=expression in run'" "the step with name expression in run of job j has an expression in its run script, which only the runner evaluates: hand the value in by env"
     refused "select_step j 'name=working directory'" "the step with name working directory of job j has a working-directory, which the harness does not set"
     refused 'select_step container name=s' "job container runs in a container or with services, which the harness does not start"
-    refused 'select_step windows name=s' "job windows runs on another runner than ubuntu-24.04"
+    refused 'select_step windows name=s' "job windows runs on another runner than ubuntu-24.04 or ubuntu-24.04-arm"
     refused 'run_step' "no step is selected: select_step first"
 }
 
