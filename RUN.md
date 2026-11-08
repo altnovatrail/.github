@@ -355,3 +355,10 @@ T47 берёт тот же вход, что T46, и после неё выход
   - `learner-model` и `engine` берут релиз своим переходом: `.github/coderules.json`, без `rules_test.go` и `testdata/coderules`, и «Go / rules» в ruleset (R107 spec);
   - В36 — в таблице 3, «В реестр spec»: карточка 3.11 spec;
   - после мержа — находки SonarCloud, CodeQL и Scorecard по правилу 12.
+- **Итог после мержа (2026-11-08):**
+  - T48 слита pull request [103](https://github.com/altnovatrail/.github/pull/103), merge-коммитом f87e8da, по слову автора. До мержа были зелёными все проверки, «Go / …», «CodeQL / analyze (go)» и `codecov/patch` среди них;
+  - на `main` прошли CI, CodeQL, Scorecard и Release. `self-release.yml` выпустил `v0.1.20` на f87e8da: неизменяемый и Latest, `gh release verify v0.1.20` — «Release v0.1.20 verified!»;
+  - шаг автора исполнитель сделал по его слову: ruleset `main` (25477399) требует теперь «Go / lint», «Go / test», «Go / vuln», «Go / licenses», «CodeQL / analyze (go)» и `codecov/patch` — двенадцать проверок вместо шести (поправка к R11). Все шесть пришли на f87e8da до этого;
+  - Codecov на `main` — 94,82 %. README несёт значки версии Go из `tools/coderules/go.mod` и покрытия (repositories 2.3 spec);
+  - architecture 3.3 закрепляет `go.yml` на `v0.1.20`, а «Go / rules» — с него; поправка к R16 записывает релиз;
+  - правило 12: у SonarCloud на f87e8da 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard.

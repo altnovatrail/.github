@@ -4,6 +4,8 @@
 [![Release](https://github.com/altnovatrail/.github/actions/workflows/self-release.yml/badge.svg)](https://github.com/altnovatrail/.github/actions/workflows/self-release.yml)
 [![CodeQL](https://github.com/altnovatrail/.github/actions/workflows/self-codeql.yml/badge.svg)](https://github.com/altnovatrail/.github/actions/workflows/self-codeql.yml)
 [![Latest release](https://img.shields.io/github/v/release/altnovatrail/.github)](https://github.com/altnovatrail/.github/releases/latest)
+[![Go version](https://img.shields.io/github/go-mod/go-version/altnovatrail/.github?filename=tools%2Fcoderules%2Fgo.mod)](tools/coderules/go.mod)
+[![Coverage](https://codecov.io/gh/altnovatrail/.github/branch/main/graph/badge.svg)](https://codecov.io/gh/altnovatrail/.github)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/altnovatrail/.github/badge)](https://scorecard.dev/viewer/?uri=github.com/altnovatrail/.github)
 [![License](https://img.shields.io/github/license/altnovatrail/.github)](LICENSE)
 

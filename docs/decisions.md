@@ -361,6 +361,8 @@
 
 — *Поправка 2026-10-20:* `spec` записал В11 в v0.2.7, поправкой к R30 spec: только merge у всех репозиториев. Строка ушла из таблицы 3 RUN.md (R13). — RUN.md, T12.
 
+— *Поправка 2026-11-08:* с кодом Go у `.github` ruleset `main` (25477399) требует ещё «Go / lint», «Go / test», «Go / vuln», «Go / licenses» и «CodeQL / analyze (go)» — с `integration_id` 15368, как прочие проверки GitHub Actions, — и `codecov/patch` — с `integration_id` 254, как у `spec`. Всего обязательных проверок — двенадцать. Поставил их исполнитель 2026-11-08, по слову автора, после того как все шесть пришли на `main` с мержем #103, f87e8da; остальные правила ruleset те же (R33; RUN.md, T48). — architecture 3.4; RUN.md, T48.
+
 **R12. По ответам автора на В7, В10 и В11: находки CodeQL держат мерж правилом ruleset `code_scanning`, pull request вливается в `main` только merge-коммитом, а релиз берёт в checkout вершину `main` и называет коммит, на котором прошёл CI, только по SHA.** Ruleset — architecture 3.3 и 3.4, релиз — 3.4. В таблице 3 RUN.md, «в реестр spec», лежат две вещи: что из этих ответов нужно `spec` и остальным репозиториям, и ответы на В8, В9 и В12. Последние три делает `spec`; что из них нужно `.github` — рецепт по В8 и Dockerfile по В12, — он возьмёт вместе с тегом `spec`.
 - **Находки CodeQL (В7)** держит правило `code_scanning` в ruleset `main` 25477399 — как у canvas-api (R50 canvas-api):
   - инструмент — CodeQL;
@@ -628,6 +630,8 @@
 *Отвергнуто:* инструмент из релиза файлом — бинарником или архивом: его пришлось бы проверять `release-verify` (RULES.md, Hard rules), а собирать — Go каждой платформы. Собранный из исходников того же коммита, он подписи не требует: его исходники — часть того, что вызывающий закрепил.
 
 Вызывающий кладёт `.github/coderules.json`, убирает `rules_test.go` с `testdata/coderules` и ставит «Go / rules» в ruleset (architecture 3.3). — architecture 3.1, 3.3, 4; RUN.md, T48.
+
+— *Поправка 2026-11-08:* релиз вышел — `v0.1.20`, коммит f87e8da, неизменяемый и Latest; `gh release verify` его подтверждает. От `v0.1.19` в нём отличаются `go.yml` — job «Go / rules» — и новый `tools/coderules/` (R33), а прочие общие workflow — те же. Вызывающий текст в architecture 3.3 зовёт `go.yml` по этому SHA, и «Go / rules» — с него. — architecture 3.3; RUN.md, T48.
 
 ## Тег `spec` после обёртки Go
 
