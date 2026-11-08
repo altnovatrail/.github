@@ -5,6 +5,10 @@
 # It runs in the toolchain stage of the caller's .devcontainer/Dockerfile, with the Node and just
 # of the caller's devcontainer, as spec's CI runs its checks: a check that is green locally is
 # green here. Both the stage and the submodule come with every repository from spec's template.
+# How the stage is built and how a recipe runs in it are spec's, in the script
+# spec/tools/toolchain/toolchain.sh of the submodule, at the tag the caller pins, as spec's CI and
+# the shared release run them (R31 in spec; the 2026-11-08 amendment to R08): spec ships it from
+# v0.2.17, and a submodule older than that stops the check with the reason.
 # Called from a job that gives it `contents: read`.
 
 name: Documents (shared)
@@ -27,14 +31,14 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # The Dockerfile copies nothing from the repository, so it is built without a context. The
-      # container runs as the runner's user: what it writes in the checkout is the runner's, and git
-      # finds the repository owned by the user it runs as.
-      - name: Toolchain image
-        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-
+      # spec's script builds the stage and runs spec's recipe in it, as the runner's user, so that
+      # what it writes in the checkout is the runner's and git finds the repository owned by the
+      # user it runs as.
       - name: Documents
         run: |
-          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work \
-              toolchain just -f spec/justfile docs-check-repo
+          if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
+              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 in spec): move the spec submodule to v0.2.17 or newer, then run the check again."
+              exit 1
+          fi
+          spec/tools/toolchain/toolchain.sh build
+          spec/tools/toolchain/toolchain.sh spec docs-check-repo
