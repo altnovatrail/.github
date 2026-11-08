@@ -229,3 +229,8 @@ T43 сделана, и все задачи E12 сделаны. С T43 `.github` 
   - пересобрать devcontainer («Rebuild Container»): buf и новый базовый образ придут только с ним;
   - E13 и E14 в таблице 2 — какой брать следующим, решает автор;
   - после мержа — находки SonarCloud, CodeQL и Scorecard по правилу 12.
+- **Итог после мержа (2026-11-08):**
+  - T43 слита pull request [92](https://github.com/altnovatrail/.github/pull/92), merge-коммитом ce06d9f. До мержа были зелёными все восемь проверок;
+  - на `main` прошли CI, CodeQL, Scorecard и Release. `self-release.yml` релиза не выпустил — «No shared workflow has changed since v0.1.15: nothing to release», как и ждал R32: общие workflow не менялись;
+  - devcontainer пересобран, и `buf --version` в нём — 1.75.0;
+  - правило 12: у SonarCloud на ce06d9f 0 находок и 0 мест безопасности на проверку, quality gate OK. В code scanning — те же шесть находок Scorecard.
