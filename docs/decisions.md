@@ -838,6 +838,8 @@
 
 Вызывающему это ничего нового не требует. — architecture 3.1, 4; RUN.md, T44.
 
+— *Поправка 2026-11-08:* релиз вышел — `v0.1.16`, коммит ea6771c, неизменяемый и Latest; `gh release verify` его подтверждает. От `v0.1.15` в нём отличаются `release.yml` — шаг npm по T44 — и `codeql.yml` и `scorecard.yml`: `github/codeql-action` v4.39.1, pull request Dependabot #71–#73 (`git diff v0.1.15 v0.1.16`). Вызывающий текст в architecture 3.3 зовёт общий `release.yml` по этому SHA. — architecture 3.3; RUN.md, T44.
+
 ## Обёртка TypeScript
 
 **R19. Обёртка TypeScript — общий `typescript.yml`, по образцу `go.yml`: те же четыре рецепта вызывающего — `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`, — в стадии `toolchain` его devcontainer, тот же список лицензий, а контейнер — с `--init` и `--ipc=host`, для тестов в браузере. Это договор: по нему `canvas` пишет рецепты своего первого кода (T08 canvas), а сам файл пишет T22, вместе с этим кодом.**
