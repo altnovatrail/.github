@@ -15,7 +15,7 @@
 # self-ci.yml holds it to spec's own list at the tag .github is on. A repository's exceptions are
 # its recipe's, each with its decision.
 #
-# With same-bits, two more jobs hold the caller's bits the same on every build (R107 in spec), as
+# With same-bits, three more jobs hold the caller's bits the same on every build (R107 in spec), as
 # learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
 # "Go / targets" runs the tests on the builds where the bits are most at risk, and builds and vets
 # wasip1; "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
@@ -289,7 +289,9 @@ jobs:
     name: arm64
     if: inputs.same-bits
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 30
+    # ci-test, which check gives 20 minutes, and the targets, which targets gives 30, one after the
+    # other.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
