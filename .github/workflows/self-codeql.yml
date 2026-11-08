@@ -28,3 +28,6 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/codeql.yml
+    # Beside the workflows, .github's Go code, the tool tools/coderules (R33).
+    with:
+      languages: go

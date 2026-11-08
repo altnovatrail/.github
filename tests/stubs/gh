@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# A stand-in for gh, for the two calls release.yml's steps "The npm package of the release" and "The
-# previous release's file" make, and no other. gh release download <tag> --repo <repository> --dir
+# A stand-in for gh, for the calls release.yml's steps "The npm package of the release" and "The
+# previous release's file" make, and the one of self-release.yml's step "Work out the version". gh release download <tag> --repo <repository> --dir
 # <folder> --pattern <name>... copies into the folder each file release_files put in the release
 # whose name a pattern names, as gh downloads the assets a pattern matches: the steps name whole
 # names, not globs. When no pattern names any file, it fails, as gh does with "no assets match the
-# file pattern". gh release verify-asset checks nothing. Each exits as the case says, by stub_exit
-# gh-download or gh-verify-asset, 0 unless told otherwise.
+# file pattern". gh release verify-asset checks nothing, nor gh release view <tag> --repo
+# <repository>, which self-release.yml asks of every tag it counts from. Each exits as the case
+# says, by stub_exit gh-download, gh-verify-asset or gh-view, 0 unless told otherwise.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh
@@ -46,7 +47,7 @@ case $what in
             exit 1
         fi
         ;;
-    verify-asset) ;;
+    verify-asset | view) ;;
     *) unexpected "knows no call gh release $what" ;;
 esac
 exit "$(cat "$state/stub/gh-$what.exit" 2> /dev/null || echo 0)"

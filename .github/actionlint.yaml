@@ -2,8 +2,11 @@
 # jobs or workflow runs can be pending in the concurrency group" (GitHub Docs, Workflow syntax,
 # read 2026-10-19, as spec's .github/actionlint.yaml cites it). Nor does it know job.workflow_ref,
 # "The full ref of the workflow file that defines the current job" (GitHub Docs, Contexts
-# reference, job context, read 2026-10-21), which release.yml signs under. Only those complaints,
-# only in the workflows that use them, are waived.
+# reference, job context, read 2026-10-21), which release.yml signs under; nor job.workflow_sha
+# and job.workflow_repository of the same context, "The commit SHA of the workflow file that
+# defines the current job" and "The owner/repo of the repository containing the workflow file that
+# defines the current job" (read 2026-11-08), by which go.yml checks out the tool of its own
+# version. Only those complaints, only in the workflows that use them, are waived.
 paths:
   .github/workflows/self-release.yml:
     ignore:
@@ -12,3 +15,7 @@ paths:
     ignore:
       - 'unexpected key "queue" for "concurrency" section'
       - 'property "workflow_ref" is not defined in object type'
+  .github/workflows/go.yml:
+    ignore:
+      - 'property "workflow_repository" is not defined in object type'
+      - 'property "workflow_sha" is not defined in object type'

@@ -188,11 +188,12 @@ jobs:
               fi
           done
           # A shared workflow is a file of .github/workflows/ without the self- prefix. A file
-          # that a shared workflow comes to read from .github joins this list with it. git diff
+          # that a shared workflow comes to read from .github joins this list with it: the tool
+          # of the rules of code, tools/coderules/, which go.yml builds of its own version (R33). git diff
           # --quiet exits 1 on a change and 0 on none; anything else is its own failure.
           if [ -n "$version" ] && [ -n "$previous" ]; then
               changed=0
-              git diff --quiet "$previous" "$TARGET" -- .github/workflows/ ':(exclude).github/workflows/self-*' || changed=$?
+              git diff --quiet "$previous" "$TARGET" -- .github/workflows/ ':(exclude).github/workflows/self-*' tools/coderules/ || changed=$?
               if [ "$changed" = 0 ]; then
                   echo "::notice::No shared workflow has changed since ${previous}: nothing to release."
                   version=""

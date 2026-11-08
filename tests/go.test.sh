@@ -17,7 +17,7 @@ test_go_is_called_with_same_bits_alone_no_secrets_and_gives_the_token_to_the_cov
     assert_eq "$(wf '.on.workflow_call | keys')" '["inputs"]' "what the call takes"
     assert_eq "$(wf '.on.workflow_call.inputs | map_values({type, default})')" '{"same-bits":{"type":"boolean","default":false}}' "the inputs"
     assert_eq "$(wf '.permissions')" '{"contents":"read"}' "the workflow's permissions"
-    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","targets"]' "the jobs"
+    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","rules","targets"]' "the jobs"
     assert_eq "$(wf '[.jobs | to_entries[] | select(.value | has("permissions")) | .key]')" '["coverage"]' "the jobs with permissions of their own"
     assert_eq "$(wf '.jobs.coverage.permissions')" '{"contents":"read","id-token":"write"}' "the coverage job's permissions"
 }
@@ -393,4 +393,67 @@ test_go_arm64_fails_with_ci_test() {
     stub_exit docker 3
     run_step
     assert_status 3
+}
+
+# The tests of the job T48 adds to same-bits: "Go / rules", the rules of code by the tool of
+# .github of this workflow's own version, tools/coderules, and the caller's lists (R33).
+
+test_go_runs_rules_with_same_bits_alone_by_the_tool_of_its_own_version() {
+    use_workflow go.yml
+    assert_eq "$(wf '.jobs.rules | {name, if, "runs-on", "timeout-minutes", permissions}')" \
+        '{"name":"rules","if":"inputs.same-bits","runs-on":"ubuntu-24.04","timeout-minutes":20,"permissions":null}' "the job rules"
+    assert_eq "$(wf '[.jobs.rules.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
+        '["actions/checkout@<sha>","actions/checkout@<sha>","Toolchain image","The rules of code"]' "its steps"
+    assert_eq "$(wf '.jobs.rules.steps[0].with')" '{"persist-credentials":false}' "the checkout of the caller"
+    assert_eq "$(wf '.jobs.rules.steps[1].with')" \
+        '{"repository":"${{ job.workflow_repository }}","ref":"${{ job.workflow_sha }}","path":".shared-github","persist-credentials":false}' "the checkout of .github"
+    assert_eq "$(wf '.jobs.rules.steps[2].run')" "$(wf '.jobs.check.steps[1].run')" "its toolchain stage"
+}
+
+# The workspace as the two checkouts leave it: the caller's module, with its lists or without, and
+# .github of the workflow's version in .shared-github.
+rules_workspace() {
+    mkdir -p "$step_workspace/.shared-github/tools/coderules" "$step_workspace/.github"
+    printf 'module github.com/altnovatrail/.github/tools/coderules\n' > "$step_workspace/.shared-github/tools/coderules/go.mod"
+    if [ "${1-}" != without-lists ]; then
+        printf '{"code-imports": ["math"]}\n' > "$step_workspace/.github/coderules.json"
+    fi
+}
+
+test_go_rules_builds_the_tool_in_the_toolchain_stage_and_runs_it_on_the_module() {
+    rules_workspace
+    use_workflow go.yml
+    select_step rules 'name=The rules of code'
+    stub docker
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+        --volume "$step_workspace:/work" --workdir /work \
+        --volume "$step_temp/shared-github/tools/coderules:/tool:ro" \
+        toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
+    # .github's checkout is out of the caller's module, where the tool would see a nested module.
+    assert_eq "$(if [ -e "$step_workspace/.shared-github" ]; then echo there; else echo gone; fi)" gone "the checkout in the workspace"
+    assert_eq "$(if [ -f "$step_temp/shared-github/tools/coderules/go.mod" ]; then echo moved; else echo not; fi)" moved "the checkout in RUNNER_TEMP"
+}
+
+test_go_rules_stops_without_the_callers_lists() {
+    rules_workspace without-lists
+    use_workflow go.yml
+    select_step rules 'name=The rules of code'
+    stub docker
+    run_step
+    assert_status 1
+    assert_line "::error::same-bits holds the code to the rules of code by the caller's lists, .github/coderules.json, and there is none (architecture 3.3 of .github)."
+    assert_calls docker 0
+}
+
+test_go_rules_fails_with_the_tool() {
+    rules_workspace
+    use_workflow go.yml
+    select_step rules 'name=The rules of code'
+    stub docker
+    stub_exit docker 1
+    run_step
+    assert_status 1
 }

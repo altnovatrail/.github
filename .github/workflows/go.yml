@@ -15,12 +15,14 @@
 # self-ci.yml holds it to spec's own list at the tag .github is on. A repository's exceptions are
 # its recipe's, each with its decision.
 #
-# With same-bits, three more jobs hold the caller's bits the same on every build (R107 in spec), as
+# With same-bits, four more jobs hold the caller's bits the same on every build (R107 in spec), as
 # learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
 # "Go / targets" runs the tests on the builds where the bits are most at risk, and builds and vets
 # wasip1; "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
 # control of its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
-# runner. Without the input the workflow is what it was.
+# runner; "Go / rules" holds the code to the rules of code by the tool tools/coderules of .github,
+# of this workflow's own version, and the caller's lists, .github/coderules.json (R33). Without the
+# input the workflow is what it was.
 #
 # There is no Go code in .github, so a change here is tried from a Go repository's pull request
 # that calls this file by the SHA of the branch, or by a trial pull request of .github that calls
@@ -34,7 +36,7 @@ on:
   workflow_call:
     inputs:
       same-bits:
-        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff" and "Go / arm64" (R107 in spec).
+        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff", "Go / arm64" and "Go / rules" (R107 in spec).
         type: boolean
         default: false
 
@@ -324,3 +326,46 @@ jobs:
           run GOOS=wasip1 GOARCH=wasm go build ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
+
+  # The rules of code that keep the bits the same on every build — float64() round every * and /,
+  # math and the imports by the lists, no cgo, assembler, linkname or build constraint, no map
+  # range or goroutine in code, no require the lists do not name, no replace, no nested module —
+  # held by the tool of .github, tools/coderules, which learner-model and engine kept each as a
+  # rules_test.go of its own (R107 in spec; R33). The tool is .github's of the very commit this
+  # workflow file comes from, job.workflow_sha, so that a caller pinned to a release runs the tool
+  # of that release; it is built by the Go of the caller's toolchain stage, as the caller's code
+  # is, and reads the caller's lists, .github/coderules.json. actions/checkout puts it in the
+  # workspace alone, so the step moves it out before anything reads the caller's module, which
+  # would hold it as a module nested in its own.
+  rules:
+    name: rules
+    if: inputs.same-bits
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .shared-github
+          persist-credentials: false
+
+      - name: Toolchain image
+        run: docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
+
+      # The tool's own module is mounted read-only, and the binary goes to the container's /tmp.
+      - name: The rules of code
+        run: |
+          mv .shared-github "$RUNNER_TEMP/shared-github"
+          if [ ! -f .github/coderules.json ]; then
+              echo "::error::same-bits holds the code to the rules of code by the caller's lists, .github/coderules.json, and there is none (architecture 3.3 of .github)."
+              exit 1
+          fi
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "$PWD:/work" --workdir /work \
+              --volume "$RUNNER_TEMP/shared-github/tools/coderules:/tool:ro" \
+              toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
