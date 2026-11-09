@@ -179,7 +179,8 @@ T52 идёт сейчас: её шаги собирают образ сами, �
   - R36, поправки 2026-11-09 к R16 и R19; architecture 3.1, 4 и статус; в теле T53 — job «Workflows» `self-ci.yml`;
   - проверено: `bash tests/run.sh` с yq 4.54.1 по сумме `self-ci.yml` — 149 тестов, 0 упало; actionlint 1.7.12 с ShellCheck 0.11.0 и ShellCheck по `tests/` — чисто; `docs-check-repo` — ok;
   - `/code-review high`, один круг, — семь находок, шесть приняты: сверка образа после `docker load` — без неё файл с другим именем образа дал бы `docker run toolchain` из Docker Hub; без `docker save` после файла из кеша; испорченная запись, которую читает каждый прогон, не стареет за неделю — R36 и «Решено при планировании» поправлены; комментарий не говорит, что кеш уже есть у `spec`; правка сборки берёт новый путь; `stub_exit_on` отказывает другим заглушкам. Отклонены YAML-якоря вместо шести копий — R36, «Отвергнуто».
-- **Открыто:** живая проверка — черновой pull request ветки `e17`: первый прогон — промах и сохранение в job «Go / …» из `self-ci.yml`, повторный — попадание без сборки. Итог допишу сюда отдельным коммитом. Вживую `typescript.yml` и job `same-bits` проверит CI вызывающих после релиза эпика.
+  - живая проверка — черновой pull request #109 ветки `e17`, прогон `self-ci.yml` 42715578341. Первая попытка: в четырёх job «Go / lint», «Go / test», «Go / vuln» и «Go / licenses» — «Cache not found», сборка с `docker save` — 36–46 с; один job — «Cache saved with key: toolchain-Linux-X64-bbe8a2cb…», три — «Failed to save: Unable to reserve cache with key …, another job may be creating this cache», и все зелёные. Запись — ~383 МБ, область `refs/pull/109/merge`. Повторная попытка: во всех четырёх — «Cache restored from key», восстановление 4–7 с, `docker load` 20–29 с, `docker build` не шёл, сохранение пропущено.
+- **Открыто:** вживую `typescript.yml` и job `same-bits`, `arm64` с его своей записью тоже, проверит CI вызывающих после релиза эпика.
 
 #### T53. Кеш образа в `documents.yml`
 
