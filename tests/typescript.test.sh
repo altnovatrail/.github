@@ -1,7 +1,8 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
 # The tests of typescript.yml (R19 and its amendments): the shape its callers' rulesets name —
-# "TypeScript / lint", "/ test", "/ vuln", "/ licenses" — and its steps "Toolchain image" and
-# ci-${{ matrix.check }}, each run with a stand-in docker that writes down what it was asked, and
+# "TypeScript / lint", "/ test", "/ vuln", "/ licenses" — and its steps "Toolchain image", with its
+# cache, which go.yml's cases run, and ci-${{ matrix.check }}, each run with a stand-in docker
+# that writes down what it was asked, and
 # the upload of the coverage, which is go.yml's but for its artifact and its report: the cases of
 # go.yml run its steps, and the one here holds the two alike.
 # The checkout, which takes the spec submodule for the licenses job alone, is an action, and the
@@ -50,17 +51,15 @@ test_typescript_checks_the_submodule_out_for_the_licenses_job_alone() {
         '{"submodules":"${{ matrix.check == '"'licenses'"' }}","persist-credentials":false}' "the checkout's inputs"
 }
 
-test_typescript_builds_the_toolchain_stage_from_the_dockerfile_alone() {
+# The stage and its cache are go.yml's, step for step: the cases of go.yml run them, and the test
+# there holds every job of both files to the job check of go.yml (R36).
+test_typescript_builds_the_toolchain_stage_and_caches_it_as_go_does() {
+    local go typescript
+    use_workflow go.yml
+    go=$(wf '.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]')
     use_workflow typescript.yml
-    select_step check 'name=Toolchain image'
-    mkdir -p "$step_workspace/.devcontainer"
-    printf 'FROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
-    stub docker
-    run_step
-    assert_status 0
-    assert_calls docker 1
-    assert_call docker 1 build --target toolchain --tag toolchain -
-    assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
+    typescript=$(wf '.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]')
+    assert_eq "$typescript" "$go" "the toolchain stage and its cache"
 }
 
 test_typescript_runs_each_recipe_with_ci_and_the_test_job_alone_with_the_hosts_ipc() {

@@ -4,8 +4,10 @@
 # had: what docker would hand the container, which the arguments alone do not show. It also writes
 # down whether GH_TOKEN reached it at all, as token. A docker run with a --volume <folder>:/work
 # copies into <folder>/dist/ what the case put in stub/docker-dist/, when it put anything: the
-# files the caller's release-files recipe would write. It exits as the case says, 0 unless stub_exit
-# says otherwise.
+# files the caller's release-files recipe would write. A docker save --output <file> writes the
+# file: the image it would hold, or, when the case makes it fail, the part a failed save leaves. It
+# exits as the case says: by stub_exit_on for its
+# subcommand, else by stub_exit, else 0.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh
@@ -38,4 +40,18 @@ if [ "${1-}" = run ] && [ -n "$work" ] && [ -d "$state/stub/docker-dist" ]; then
     mkdir -p "$work/dist"
     cp -a "$state/stub/docker-dist/." "$work/dist/"
 fi
-exit "$(cat "$state/stub/docker.exit" 2> /dev/null || echo 0)"
+status_file="$state/stub/docker.exit"
+if [ "$#" -gt 0 ] && [ -f "$state/stub/docker.$1.exit" ]; then
+    status_file="$state/stub/docker.$1.exit"
+fi
+status=$(cat "$status_file" 2> /dev/null || echo 0)
+if [ "${1-}" = save ]; then
+    previous=""
+    for argument in "$@"; do
+        if [ "$previous" = --output ]; then
+            if [ "$status" = 0 ]; then echo "an image"; else echo "a part of an image"; fi > "$argument"
+        fi
+        previous=$argument
+    done
+fi
+exit "$status"

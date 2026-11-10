@@ -1,6 +1,7 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
 # The tests of go.yml (R16 and its amendments): the shape its callers' rulesets name — "Go / lint",
-# "Go / test", "Go / vuln", "Go / licenses" — its steps "Toolchain image" and
+# "Go / test", "Go / vuln", "Go / licenses" — its steps "Toolchain image", with the cache of the
+# toolchain stage around it in every job that builds the stage (R36), and
 # ci-${{ matrix.check }}, each run with a stand-in docker that writes down what it was asked, and
 # the upload of the coverage: the report the test job hands on, the coverage job that alone gets
 # the OIDC token, and its step "Codecov CLI", run with a stand-in curl. The steps that use an
@@ -104,19 +105,6 @@ test_go_runs_each_check_as_a_job_named_after_it() {
     assert_eq "$(wf '.jobs.check.name')" '"${{ matrix.check }}"' "the job's name"
 }
 
-test_go_builds_the_toolchain_stage_from_the_dockerfile_alone() {
-    use_workflow go.yml
-    select_step check 'name=Toolchain image'
-    mkdir -p "$step_workspace/.devcontainer"
-    printf 'FROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
-    stub docker
-    run_step
-    assert_status 0
-    assert_calls docker 1
-    assert_call docker 1 build --target toolchain --tag toolchain -
-    assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
-}
-
 test_go_runs_each_recipe_in_the_toolchain_stage_with_the_license_list_alone() {
     use_workflow go.yml
     select_step check 'name=ci-${{ matrix.check }}'
@@ -147,6 +135,133 @@ test_go_fails_the_check_with_the_recipe() {
     assert_status 3
 }
 
+# The tests of the cache of the toolchain stage (T52; R36): the step "Toolchain image" with the
+# file the step before it restored, or none, and the three steps every job that builds the stage
+# has, in go.yml and typescript.yml alike, read as text.
+
+# The step "Toolchain image" of the job check, a Dockerfile in the workspace, and, with a word, the
+# file the cache restored.
+toolchain_step() {
+    use_workflow go.yml
+    select_step check 'name=Toolchain image'
+    mkdir -p "$step_workspace/.devcontainer"
+    printf 'FROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
+    if [ "$#" -gt 0 ]; then
+        printf '%s\n' "$1" > "$step_temp/toolchain.tar"
+    fi
+    stub docker
+}
+
+# What the file of the cache holds once the step is done, or none.
+toolchain_file() {
+    if [ -e "$step_temp/toolchain.tar" ]; then cat "$step_temp/toolchain.tar"; else echo none; fi
+}
+
+test_go_builds_the_toolchain_stage_from_the_dockerfile_alone_and_saves_it_on_a_miss() {
+    toolchain_step
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 build --target toolchain --tag toolchain -
+    assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
+    assert_call docker 2 save --output "$step_temp/toolchain.tar" toolchain
+    assert_eq "$(toolchain_file)" "an image" "the file the cache saves"
+}
+
+test_go_loads_the_toolchain_stage_from_the_cache_without_building_it() {
+    toolchain_step "a cached image"
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 load --quiet --input "$step_temp/toolchain.tar"
+    assert_call docker 2 image inspect toolchain
+    assert_line "Toolchain image: loaded from the cache."
+    assert_eq "$(toolchain_file)" none "the file once loaded"
+}
+
+# A file of the cache came with a hit, whose entry no save replaces: the step builds the image and
+# writes no file for the save step, which does not run on a hit.
+test_go_builds_the_toolchain_stage_when_the_file_of_the_cache_does_not_load() {
+    toolchain_step "a broken image"
+    stub_exit_on docker load 1
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 load --quiet --input "$step_temp/toolchain.tar"
+    assert_line "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile, on every run until the entry is deleted (gh cache delete) or the Dockerfile changes."
+    assert_call docker 2 build --target toolchain --tag toolchain -
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+test_go_builds_the_toolchain_stage_when_the_file_of_the_cache_holds_no_image_toolchain() {
+    toolchain_step "an image of another name"
+    stub_exit_on docker image 1
+    run_step
+    assert_status 0
+    assert_calls docker 3
+    assert_call docker 2 image inspect toolchain
+    assert_line "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile, on every run until the entry is deleted (gh cache delete) or the Dockerfile changes."
+    assert_call docker 3 build --target toolchain --tag toolchain -
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+test_go_fails_with_the_build_of_the_toolchain_stage() {
+    toolchain_step
+    stub_exit_on docker build 1
+    run_step
+    assert_status 1
+    assert_calls docker 1
+    assert_eq "$(toolchain_file)" none "the file of the cache"
+}
+
+test_go_drops_the_file_of_the_cache_that_does_not_load_even_when_the_build_fails() {
+    toolchain_step "a broken image"
+    stub_exit_on docker load 1
+    stub_exit_on docker build 1
+    run_step
+    assert_status 1
+    assert_calls docker 2
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+test_go_goes_on_without_the_cache_when_the_image_cannot_be_saved() {
+    toolchain_step
+    stub_exit_on docker save 1
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_line "::warning::The image of the toolchain stage could not be saved for the cache: the next run builds it again."
+    assert_eq "$(toolchain_file)" none "the part docker save wrote"
+}
+
+# The three steps around the build, from the job check of go.yml, with the SHA of the action as
+# <sha>: Dependabot moves it, and both steps have to name the same one.
+cache_steps='[{"name":"Toolchain image from the cache","id":"toolchain","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/toolchain.tar","key":"toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}"}},{"name":"Toolchain image"},{"name":"Toolchain image into the cache","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"'","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/toolchain.tar","key":"${{ steps.toolchain.outputs.cache-primary-key }}"}}]'
+
+test_go_and_typescript_take_the_toolchain_stage_from_the_cache_in_every_job_that_builds_it() {
+    local file jobs job run sha
+    use_workflow go.yml
+    run=$(wf '.jobs.check.steps[] | select(.name == "Toolchain image") | .run')
+    sha=$(wf_raw '.jobs.check.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
+    for file in go.yml typescript.yml; do
+        use_workflow "$file"
+        jobs=$(wf_raw '.jobs | to_entries[] | select(any(.value.steps[]; .name == "Toolchain image" or ((.run // "") | test("docker build")))) | .key' | tr '\n' ' ')
+        case $file in
+            go.yml) assert_eq "$jobs" "check targets fma-diff arm64 rules " "the jobs of $file that build the stage" ;;
+            *) assert_eq "$jobs" "check " "the jobs of $file that build the stage" ;;
+        esac
+        for job in $jobs; do
+            assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.name == "Toolchain image")] | length')" 1 "the builds of $job in $file"
+            assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]
+                | map(if .uses then .uses |= sub("@[0-9a-f]{40}$"; "@<sha>") else {name} end)')" \
+                "$cache_steps" "the cache of $job in $file"
+            assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.uses // "" | startswith("actions/cache/")) | .uses | sub("^[^@]*@"; "")] | unique')" \
+                "[\"$sha\"]" "the one SHA of actions/cache in $job of $file"
+            assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Toolchain image") | .run')" "$run" "the build of $job in $file"
+        done
+    done
+}
+
 # The tests of same-bits (T46; R107 in spec): learner-model's and engine's recipes test-targets
 # and fma-diff, as jobs of go.yml. A step hands its script to one toolchain container on stdin; the
 # cases run that script as the container would, with bash in the workspace, and with the stand-in
@@ -154,8 +269,8 @@ test_go_fails_the_check_with_the_recipe() {
 # variables.
 
 # The job's steps, as the jobs of the checks have them: the checkout without credentials, the
-# toolchain stage, then one step of its own.
-same_bits_steps='["actions/checkout@<sha>","Toolchain image"'
+# toolchain stage from the cache, then one step of its own.
+same_bits_steps='["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>"'
 
 # Run the script that the first docker call of the step read on stdin, as the container would.
 run_container_script() {
@@ -201,11 +316,10 @@ test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
     for job in targets fma-diff; do
         assert_eq "$(wf --arg j "$job" '.jobs[$j] | {name, if, "runs-on", "timeout-minutes", permissions}')" \
             "{\"name\":\"$job\",\"if\":\"inputs.same-bits\",\"runs-on\":\"ubuntu-24.04\",\"timeout-minutes\":30,\"permissions\":null}" "the job $job"
-        assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[:2][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | tostring')" \
+        assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[:4][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | tostring')" \
             "\"${same_bits_steps//\"/\\\"}]\"" "the first steps of $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[0].with')" '{"persist-credentials":false}' "the checkout of $job"
-        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[1].run')" "$(wf '.jobs.check.steps[1].run')" "the toolchain stage of $job"
-        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | length')" 3 "the steps of $job"
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | length')" 5 "the steps of $job"
     done
 }
 
@@ -368,11 +482,10 @@ test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
     assert_eq "$(wf '.jobs.arm64 | {name, if, "runs-on", "timeout-minutes", permissions}')" \
         '{"name":"arm64","if":"inputs.same-bits","runs-on":"ubuntu-24.04-arm","timeout-minutes":45,"permissions":null}' "the job arm64"
     assert_eq "$(wf '[.jobs.arm64.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
-        '["actions/checkout@<sha>","Toolchain image","ci-test","Tests on the targets"]' "its steps"
+        '["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","ci-test","Tests on the targets"]' "its steps"
     assert_eq "$(wf '.jobs.arm64.steps[0].with')" '{"persist-credentials":false}' "its checkout"
-    assert_eq "$(wf '.jobs.arm64.steps[1].run')" "$(wf '.jobs.check.steps[1].run')" "its toolchain stage"
     # The targets as the job targets has them, word for word: one script for both hosts.
-    assert_eq "$(wf '.jobs.arm64.steps[3].run')" "$(wf '.jobs.targets.steps[2].run')" "its tests on the targets"
+    assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .run')" "$(wf '.jobs.targets.steps[] | select(.name == "Tests on the targets") | .run')" "its tests on the targets"
 }
 
 test_go_arm64_runs_ci_test_in_the_toolchain_stage_without_the_license_list() {
@@ -403,11 +516,10 @@ test_go_runs_rules_with_same_bits_alone_by_the_tool_of_its_own_version() {
     assert_eq "$(wf '.jobs.rules | {name, if, "runs-on", "timeout-minutes", permissions}')" \
         '{"name":"rules","if":"inputs.same-bits","runs-on":"ubuntu-24.04","timeout-minutes":20,"permissions":null}' "the job rules"
     assert_eq "$(wf '[.jobs.rules.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
-        '["actions/checkout@<sha>","actions/checkout@<sha>","Toolchain image","The rules of code"]' "its steps"
+        '["actions/checkout@<sha>","actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","The rules of code"]' "its steps"
     assert_eq "$(wf '.jobs.rules.steps[0].with')" '{"persist-credentials":false}' "the checkout of the caller"
     assert_eq "$(wf '.jobs.rules.steps[1].with')" \
         '{"repository":"${{ job.workflow_repository }}","ref":"${{ job.workflow_sha }}","path":".shared-github","persist-credentials":false}' "the checkout of .github"
-    assert_eq "$(wf '.jobs.rules.steps[2].run')" "$(wf '.jobs.check.steps[1].run')" "its toolchain stage"
 }
 
 # The workspace as the two checkouts leave it: the caller's module, with its lists or without, and

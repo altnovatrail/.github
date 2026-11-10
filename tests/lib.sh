@@ -216,6 +216,15 @@ stub_exit() {
     printf '%s\n' "$2" > "$state/stub/$1.exit"
 }
 
+# A code of the stand-in's own for one of its subcommands, over what stub_exit says for the rest:
+# stub_exit_on docker load 1, for a file that does not load while the build goes on. Only the
+# stand-in docker reads it, so it takes no other.
+stub_exit_on() {
+    [ "$1" = docker ] || harness_refuse "stub_exit_on: only the stand-in docker exits by its subcommand, not $1"
+    [[ $2 =~ ^[a-z]+$ ]] || harness_refuse "stub_exit_on takes a subcommand, not $2"
+    printf '%s\n' "$3" > "$state/stub/$1.$2.exit"
+}
+
 # What the stand-in prints, from stdin.
 stub_stdout() {
     cat > "$state/stub/$1.stdout"

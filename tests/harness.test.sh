@@ -104,6 +104,12 @@ jobs:
         run: wget -q https://example.invalid/ || true
       - name: curl -f
         run: curl -fsS https://example.invalid/ || true
+      - name: docker
+        run: |
+          docker load --input "$RUNNER_TEMP/image.tar" || echo "load failed"
+          docker save --output "$RUNNER_TEMP/image.tar" x
+          cat "$RUNNER_TEMP/image.tar"
+          docker build - < /dev/null
       - name: download
         run: |
           curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors -o "$RUNNER_TEMP/got" https://example.invalid/
@@ -342,6 +348,29 @@ test_harness_stands_in_for_curl_with_fail_as_curl_would_answer() {
     assert_status 0
     assert_line "a body"
     assert_call curl 1 -fsSL --proto =https --proto-redir =https --retry 3 --retry-all-errors -o "$step_temp/got" https://example.invalid/
+}
+
+test_harness_stands_in_for_docker_by_subcommand_and_writes_what_docker_save_would() {
+    workflow
+    use_workflow "$state/fixtures/w.yml"
+    select_step j name=docker
+    stub docker
+    stub_exit docker 3
+    stub_exit_on docker load 1
+    stub_exit_on docker save 1
+    run_step
+    assert_status 1
+    assert_line "load failed"
+    assert_calls docker 2
+    assert_eq "$(cat "$step_temp/image.tar")" "a part of an image" "what a failed docker save left"
+    stub_exit_on docker save 0
+    run_step
+    assert_status 3
+    assert_line "an image"
+    assert_calls docker 3
+    assert_call docker 2 save --output "$step_temp/image.tar" x
+    refused 'stub_exit_on gh release 1' "stub_exit_on: only the stand-in docker exits by its subcommand, not gh"
+    refused 'stub_exit_on docker --output 1' "stub_exit_on takes a subcommand, not --output"
 }
 
 test_harness_keeps_the_output_of_a_failed_test_from_the_runner() {

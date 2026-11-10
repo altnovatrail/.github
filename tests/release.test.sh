@@ -1306,3 +1306,13 @@ test_publish_a_version_without_provenance_passes_with_a_warning() {
     assert_published
     assert_line "::warning::@altnovatrail/canvas@0.1.9 has no provenance in the registry."
 }
+
+# The releases take no cache (the amendment of 2026-11-09 to R31 in spec; R36): the image of the job
+# that signs is built from the Dockerfile, as the cache of the checks is not.
+test_release_and_self_release_take_no_cache() {
+    local file
+    for file in release.yml self-release.yml; do
+        use_workflow "$file"
+        assert_eq "$(wf '[.. | objects | .uses? // empty | select(startswith("actions/cache"))] | length')" 0 "the steps of $file that use actions/cache"
+    done
+}
