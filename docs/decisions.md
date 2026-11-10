@@ -1496,6 +1496,8 @@
 
 — *Следствие:* `documents.yml`, `self-ci.yml`; `tests/documents.test.sh`; R08; architecture 3.1, 3.4, 4; RUN.md, T53.
 
+— *Поправка 2026-11-10:* релиз вышел — `v0.1.22`, коммит c023405, merge-коммит pull request 109 ветки `e17`, неизменяемый и Latest; `gh release verify` его подтверждает. От `v0.1.21` в нём отличаются `go.yml`, `typescript.yml` и `documents.yml` — кеш образа, — а `release.yml` тот же (`git diff v0.1.21 v0.1.22`). Шаблон architecture 3.3 зовёт `go.yml` и `typescript.yml` по этому SHA; общие вызывающие файлы — `documents.yml` среди них — шаблон по-прежнему держит на `v0.1.0`, а вызывающих поднимает Dependabot. На `main` после мержа прогон CI сохранил обе записи — `toolchain.tar` и `novatrail-toolchain.tar`, по ~383 МБ, область `refs/heads/main`, — и их читает каждый pull request `.github`.
+
 ## Тег `spec` v0.13.0
 
 **R37. `.github` стоит на `spec` v0.13.0: подмодуль `spec/` — на этом теге, и ссылки на `spec`, закреплённые на теге, называют его. Тег несёт T104 `spec` — кеш образа в `toolchain.sh build` по переменной `TOOLCHAIN_IMAGE_FILE`, — которого ждала T53. Ни workflow, ни devcontainer переход не правит.** Без эпика и без задачи, как R35; коммит на ветке `e17` эпика E17.
