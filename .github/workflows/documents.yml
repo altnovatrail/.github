@@ -9,6 +9,11 @@
 # spec/tools/toolchain/toolchain.sh of the submodule, at the tag the caller pins, as spec's CI and
 # the shared release run them (R31 in spec; the 2026-11-08 amendment to R08): spec ships it from
 # v0.2.17, and a submodule older than that stops the check with the reason.
+#
+# The image of the stage comes from the caller's cache of GitHub Actions, by the key go.yml's jobs
+# use, and is built only on a miss (R36): the script loads and writes the file TOOLCHAIN_IMAGE_FILE
+# names from v0.13.0 of spec (the second 2026-11-09 amendment to R31 in spec), and an older one
+# never sees the variable and builds the stage as before, so the step sets it whatever the tag.
 # Called from a job that gives it `contents: read`.
 
 name: Documents (shared)
@@ -31,14 +36,39 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # spec's script builds the stage and runs spec's recipe in it, as the runner's user, so that
-      # what it writes in the checkout is the runner's and git finds the repository owned by the
-      # user it runs as.
-      - name: Documents
+      # The toolchain stage from the cache, as in go.yml (R36), but for the file: spec's script
+      # names its image novatrail-toolchain, not go.yml's toolchain, so its file has a path of its
+      # own, the one spec's CI gives it, and its entry is another under the same key. The build is
+      # a step of its own, so that the image is saved before the check runs, and a red check still
+      # fills the cache.
+      - name: Toolchain image from the cache
+        id: toolchain
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/novatrail-toolchain.tar
+          key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}
+
+      # spec's script loads the image from the file, or builds the stage and writes the file. A
+      # script of a tag before v0.13.0 builds the stage alone and writes nothing, and the save then
+      # only warns.
+      - name: Toolchain image
+        env:
+          TOOLCHAIN_IMAGE_FILE: ${{ runner.temp }}/novatrail-toolchain.tar
         run: |
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
               echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 in spec): move the spec submodule to v0.2.17 or newer, then run the check again."
               exit 1
           fi
           spec/tools/toolchain/toolchain.sh build
-          spec/tools/toolchain/toolchain.sh spec docs-check-repo
+
+      - name: Toolchain image into the cache
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/novatrail-toolchain.tar
+          key: ${{ steps.toolchain.outputs.cache-primary-key }}
+
+      # spec's script runs spec's recipe in the stage, as the runner's user, so that what it writes
+      # in the checkout is the runner's and git finds the repository owned by the user it runs as.
+      - name: Documents
+        run: spec/tools/toolchain/toolchain.sh spec docs-check-repo

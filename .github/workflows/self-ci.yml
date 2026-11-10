@@ -124,9 +124,26 @@ jobs:
 
       # The toolchain stage of .github's own Dockerfile, with the Node and just of the devcontainer,
       # built by spec's script, as spec's recipes run wherever they run (R31 in spec): the next
-      # step asks one of them for spec's list.
+      # step asks one of them for spec's list. Its image comes from the cache as documents.yml's
+      # does, by the same three steps, so the two jobs share one entry (R36).
+      - name: Toolchain image from the cache
+        id: toolchain
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/novatrail-toolchain.tar
+          key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}
+
       - name: Toolchain image
+        env:
+          TOOLCHAIN_IMAGE_FILE: ${{ runner.temp }}/novatrail-toolchain.tar
         run: spec/tools/toolchain/toolchain.sh build
+
+      - name: Toolchain image into the cache
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/novatrail-toolchain.tar
+          key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
       # go.yml hands the license check of every Go repository a copy of spec's list (R16): the
       # ASF's Category A, which spec's recipe licenses-allowed prints at the tag .github is on, one
