@@ -2,7 +2,7 @@
 
 NovaTrail is a universal open platform for adaptive learning, interactive lessons and AI tutoring, for any subject and any age. A subject comes as a module: data, not code and not instructions to a model. A program decides whether an answer is right, against the task's key; the AI only reads the learner's work and words the tutor's replies. A learner model brings together the skills of every module, and an engine picks what comes next.
 
-**Status:** early design. spec holds the platform's documents and the [module format](https://github.com/altnovatrail/spec/blob/v0.12.0/format/README.md): its text, schemas, examples and test vectors. Version 0.1 came out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0; version 0.2, whose digit on a crop is 24 px high unless the module gives it, came out from v0.6.0; version 0.3, which names the version of go.starlark.net that runs all its Starlark and brings the rules by which the versions of a module compare, came out from v0.9.0; and version 0.4, which brings what the three modules of the first slice and the code of module-kit asked of the format, the page of a workbook among it, comes out from v0.10.0. The first contract between the platform's parts, the types of the element `<novatrail-canvas>` between canvas and app, comes out from v0.5.0, and the other contracts come after it. NovaTrail succeeds [MathTrail](https://github.com/mathtrail), olympiad maths for grades 1–6, which is now frozen.
+**Status:** early design. spec holds the platform's documents and the [module format](https://github.com/altnovatrail/spec/blob/v0.13.0/format/README.md): its text, schemas, examples and test vectors. Version 0.1 came out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0; version 0.2, whose digit on a crop is 24 px high unless the module gives it, came out from v0.6.0; version 0.3, which names the version of go.starlark.net that runs all its Starlark and brings the rules by which the versions of a module compare, came out from v0.9.0; and version 0.4, which brings what the three modules of the first slice and the code of module-kit asked of the format, the page of a workbook among it, comes out from v0.10.0. The first contract between the platform's parts, the types of the element `<novatrail-canvas>` between canvas and app, comes out from v0.5.0, and the other contracts come after it. NovaTrail succeeds [MathTrail](https://github.com/mathtrail), olympiad maths for grades 1–6, which is now frozen.
 
 ## Repositories
 
@@ -22,18 +22,18 @@ NovaTrail is a universal open platform for adaptive learning, interactive lesson
 | [app](https://github.com/altnovatrail/app) | the web app for learners and the adults beside them | 2. First slice with learners |
 | [infra](https://github.com/altnovatrail/infra) | shared infrastructure: Terraform, domains, logs, deployment and self-hosting | 2. First slice with learners |
 
-Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/product.md).
+Later come site, at stage 3, Beta and public launch, and module-registry, module-pipeline and widget-template, at stage 4, Authors. The stages are the roadmap's, in the [product document](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/product.md).
 
 ## Documents
 
 The platform's documents live in spec, in Russian:
 
-- [product](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/product.md) — what we build and why: the principles, the first slice, the roadmap;
-- [concepts](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/concepts.md) — the shared vocabulary;
-- [privacy](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/privacy.md) — privacy and age;
-- [architecture](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/architecture.md) — the components and how they connect;
-- [repositories](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/repositories.md) — the repositories, the order they appear in, and how one is set up;
-- [decisions](https://github.com/altnovatrail/spec/blob/v0.12.0/docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
+- [product](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/product.md) — what we build and why: the principles, the first slice, the roadmap;
+- [concepts](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/concepts.md) — the shared vocabulary;
+- [privacy](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/privacy.md) — privacy and age;
+- [architecture](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/architecture.md) — the components and how they connect;
+- [repositories](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/repositories.md) — the repositories, the order they appear in, and how one is set up;
+- [decisions](https://github.com/altnovatrail/spec/blob/v0.13.0/docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
 
 ## Contributing
 
@@ -44,4 +44,4 @@ The platform's documents live in spec, in Russian:
 
 ## License
 
-Everything is [Apache-2.0](https://github.com/altnovatrail/spec/blob/v0.12.0/LICENSE): the code, the documents and the official modules' content. The one exception is the code of conduct, the Contributor Covenant 2.1, which keeps its own license, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+Everything is [Apache-2.0](https://github.com/altnovatrail/spec/blob/v0.13.0/LICENSE): the code, the documents and the official modules' content. The one exception is the code of conduct, the Contributor Covenant 2.1, which keeps its own license, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
