@@ -1,6 +1,22 @@
 {
   "claudeMdExcludes": [
     "**/.github/spec/CLAUDE.md",
-    "**/.github/spec/**/CLAUDE.md"
-  ]
+    "**/.github/spec/**/CLAUDE.md",
+    "**/.github/spec/.claude/rules/**"
+  ],
+  "autoCompactWindow": 400000,
+  "disableClaudeAiConnectors": true,
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/spec/tools/session/main.mjs"]
+          }
+        ]
+      }
+    ]
+  }
 }
