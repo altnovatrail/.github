@@ -28,6 +28,8 @@ Detailing done. The first epic of [RUN.md](RUN.md) decided what the component's 
 The documents are in Russian until epic E18 translates them into English (R143 spec). The work plan and its technical debt stay in Russian.
 
 - [docs/architecture.md](docs/architecture.md) — the component: what it does and does not do, its data and links, and what is still to decide.
+- [docs/sources.md](docs/sources.md) — the external facts the documents rest on, each with its source, the date it was read and its quote.
+- [docs/measurements.md](docs/measurements.md) — the results of measurements: trial runs of the shared workflows, the suite of their tests, durations and sizes.
 - [docs/decisions.md](docs/decisions.md) — the decision log: what was decided, why, and what was rejected.
 - [RUN.md](RUN.md) — the work plan, in epics.
 - [DEBT.md](DEBT.md) — the technical debt, table 4 of the work plan.

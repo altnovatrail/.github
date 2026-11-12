@@ -2,7 +2,7 @@
 # to the Scorecard server and uploaded to code scanning. It holds no merge (R30 in spec): it runs
 # on main and on a schedule, as the action supports, and a pull request has no result of it.
 #
-# Publishing holds this workflow to the Scorecard server's rules (architecture 4): no `env` or
+# Publishing holds this workflow to the Scorecard server's rules (sources 6.1): no `env` or
 # `defaults` at the top or on the job, no write permission at the top, `id-token: write` on this
 # job alone, an Ubuntu runner, no container, and in the job only the approved actions —
 # checkout, scorecard-action, upload-artifact and upload-sarif, with no script of its own.
