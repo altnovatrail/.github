@@ -399,7 +399,7 @@ jobs:
           SCRIPT
 
   # ci-test and the tests on the targets again, on an arm64 host, a free runner of a public repository
-  # (architecture 4): the caller's tests with the race detector and coverage, whose report goes
+  # (sources 2.6): the caller's tests with the race detector and coverage, whose report goes
   # nowhere — the test job sends the one report — then the script of targets, which on a host other
   # than amd64 runs its own build with cpu.all=off, js/wasm and wasip1. fma-diff does not depend on
   # the host and does not run again. learner-model and engine ran this as a job of their own, "Go

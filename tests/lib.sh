@@ -353,7 +353,7 @@ run_step() {
         envs+=("$name=${HARNESS_RUNNER[$name]}")
     done
     # GitHub's shells on Linux: bash -e {0} when the step names none, bash --noprofile --norc -eo
-    # pipefail {0} for shell: bash (architecture 4).
+    # pipefail {0} for shell: bash (sources 2.3).
     shell=$(harness_step -r '.jobs[$j].steps[$i].shell // .jobs[$j].defaults.run.shell // .defaults.run.shell // ""')
     case $shell in
         "") command=(/usr/bin/bash -e) ;;

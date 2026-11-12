@@ -39,7 +39,7 @@ gone_after="The next release, with a new number, publishes the package."
 whole="@altnovatrail/canvas was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3)."
 
 # A package unpublished as a whole, as the registry answers for one (asdasd, aaaaaaa and
-# test-unpublish, 2026-11-02; architecture 4): 200, and no versions, but a time with every number
+# test-unpublish, 2026-11-02; sources 8.3): 200, and no versions, but a time with every number
 # it held — 0.1.7 among them, which unpublished.versions leaves out, as a version unpublished
 # before the rest — and unpublished.
 tombstone() {
@@ -105,7 +105,7 @@ registry() {
 }
 
 # npm's dry run as npm 11 prints it with --json: an object by the package's name, with the file it
-# read and its integrity (architecture 4) — the archive's unless others are given.
+# read and its integrity (measurements 5.5) — the archive's unless others are given.
 dry_run() {
     stub_in_temp npm-isolated
     jq -n --arg f "${1:-${archive##*/}}" --arg i "${2:-$integrity}" '{"@altnovatrail/canvas": {filename: $f, integrity: $i}}' \
