@@ -112,7 +112,7 @@
 |---|---|---|---|---|---|
 | [x] | T54 | Тег v0.16.3 и порядок работы | Claude | — | — |
 | [x] | T55 | «Источники» и замеры — в свои файлы | Claude | да | T54 |
-| [ ] | T56 | Перевод: architecture, sources и measurements | Claude | — | T55 |
+| [x] | T56 | Перевод: architecture, sources и measurements | Claude | — | T55 |
 | [ ] | T57 | Перевод журнала, бюджеты и замер | Claude | — | T56 |
 
 **Почему такой порядок.** T54 — первой: тег приносит правила, заготовку и инструменты — `translation-check`, бюджеты `docs-check`, `tokens-report`. Перестройка T55 — до перевода и на русском: `translation-check` сверяет перевод с оригиналом на коммите, абзац за абзацем, так что русский `docs/sources.md` должен быть в коммите раньше английского. T56 и T57 — каждая после коммита предыдущей, по той же причине; бюджеты и замер «после» — в последней, когда документы приняли свой вид.
@@ -149,18 +149,7 @@
 
 - T54 — сделана 2026-11-12: подмодуль `spec` — на v0.16.3 (R38); `.claude/settings.json` по заготовке — хук сессии, сжатие на 400 тыс., без коннекторов claude.ai и со строкой Д215 spec; тонкий CLAUDE.md с правилами частей `workflows` и `go`; RUN.md по заготовке и таблица 4 — в [DEBT.md](DEBT.md); Go 1.27.4 в контейнере; «OpenTofu» в профиле (Д134 spec). Тело — [docs/plan/E18.md](docs/plan/E18.md).
 - T55 — сделана 2026-11-12: «Источники» architecture 4 — в [docs/sources.md](docs/sources.md), 62 записи в 13 темах, итоги замеров — в [docs/measurements.md](docs/measurements.md), 32 записи; на месте раздела 4 — указатель с таблицей групп, а утверждения, CLAUDE.md, README и комментарии workflow и тестов ссылаются на записи (поправка 2026-11-12 к R38). Тело — [docs/plan/E18.md](docs/plan/E18.md).
-
-#### T56. Перевод: architecture, sources и measurements
-
-- **Цель:** `docs/architecture.md`, `docs/sources.md` и `docs/measurements.md` — на английском, без потерь против русского оригинала.
-- **Почему:** RULES.md spec — Hard rules, Language; R143 spec; шаг 6 общего текста T123 `spec`.
-- **Сделать:**
-  - перевод — по `spec/tools/translation/README.md` и по образцу T136 и T137 `spec`: абзац за абзац, пункт за пункт; цитата источника — на своём языке, а приставки О-, П-, Т-, Д и В — кириллицей;
-  - `just -f spec/justfile translation-check <ref> docs/architecture.md docs/sources.md docs/measurements.md`, где `<ref>` — коммит с T55, на котором задача начата, — чисто;
-  - ссылки на заголовки, которые перевод переименовал, — `just -f spec/justfile translation-anchors <ref> <файлы>`, во всех файлах Markdown репозитория.
-- **Не делать:** не менять смысла и строения; журнал — T57; RUN.md, DEBT.md и `docs/plan/` остаются на русском.
-- **Как проверить:** `translation-check` — чисто; `just -f spec/justfile docs-check-repo`; `/code-review high`.
-- **Разделы:** RULES.md spec — Hard rules; R143 spec; `spec/tools/translation/README.md`; T136 и T137 `spec`.
+- T56 — сделана 2026-11-13: architecture, sources и measurements — на английском, 335 КБ русского — 279 КБ английского; `translation-check` по коммиту `629cbca` — чисто, слепое чтение 8 кусков нашло 7 расхождений, все исправлены; Д8 — устаревшие номера релизов в 3.3 оригинала. Тело — [docs/plan/E18.md](docs/plan/E18.md).
 
 #### T57. Перевод журнала, бюджеты и замер
 
