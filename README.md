@@ -25,7 +25,7 @@ Detailing done. The first epic of [RUN.md](RUN.md) decided what the component's 
 
 ## Documents
 
-The documents are in English, but for the decision log, which stays in Russian until epic E18 translates it too (R143 spec). The work plan and its technical debt stay in Russian.
+The documents are in English (R143 spec). The work plan and its technical debt stay in Russian.
 
 - [docs/architecture.md](docs/architecture.md) — the component: what it does and does not do, its data and links, and what is still to decide.
 - [docs/sources.md](docs/sources.md) — the external facts the documents rest on, each with its source, the date it was read and its quote.
