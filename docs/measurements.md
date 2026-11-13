@@ -341,3 +341,24 @@ Measured 2026-11-12 (the 2026-11-12 amendment to R38, T55):
 - **on what** — the former section "Sources", architecture 4 on `main` at d5c57ae, from "## 4." to the end of the file, against `docs/sources.md`, `docs/measurements.md` and the pointer architecture 4 of T55. The pointer is in the comparison: its table now holds the names of the groups, and the builder of the files fixed ten places of the items — the section's links to its own sections and groups, "(2.8)" or «ниже, «<группа>»», are named by a document and a record's number;
 - **how** — a node script in the session's scratchpad, like the comparison T133 `spec`: in the former section and in the new files it gathers URLs, quotes «…» — the outer ones, by depth — dates, commits, the numbers R, О-, П-, Т-, «Д», «В» and T, and code in backticks, and for each kind counts how many distinct values went missing and how many occur less often than before. The builder of the files also checked that each of the 273 items of the section was taken exactly once — whole or in parts;
 - **the numbers** — distinct values: URLs 105, quotes 413, dates 44, commits 79, numbers 104, code 950. Missing 0, less often than before 0. Without the pointer one quote goes missing — «Интерфейс релиза `spec` и суммы архивов», a link to a group that became a record's number — and `go.yml` occurs 24 times instead of 25: only the table holds two names of groups with it.
+
+## 11. The cost of the sessions
+
+### 11.1. The budgets of size of T57
+
+Measured 2026-11-13 (the 2026-11-13 amendment to R38, T57), by `just -f spec/justfile docs-check-repo` with `docs-budgets.json` at the root, after the rebuilding of T55 and the translations of T56 and T57:
+- **with `{}`**, the limits of the block `repository` of `spec/tools/docs-check/budgets.json` alone: two things over — architecture 3.3 — 37,544 bytes, over the 24 KB of a section, and the entry R18 — 50,915 bytes, over the 40 KB of an entry. The probe of T54, before the rebuilding and the translations, had four over: architecture 3.1 — 26,962 bytes, 3.3 — 46,089, section 4 — 166,487, and R18 — 67,923;
+- **with the file of T57** — `"entry": 50`, and 37 KB for architecture 3.3 under `sections` — nothing over, 194 things measured. The block has no limit for one entry, so the limit of 50 KB holds every entry of the log;
+- **the decision log** — 388,566 bytes in Russian, 299,763 in English after the join of the 19 pieces.
+
+### 11.2. The sessions of epic E18
+
+Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-11-12T14:27 --row`, from the end of the window "before", the row `-workspaces--github` of measurements 1.9 spec. The table is that of measurements 1.9 spec; a row is added at the archive of each epic (RUN.md, «Как устроен план: эпики»).
+
+| Project | Window, UTC | Sessions | Calls, main / subagents | Context of a call, k, main / subagents | Compactions | Cost at API prices |
+|---|---|---|---|---|---|---|
+| `-workspaces--github` — before E18, measurements 1.9 spec | 2026-10-13T00:00 … 2026-11-12T14:27 | 14 | 4,196 / 2,565 | 397.5 / 124.0 | 10 | $739.31 |
+| `-workspaces--github` — E18, T54 to T57 | 2026-11-12T14:27 … 2026-11-13T04:44 | 4 | 410 / 353 | 188.8 / 78.5 | 1 | $49.77 |
+
+- The context of a call of the main session fell from 397.5 to 188.8 thousand tokens, of a subagent from 124.0 to 78.5. The window "before" holds a month of the tasks of every kind, and the row of E18 four tasks of documents, so the comparison across the sessions after the epic is T124 `spec`'s;
+- the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row.
