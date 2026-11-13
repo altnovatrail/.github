@@ -14,7 +14,7 @@ Its card in spec is architecture 3.11 spec. The card is the summary and this rep
 
 ## Documents
 
-The documents under `docs/` are in English, but for the epic archives `docs/plan/`, which stay in Russian with RUN.md and DEBT.md (R143 spec). Until epic E18 of [RUN.md](RUN.md) translates them, they are still in Russian, and a new text in one of them is written in its language. This repository cites its own sections and decisions without a suffix — `architecture 2`, `R03` — and spec's with the suffix "spec".
+The documents under `docs/` are in English, but for the epic archives `docs/plan/`, which stay in Russian with RUN.md and DEBT.md (R143 spec). Until epic E18 of [RUN.md](RUN.md) translates it, the decision log is still in Russian, and a new text in it is written in Russian. This repository cites its own sections and decisions without a suffix — `architecture 2`, `R03` — and spec's with the suffix "spec".
 
 - [docs/architecture.md](docs/architecture.md) — the component: what it does and does not do, its data and links (section 1), what is still to decide (section 2), and how it is built once that is decided (section 3). Its section 4 is a pointer: which former group of its "Sources" went to which records.
 - [docs/sources.md](docs/sources.md) — the records of external facts — GitHub's documentation and API, the code of actions and tools at a commit, npm's registry, spec's tags, other repositories' files — each with its source, the date read and its quote; a claim cites its record, as `sources 2.1` (R143 spec).
