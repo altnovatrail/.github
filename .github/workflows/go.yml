@@ -21,8 +21,8 @@
 #
 # With same-bits, four more jobs hold the caller's bits the same on every build (R107 in spec), as
 # learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
-# "Go / targets" runs the tests on the builds where the bits are most at risk, and builds and vets
-# wasip1; "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
+# "Go / targets" runs the tests on the builds where the bits are most at risk, wasip1 among them;
+# "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
 # control of its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
 # runner; "Go / rules" holds the code to the rules of code by the tool tools/coderules of .github,
 # of this workflow's own version, and the caller's lists, .github/coderules.json (R33). Without the
@@ -207,11 +207,13 @@ jobs:
   # The caller's tests again, without the race detector and coverage, which Go does not have on 386
   # and wasm: on amd64 with GOAMD64 v3, where the compiler fuses an addition; with v1 and
   # GODEBUG=cpu.all=off, with no processor extension for the runtime and the standard library to
-  # pick their path by; on 386; and in js/wasm, in the Node of the toolchain stage. A host other
-  # than amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off.
-  # wasip1 is built and vetted alone: the toolchain stage has no WASI runtime. The list is
-  # learner-model's and engine's recipe test-targets (R107 in spec), and the script goes to the
-  # container on stdin, so that one container keeps the build cache from run to run.
+  # pick their path by; on 386; in js/wasm, in the Node of the toolchain stage; and in wasip1, in
+  # node:wasi of the same Node, by an executor the script writes, since Go's go_wasip1_wasm_exec
+  # knows only runtimes the stage does not have (sources 10.1); wasip1 is vetted too. A host other
+  # than amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off. The
+  # list is learner-model's and engine's recipe test-targets (R107 in spec), with wasip1 run by the
+  # amendment of 2026-11-11 to it (R39), and the script goes to the container on stdin, so that one
+  # container keeps the build cache from run to run.
   targets:
     name: targets
     if: inputs.same-bits
@@ -273,7 +275,20 @@ jobs:
               run GODEBUG=cpu.all=off go test -count=1 ./...
           fi
           run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
-          run GOOS=wasip1 GOARCH=wasm go build ./...
+          # wasip1 in node:wasi, by an executor written outside the checkout: the test binary with its
+          # arguments, the environment, where go test sets PWD to the package's folder, and the whole
+          # file system; the code wasi.start returns is the process's. Node has the stack
+          # go_js_wasm_exec gives it for js/wasm (R39).
+          wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
+          cat > "$wasi" <<'JS'
+          import { readFile } from "node:fs/promises";
+          import { WASI } from "node:wasi";
+          const args = process.argv.slice(2);
+          const wasi = new WASI({ version: "preview1", args, env: process.env, preopens: { "/": "/" }, returnOnExit: true });
+          const { instance } = await WebAssembly.instantiate(await readFile(args[0]), wasi.getImportObject());
+          process.exitCode = wasi.start(instance);
+          JS
+          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
 
@@ -473,7 +488,20 @@ jobs:
               run GODEBUG=cpu.all=off go test -count=1 ./...
           fi
           run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
-          run GOOS=wasip1 GOARCH=wasm go build ./...
+          # wasip1 in node:wasi, by an executor written outside the checkout: the test binary with its
+          # arguments, the environment, where go test sets PWD to the package's folder, and the whole
+          # file system; the code wasi.start returns is the process's. Node has the stack
+          # go_js_wasm_exec gives it for js/wasm (R39).
+          wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
+          cat > "$wasi" <<'JS'
+          import { readFile } from "node:fs/promises";
+          import { WASI } from "node:wasi";
+          const args = process.argv.slice(2);
+          const wasi = new WASI({ version: "preview1", args, env: process.env, preopens: { "/": "/" }, returnOnExit: true });
+          const { instance } = await WebAssembly.instantiate(await readFile(args[0]), wasi.getImportObject());
+          process.exitCode = wasi.start(instance);
+          JS
+          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
 
