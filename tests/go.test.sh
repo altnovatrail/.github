@@ -339,7 +339,7 @@ test_go_targets_runs_the_tests_on_every_amd64_target_in_order() {
     assert_call go 6 test -count=1 -exec=/usr/local/go/lib/wasm/go_js_wasm_exec ./...
     assert_call_record go 6 env "GOOS=js" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
     wasi_executor 7
-    assert_call go 7 test -count=1 "-exec=node --disable-warning=ExperimentalWarning $executor" ./...
+    assert_call go 7 test -count=1 "-exec=node --stack-size=8192 --disable-warning=ExperimentalWarning $executor" ./...
     assert_call_record go 7 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
     assert_call go 8 vet ./...
     assert_call_record go 8 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
@@ -355,6 +355,9 @@ test_go_targets_runs_another_host_with_cpu_all_off_and_no_amd64_build() {
     assert_call go 2 test -count=1 ./...
     assert_call_record go 2 env "GOOS unset" "GOARCH unset" "GOAMD64 unset" "GODEBUG=cpu.all=off"
     assert_call go 3 env GOROOT
+    wasi_executor 5
+    assert_call go 5 test -count=1 "-exec=node --stack-size=8192 --disable-warning=ExperimentalWarning $executor" ./...
+    assert_call_record go 5 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
     refute_script_has "GOAMD64="
     refute_script_has "GOARCH=386"
 }
@@ -371,8 +374,8 @@ test_go_targets_fails_on_the_first_target_that_fails() {
 # The tests on wasip1 (T58; R39): go test by an executor of the script's own in node:wasi, as
 # js/wasm runs go_js_wasm_exec.
 
-# The executor that the go test of the index-th call of go runs, by its -exec: the file, and the
-# words go splits the flag into, in words.
+# The executor that the go test of the index-th call of go runs, by its -exec. It sets two
+# variables for the case: executor, the file, and words, the command go splits the flag into.
 wasi_executor() {
     local -a argv
     mapfile -d '' -t argv < "$(harness_call go "$1").argv"

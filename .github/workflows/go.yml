@@ -277,7 +277,8 @@ jobs:
           run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
           # wasip1 in node:wasi, by an executor written outside the checkout: the test binary with its
           # arguments, the environment, where go test sets PWD to the package's folder, and the whole
-          # file system; the code wasi.start returns is the process's (R39).
+          # file system; the code wasi.start returns is the process's. Node has the stack
+          # go_js_wasm_exec gives it for js/wasm (R39).
           wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
           cat > "$wasi" <<'JS'
           import { readFile } from "node:fs/promises";
@@ -287,7 +288,7 @@ jobs:
           const { instance } = await WebAssembly.instantiate(await readFile(args[0]), wasi.getImportObject());
           process.exitCode = wasi.start(instance);
           JS
-          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --disable-warning=ExperimentalWarning $wasi" ./...
+          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
 
@@ -489,7 +490,8 @@ jobs:
           run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
           # wasip1 in node:wasi, by an executor written outside the checkout: the test binary with its
           # arguments, the environment, where go test sets PWD to the package's folder, and the whole
-          # file system; the code wasi.start returns is the process's (R39).
+          # file system; the code wasi.start returns is the process's. Node has the stack
+          # go_js_wasm_exec gives it for js/wasm (R39).
           wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
           cat > "$wasi" <<'JS'
           import { readFile } from "node:fs/promises";
@@ -499,7 +501,7 @@ jobs:
           const { instance } = await WebAssembly.instantiate(await readFile(args[0]), wasi.getImportObject());
           process.exitCode = wasi.start(instance);
           JS
-          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --disable-warning=ExperimentalWarning $wasi" ./...
+          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
 
