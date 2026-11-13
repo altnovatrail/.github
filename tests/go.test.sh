@@ -338,7 +338,8 @@ test_go_targets_runs_the_tests_on_every_amd64_target_in_order() {
     assert_call go 5 env GOROOT
     assert_call go 6 test -count=1 -exec=/usr/local/go/lib/wasm/go_js_wasm_exec ./...
     assert_call_record go 6 env "GOOS=js" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
-    assert_call go 7 build ./...
+    wasi_executor 7
+    assert_call go 7 test -count=1 "-exec=node --disable-warning=ExperimentalWarning $executor" ./...
     assert_call_record go 7 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
     assert_call go 8 vet ./...
     assert_call_record go 8 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
@@ -365,6 +366,63 @@ test_go_targets_fails_on_the_first_target_that_fails() {
     assert_script_status 1
     assert_calls go 4
     refute_script_has "GOOS=js"
+}
+
+# The tests on wasip1 (T58; R39): go test by an executor of the script's own in node:wasi, as
+# js/wasm runs go_js_wasm_exec.
+
+# The executor that the go test of the index-th call of go runs, by its -exec: the file, and the
+# words go splits the flag into, in words.
+wasi_executor() {
+    local -a argv
+    mapfile -d '' -t argv < "$(harness_call go "$1").argv"
+    [[ ${argv[2]-} == -exec=* ]] || fail "call $1 of go has no -exec as its third argument:$(harness_argv "$(harness_call go "$1").argv")"
+    read -r -a words <<< "${argv[2]#-exec=}"
+    executor=${words[-1]}
+}
+
+# A WASI command written by hand: its _start calls proc_exit with the code given, below 64, and it
+# exports its memory, as node:wasi requires.
+wasi_command() {
+    local code
+    code=$(printf '\\x%02x' "$1")
+    # shellcheck disable=SC2059 # The format is the module, with the code's byte in it.
+    printf "\x00asm\x01\x00\x00\x00\x01\x08\x02\x60\x01\x7f\x00\x60\x00\x00\x02\x24\x01\x16wasi_snapshot_preview1\x09proc_exit\x00\x00\x03\x02\x01\x01\x05\x03\x01\x00\x01\x07\x13\x02\x06memory\x02\x00\x06_start\x00\x01\x0a\x08\x01\x06\x00\x41${code}\x10\x00\x0b" > "$2"
+}
+
+test_go_targets_runs_wasip1_in_node_wasi_by_an_executor_outside_the_checkout() {
+    run_same_bits_step targets 'Tests on the targets'
+    run_container_script
+    assert_script_status 0
+    wasi_executor 7
+    assert_eq "$(if [ -f "$executor" ]; then echo written; else echo none; fi)" written "the executor"
+    assert_eq "$(case $executor in "$step_workspace"/*) echo in the checkout ;; "$state/tmp"/*) echo in a temporary folder ;; *) echo elsewhere ;; esac)" \
+        "in a temporary folder" "where the executor is"
+    local fragment
+    for fragment in 'import { WASI } from "node:wasi";' 'const args = process.argv.slice(2);' 'version: "preview1"' 'args,' 'env: process.env' \
+        'preopens: { "/": "/" }' 'returnOnExit: true' 'await readFile(args[0])' 'process.exitCode = wasi.start(instance);'; do
+        assert_eq "$(grep -cF -- "$fragment" "$executor")" 1 "the lines of the executor with $fragment"
+    done
+    # The executor in the Node of the runner, as go test runs it: the code of the command's
+    # proc_exit is the code of the process, and Node warns of nothing.
+    local code status
+    for code in 0 3; do
+        wasi_command "$code" "$state/exit.wasm"
+        status=0
+        "${words[@]}" "$state/exit.wasm" > "$state/node.out" 2>&1 || status=$?
+        assert_eq "$status" "$code" "the exit status of a command that exits with $code"
+        assert_eq "$(cat "$state/node.out")" "" "what Node printed"
+    done
+}
+
+test_go_targets_fails_with_a_test_on_wasip1() {
+    run_same_bits_step targets 'Tests on the targets'
+    echo GOOS=wasip1 > "$state/stub/go.fails"
+    run_container_script
+    assert_script_status 1
+    assert_calls go 7
+    assert_script_line "go: a stand-in failure under GOOS=wasip1"
+    refute_script_has "go vet"
 }
 
 # Two packages with code, as go list prints them for the caller's module.
