@@ -1,0 +1,19 @@
+# Trial (T58, never merged): the shared go.yml with same-bits, called by local path from this pull
+# request, on the trial module at the root: a deep recursion on wasip1 (R16; R39).
+name: Same-bits trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/go.yml
+    with:
+      same-bits: true
