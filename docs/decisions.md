@@ -1599,3 +1599,5 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 - no `--stack-size`, as the task had it, until a caller's test fails on the stack: the deep recursion of the review would turn wasip1 red where js/wasm is green;
 
 — *Consequence:* `go.yml`; `tests/go.test.sh`; R16; architecture 3.1; sources 9.1, 10.1; measurements 2.6; RUN.md, T58. A caller changes nothing but the SHA of `go.yml`, which Dependabot raises; a caller whose tests do not pass on wasip1 gets "Go / targets" and "Go / arm64" red from that release on.
+
+— *Amendment 2026-11-13:* the release came out — `v0.1.24`, commit fab102d, the merge commit of pull request 117, immutable and Latest; `gh release verify` confirms it. Of the shared workflows it differs from `v0.1.23` in `go.yml` alone (`git diff v0.1.23 v0.1.24`). The template of architecture 3.3 calls `go.yml` by this SHA. `learner-model` and `engine` have no pull request of Dependabot with it yet: Dependabot waits three days (R10). — architecture 3.3; RUN.md, T58.

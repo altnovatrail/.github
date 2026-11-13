@@ -368,6 +368,8 @@ Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-
 |---|---|---|---|---|---|---|
 | `-workspaces--github` — before E18, measurements 1.9 spec | 2026-10-13T00:00 … 2026-11-12T14:27 | 14 | 4,196 / 2,565 | 397.5 / 124.0 | 10 | $739.31 |
 | `-workspaces--github` — E18, T54 to T57 | 2026-11-12T14:27 … 2026-11-13T04:44 | 4 | 410 / 353 | 188.8 / 78.5 | 1 | $49.77 |
+| `-workspaces--github` — E19, T58 | 2026-11-13T04:44 … 2026-11-13T05:35 | 2 | 171 / 30 | 170.2 / 70.2 | 0 | $11.31 |
 
 - The context of a call of the main session fell from 397.5 to 188.8 thousand tokens, of a subagent from 124.0 to 78.5. The window "before" holds a month of the tasks of every kind, and the row of E18 four tasks of documents, so the comparison across the sessions after the epic is T124 `spec`'s;
-- the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row.
+- the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row;
+- the row of E19 is by `tokens-report --since 2026-11-13T04:44 --row`, measured 2026-11-13 at the archive of E19, while the session of T58 ran: its two sessions are the end of T57's and T58's, and what T58 spent after 05:35 — the record of the release and the archive — goes into the next row. The threshold of R145 spec is not reached: 171 main calls, fewer than 300, and no budget was raised in the epic; so no epic of analysis goes into table 2 of RUN.md.
