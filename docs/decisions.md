@@ -4,7 +4,7 @@
 >
 > **Rule:** do not re-propose what was rejected without new facts. If a decision has to change, ask the author and update this file. An entry is never rewritten: an amendment with its date at the end of the entry corrects it, or a new entry replaces it, and the old one stays where it is, marked "Superseded".
 >
-> The repository was made 2026-10-19 from the repository template of `spec` v0.1.0 (R21 spec), moved the same day to `spec` v0.2.3 (R01), then to v0.2.4 (R02); 2026-10-20 — to v0.2.5 (R06), v0.2.6 (R07), v0.2.9 (R13) and v0.2.11 (R14), 2026-10-21 — to v0.2.12 (R15), v0.2.13 (R17) and v0.2.14 (R20), 2026-10-22 — to v0.2.17 (R21), v0.2.21 (R22) and v0.2.23 (R24), 2026-11-01 — to v0.4.1 (R25) and v0.5.3 (R27), 2026-11-02 — to v0.6.2 (R30) and v0.6.3 (R31), 2026-11-08 — to v0.9.8 (R32) and v0.9.9 (R34), 2026-11-09 — to v0.12.0 (R35), 2026-11-10 — to v0.13.0 (R37), and 2026-11-12 — to v0.16.3 (R38). How it comes to differ from the repository template over time — by tools in the devcontainer, by rules in RUN.md — is recorded here as a decision, as R46 canvas-api recorded the differences from its model. Next number — R39.
+> The repository was made 2026-10-19 from the repository template of `spec` v0.1.0 (R21 spec), moved the same day to `spec` v0.2.3 (R01), then to v0.2.4 (R02); 2026-10-20 — to v0.2.5 (R06), v0.2.6 (R07), v0.2.9 (R13) and v0.2.11 (R14), 2026-10-21 — to v0.2.12 (R15), v0.2.13 (R17) and v0.2.14 (R20), 2026-10-22 — to v0.2.17 (R21), v0.2.21 (R22) and v0.2.23 (R24), 2026-11-01 — to v0.4.1 (R25) and v0.5.3 (R27), 2026-11-02 — to v0.6.2 (R30) and v0.6.3 (R31), 2026-11-08 — to v0.9.8 (R32) and v0.9.9 (R34), 2026-11-09 — to v0.12.0 (R35), 2026-11-10 — to v0.13.0 (R37), and 2026-11-12 — to v0.16.3 (R38). How it comes to differ from the repository template over time — by tools in the devcontainer, by rules in RUN.md — is recorded here as a decision, as R46 canvas-api recorded the differences from its model. Next number — R40.
 >
 > Here entries are cited as `R03`, in other repositories as `R03 .github`. The decisions of `spec` are cited as "R18 spec", MathTrail's decisions as "R37 canvas-api", and in a list as "canvas-api: R37, R38". Each log has its own numbers.
 >
@@ -646,6 +646,8 @@ A caller puts in `.github/coderules.json`, removes `rules_test.go` with `testdat
 — *Amendment 2026-11-08:* the release came out — `v0.1.20`, the commit f87e8da, immutable and Latest; `gh release verify` confirms it. From `v0.1.19` it differs in `go.yml` — the job "Go / rules" — and in the new `tools/coderules/` (R33), and the other shared workflows are the same. The calling text in architecture 3.3 calls `go.yml` by this SHA, and "Go / rules" is there from it. — architecture 3.3; RUN.md, T48.
 
 — *Amendment 2026-11-09:* **the jobs of `go.yml` take the image of the `toolchain` stage from the GitHub Actions cache and build it only on a miss (R36).** What is said above about the step "Toolchain image", that it builds the image from the Dockerfile, is now about a miss. Task T52.
+
+— *Amendment 2026-11-13:* **"Go / targets" and "Go / arm64" run the tests on wasip1 too, by `go test -exec` with an executor of the step's own on `node:wasi` (R39).** What the amendments of 2026-11-08 say above — "builds wasip1 and checks it with `go vet`", "js/wasm and wasip1" — now reads: runs the tests on wasip1 and checks it with `go vet`. Task T58.
 
 ## The `spec` tag after the Go wrapper
 
@@ -1576,3 +1578,24 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 — *Rejected:* a limit of 50 KB for R18 alone — the block has no such key, and an entry is never rewritten to be shorter; raising the limit of a section for all — only 3.3 is over; keeping the section «Задачи вне эпика» as the repository template has it — the author removed it.
 
 — *Consequence:* `docs/decisions.md`; `docs-budgets.json`; measurements 11; CLAUDE.md; README.md; RUN.md; `docs/plan/E18.md`; architecture: status.
+
+## The tests on wasip1
+
+**R39. With `same-bits`, "Go / targets" and "Go / arm64" of the shared `go.yml` run the caller's tests on wasip1, not only build them: `GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning <executor>" ./...`, where the executor is a module of the step's own on `node:wasi` of the Node of the caller's `toolchain` stage, which the script writes into a folder of `mktemp -d`, outside the checkout. `go vet` for wasip1 stays, the names of the jobs and the input are the same, and the change gives a release of `.github`.** Task T58, epic E19; by the 2026-11-11 amendment to R107 spec and Д213 in RUN.md `spec`.
+- **The executor** is six lines of JavaScript: `new WASI({ version: "preview1", args, env: process.env, preopens: { "/": "/" }, returnOnExit: true })`, where `args` are the test binary and its arguments, as `go test -exec` hands them on; the binary is instantiated with `wasi.getImportObject()`, and `process.exitCode = wasi.start(instance)`. The file system is the whole one, as `go_wasip1_wasm_exec` gives wasmtime by `--dir=/`, and the environment is the whole one of the container, as it gives wazero by `-env-inherit`, where wasmtime gets `PWD` and `PATH` alone: `go test` sets `PWD` to the folder of the package, and Go on wasip1 takes its working folder from it (sources 9.1, 10.1). `returnOnExit` is the default from Node v20.1.0 and is named all the same: the code of the test's exit comes back from `wasi.start`, and the process ends by itself with it, whatever the default.
+- **The call** is the word `node` with its flag in `-exec`, which `go test` splits into words (sources 10.1), not a file with `#!/usr/bin/env node`: a flag on that line would take `env -S` from the caller's image, and a file run by `node` needs no executable bit. `--disable-warning=ExperimentalWarning` silences "WASI is an experimental feature and might change at any time", which `node:wasi` prints on stderr for every test binary and `go test` shows in front of every failed package, where it reads as part of the failure. Warnings of other types still show.
+- **The stack** is the one `go_js_wasm_exec` gives Node for js/wasm, `--stack-size=8192`, in kilobytes; `go_wasip1_wasm_exec` gives wasmtime 8 MiB (sources 10.1). The tests of `learner-model` and `engine` pass on the default stack too, but a test that recurses 100,000 deep fails on wasip1 with "RangeError: Maximum call stack size exceeded" and passes on js/wasm in the same Node, and with the flag on wasip1 too (measurements 2.6): without it the two targets of wasm would differ by a limit of the runtime, not by the bits. The finding is the review's, and the flag is the author's answer of 2026-11-13, against the task's «`--stack-size` — только если тест вызывающего упадёт на стеке».
+- **No sandbox.** `node:wasi` does not keep the test out of the file system (sources 9.1), and neither does wasmtime with `--dir=/`. The test is the caller's own code, in the container where its other targets run.
+- **Checked** — measurements 2.6: the step on clones of `learner-model` and `engine`, the suite of R28 with its breakages, and the trial pull requests #115 and #116.
+
+— *Why:* Д213 spec — «`.github` — своей задачей и релизом; `learner-model` и `engine` — подъёмом SHA»; the 2026-11-11 amendment to R107 spec took the WASI of the Node already in the stage. The author unfolded E19 right after T57, with one task (RUN.md, E19).
+
+— *Rejected:*
+- wasmtime or wazero in the image — rejected by the 2026-11-11 amendment to R107 spec;
+- Go's own `go_wasip1_wasm_exec` by `GOWASIRUNTIME`: it knows only runtimes that the stage does not have (sources 10.1);
+- the executor as a file with `#!/usr/bin/env node`: see "The call";
+- the executor in the checkout, or in `.github` taken by a second checkout as `rules` takes its tool: the caller's `git status` and recipes would see a file in the checkout, and six lines need no checkout of their own. The control of `fma-diff` is written the same way, by the script;
+- the warning left as it is: it stands in every failure;
+- no `--stack-size`, as the task had it, until a caller's test fails on the stack: the deep recursion of the review would turn wasip1 red where js/wasm is green;
+
+— *Consequence:* `go.yml`; `tests/go.test.sh`; R16; architecture 3.1; sources 9.1, 10.1; measurements 2.6; RUN.md, T58. A caller changes nothing but the SHA of `go.yml`, which Dependabot raises; a caller whose tests do not pass on wasip1 gets "Go / targets" and "Go / arm64" red from that release on.

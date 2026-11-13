@@ -394,6 +394,17 @@ Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
 Read 2026-10-22 (the amendment to R18, T27):
 - **Node** — `https://nodejs.org/dist/index.json`: v24.22.1, 2026-10-20, npm 11.19.1, `security: true`. In the `SHASUMS256.txt` of v24.22.1 — `6c172a9ab6718f7b801fb5a7bd486af2ee5e32758086a04b84fcce2aa77095e6  node-v24.22.1-linux-x64.tar.xz`, and the downloaded archive matched it.
 
+Read 2026-11-13 (R39, T58), the documentation of Node v24.21.0, the version of the `toolchain` stage:
+- **`node:wasi`** — [`api/wasi.md`](https://nodejs.org/docs/v24.21.0/api/wasi.md): "Stability: 1 - Experimental"; the example passes `version: 'preview1'`, `args: argv`, `env` and `preopens`, and runs `wasi.start(instance)`. Of `new WASI([options])`:
+  - `args` — "An array of strings that the WebAssembly application will see as command-line arguments. The first argument is the virtual path to the WASI command itself";
+  - `env` — "An object similar to `process.env` that the WebAssembly application will see as its environment";
+  - `preopens` — "The string keys of `preopens` are treated as directories within the file system. The corresponding values in `preopens` are the real paths to those directories on the host machine";
+  - `returnOnExit` — "By default, when WASI applications call `__wasi_proc_exit()`  `wasi.start()` will return with the exit code specified rather than terminating the process. Setting this option to `false` will cause the Node.js process to exit with the specified exit code instead. **Default:** `true`", and in the history of changes: "v20.1.0 … default value of returnOnExit changed to true";
+  - `version` — "Currently the only supported versions are `unstable` and `preview1`. This option is mandatory";
+  - `wasi.start(instance)` — "Attempt to begin execution of `instance` as a WASI command by invoking its `_start()` export", and it "requires that `instance` exports a [`WebAssembly.Memory`][] named `memory`";
+  - and under Security: "The current Node.js threat model does not provide secure sandboxing as is present in some WASI runtimes";
+- **`--disable-warning`** — [`api/cli.md`](https://nodejs.org/docs/v24.21.0/api/cli.md), `--disable-warning=code-or-type`, added in v21.3.0 and v20.11.0, "now stable" from v24.20.0: "Disable specific process warnings by `code` or `type`" and "The Node.js core warning types are: `DeprecationWarning` and `ExperimentalWarning`". The trial — measurements 2.6.
+
 ### 9.2. Playwright
 
 Read 2026-10-21 (R19):
@@ -442,6 +453,10 @@ Read 2026-10-21 (R19):
 
 Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
 - **Go** — [Go 1.22 Release Notes](https://go.dev/doc/go1.22): "`go test -cover` now prints coverage summaries for covered packages that do not have their own test files" — "functions in the package are treated as uncovered". And also: "if a package contains no executable code at all, we can't report a meaningful coverage percentage; for such packages the `go` tool will continue to report that there are no test files". The trial — measurements 4.1.
+
+Read 2026-11-13 (R39, T58), Go 1.27.3 of the devcontainer, in its `GOROOT`; the four files named below are byte for byte the same at the tag `go1.27.4` of golang/go, the Go of the `toolchain` stage, and so is the line of `AppendPWD`:
+- **the executors of wasm** — `lib/wasm/go_wasip1_wasm_exec` chooses by `GOWASIRUNTIME` among `wasmedge`, `wasmer`, `wazero` and `wasmtime`, the default, and any other value ends with "Unknown Go WASI runtime specified"; wasmtime runs with `--dir=/ --env PWD="$PWD" --env PATH="$PATH" -W max-wasm-stack=8388608`, and wazero with `-mount /:/ -env-inherit`. `lib/wasm/go_js_wasm_exec` ends with `exec node --stack-size=8192 "$DIR/wasm_exec_node.js" "$@"`;
+- **`go test -exec`** — `go help testflag`: "-exec xprog — Run the test binary using xprog. The behavior is the same as in 'go run'", and `go help run`: "If the -exec flag is given, 'go run' invokes the binary using xprog: 'xprog a.out arguments...'". In the source, `src/cmd/go/internal/test/testflag.go` reads the flag as `base.StringsFlag`, a command split into words, and `src/cmd/go/internal/test/test.go` runs the test with `cmd.Dir = a.Package.Dir` and `env = base.AppendPWD(env, cmd.Dir)`: the folder of the package, and `PWD` set to it. The trial — measurements 2.6.
 
 ### 10.2. go-licenses
 

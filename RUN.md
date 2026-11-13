@@ -67,7 +67,7 @@
 
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
-| [ ] | T58 | wasip1: тесты на `node:wasi` в «Go / targets» и «Go / arm64» | Claude | — | — |
+| [x] | T58 | wasip1: тесты на `node:wasi` в «Go / targets» и «Go / arm64» | Claude | — | — |
 
 **Почему одна задача.** Правка — один шаг, «Tests on the targets», в двух job одного файла, с одним исполнителем: случаи набора, проба и релиз проверяют её вместе. Подъём SHA у вызывающих — их Dependabot, не задача `.github`.
 
@@ -98,18 +98,4 @@
 
 **Не входит:** js/wasm, `fma-diff` и «Go / rules» — их правка не трогает; wasmtime и wazero — отвергнуты поправкой 2026-11-11 к R107 spec; подъём SHA в `learner-model` и `engine` — их pull request Dependabot.
 
-#### T58. wasip1: тесты на `node:wasi` в «Go / targets» и «Go / arm64»
-
-- **Цель:** тесты вызывающего на wasip1 идут, а не только собираются: расхождение битов сборки для WASI красит «Go / targets» и «Go / arm64».
-- **Почему:** Д213 spec; поправка 2026-11-11 к R107 spec; строка `learner-model` В41.
-- **Сделать:**
-  - в шаге «Tests on the targets» job `targets` и `arm64` [go.yml](.github/workflows/go.yml): скрипт пишет исполнитель — модуль Node на `node:wasi`, как в «Выяснилось при планировании», — в `mktemp -d`, вне checkout, как контроль `fma-diff`, и зовёт `GOOS=wasip1 GOARCH=wasm go test -count=1 -exec=<исполнитель> ./...` вместо `go build`; `go vet` для wasip1 остаётся. Как исполнитель зовётся — файлом с `#!/usr/bin/env node` или обёрткой `node` — и глушить ли `ExperimentalWarning` `node:wasi`, решает исполнитель задачи, с причиной в журнале;
-  - `--stack-size` Node — только если тест вызывающего упадёт на стеке: сверить на клонах `learner-model` и `engine` во временной папке, как в measurements 2.3, по шагу, вынутому из файла;
-  - комментарии `go.yml` над `targets` и `arm64` — «wasip1 is built and vetted alone» — по правке;
-  - случаи набора (R28) в `tests/go.test.sh` для обоих job: wasip1 — `go test` с `-exec` на исполнитель вне checkout; порчи — `go build` вместо `go test`, исполнитель без `returnOnExit`, код `wasi.start` не передан процессу, исполнитель в checkout, — каждая красит набор;
-  - пробный pull request, как #97 и #99 (measurements 2.3, 2.4): `go.yml` по локальному пути с `same-bits: true` на пробном модуле — с чистым модулем все «Go / …» зелёные, а с тестом, который падает только при `runtime.GOOS == "wasip1"`, красны только «Go / targets» и «Go / arm64», на wasip1. Не мержится;
-  - запись `docs/sources.md` о `node:wasi` — документация Node v24 о `WASI`, `version`, `preopens` и `returnOnExit`, с датой; замер — запись measurements 2; architecture 1 и 3.1 — что делают «Go / targets» и «Go / arm64»; решение — новая запись журнала, с поправкой на R16 (RULES.md spec, How we work);
-  - после мержа — релиз `.github` по R10: `self-release.yml` даёт `v0.1.24`, неизменяемый и Latest; фраза итога называет его и pull request Dependabot в `learner-model` и `engine`, если они уже есть.
-- **Не делать:** не трогать js/wasm, `fma-diff`, «Go / rules» и `typescript.yml`; не ставить WASI-среду в образ.
-- **Как проверить:** `bash tests/run.sh` — зелёный, с новыми случаями и порчами; actionlint и ShellCheck — по `self-ci.yml`; пробный pull request — как в «Сделать»; `just -f spec/justfile docs-check-repo`; `/code-review high`.
-- **Разделы:** Д213 spec; поправка 2026-11-11 к R107 spec; R16, R28, R33; architecture 3.1; measurements 2.3, 2.4; `.claude/rules/workflows.md`.
+- T58 — сделана 2026-11-13: в «Go / targets» и «Go / arm64» общего `go.yml` тесты вызывающего на wasip1 идут `go test -exec` со своим исполнителем на `node:wasi`, вне checkout, с `--stack-size=8192`, как у js/wasm, — по ответу автора на находку ревью; упавший тест красит job (R39). Пробы #115 и #116, не смержены; релиз `.github` — после мержа. Тело — [docs/plan/E19.md](docs/plan/E19.md).
