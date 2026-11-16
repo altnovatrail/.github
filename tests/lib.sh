@@ -61,6 +61,16 @@ harness_end() {
     fi
     [ -s "$state/asserts" ] || fail "the test asserts nothing"
     [ ! -e "$state/run/status-unasserted" ] || fail "the test never asserts the exit status of what it ran"
+    harness_runner_files_read "the step"
+}
+
+# A run whose step wrote GITHUB_ENV or GITHUB_PATH leaves a mark that the test is still to read
+# it, by assert_runner_file: what a step hands the steps after it is asserted, as its status is.
+harness_runner_files_read() {
+    local name
+    for name in GITHUB_ENV GITHUB_PATH; do
+        [ ! -e "$state/run/${name,,}-unread" ] || fail "the test never reads the $name that $1 wrote"
+    done
 }
 
 # A failed assertion: the reason, then the step's output and calls. The marker file catches a
@@ -294,12 +304,13 @@ harness_resolve() {
 # be asserted too: so a run whose status nobody asserted fails the test, whatever runs after it.
 harness_fresh_run() {
     [ ! -e "$state/run/status-unasserted" ] || fail "the test never asserts the exit status of the run before this one"
+    harness_runner_files_read "the run before this one"
     rm -rf -- "$state/run"
     mkdir -p "$state/run/calls"
 }
 
-# Run the selected step. Its exit status, output, calls and GITHUB_OUTPUT are what the assertions
-# read, until the next run.
+# Run the selected step. Its exit status, output, calls, GITHUB_OUTPUT, GITHUB_ENV and
+# GITHUB_PATH are what the assertions read, until the next run.
 run_step() {
     [ -n "$harness_job" ] || harness_refuse "no step is selected: select_step first"
     local run="$state/run" name type value shell status=0
@@ -365,8 +376,9 @@ run_step() {
     (cd -- "$step_workspace" && /usr/bin/env -i "${envs[@]}" /usr/bin/timeout 60 "${command[@]}" "$run/step.sh") \
         < /dev/null > "$run/output" 2>&1 || status=$?
     printf '%s\n' "$status" > "$run/status"
-    for name in github_env github_path github_step_summary; do
-        [ ! -s "$run/$name" ] || harness_refuse "the step wrote ${name^^}, which no case of the harness reads yet"
+    [ ! -s "$run/github_step_summary" ] || harness_refuse "the step wrote GITHUB_STEP_SUMMARY, which no case of the harness reads yet"
+    for name in github_env github_path; do
+        [ ! -s "$run/$name" ] || : > "$run/$name-unread"
     done
     if grep -q '^[^=]*<<' "$run/github_output" || grep -qv '=' "$run/github_output"; then
         harness_refuse "the step wrote GITHUB_OUTPUT in a form the harness does not read: name=value lines alone"
@@ -390,6 +402,25 @@ assert_status() {
     local status
     status=$(< "$state/run/status")
     [ "$status" = "$1" ] || fail "it exited with $status, not $1"
+}
+
+# What the step wrote to GITHUB_ENV or GITHUB_PATH, exactly, a line each, and nothing when no
+# line is given: assert_runner_file GITHUB_ENV GOTOOLCHAIN=local.
+assert_runner_file() {
+    harness_assert
+    local name=$1 file
+    shift
+    case $name in
+        GITHUB_ENV | GITHUB_PATH) file="$state/run/${name,,}" ;;
+        *) harness_refuse "assert_runner_file reads GITHUB_ENV or GITHUB_PATH, not $name" ;;
+    esac
+    [ -f "$file" ] || harness_refuse "assert_runner_file: no step has run"
+    rm -f "$file-unread"
+    local expected=""
+    if [ "$#" -gt 0 ]; then expected=$(printf '%s\n' "$@"; printf x); fi
+    local written
+    written=$(cat "$file"; printf x)
+    [ "${written%x}" = "${expected%x}" ] || fail "the step wrote $(printf %q "${written%x}") to $name, not $(printf %q "${expected%x}")"
 }
 
 # A whole line of the output, as it is: assert_line "::error::...".

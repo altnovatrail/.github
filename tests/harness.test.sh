@@ -95,7 +95,12 @@ jobs:
         working-directory: sub
         run: "true"
       - name: github env
-        run: echo X=1 >> "$GITHUB_ENV"
+        run: |
+          echo X=1 >> "$GITHUB_ENV"
+          echo Y=2 >> "$GITHUB_ENV"
+          echo /x/bin >> "$GITHUB_PATH"
+      - name: step summary
+        run: echo "# a summary" >> "$GITHUB_STEP_SUMMARY"
       - name: heredoc output
         run: printf 'a<<EOF\nb\nEOF\n' >> "$GITHUB_OUTPUT"
       - name: masked
@@ -317,8 +322,26 @@ test_harness_refuses_an_env_it_cannot_hand_in_as_github_would() {
 
 test_harness_refuses_what_a_step_writes_and_it_does_not_read() {
     workflow
-    refused "select_step j 'name=github env'; run_step" "the step wrote GITHUB_ENV, which no case of the harness reads yet"
+    refused "select_step j 'name=step summary'; run_step" "the step wrote GITHUB_STEP_SUMMARY, which no case of the harness reads yet"
     refused "select_step j 'name=heredoc output'; run_step" "the step wrote GITHUB_OUTPUT in a form the harness does not read: name=value lines alone"
+    refused 'assert_runner_file GITHUB_OUTPUT a=b' "assert_runner_file reads GITHUB_ENV or GITHUB_PATH, not GITHUB_OUTPUT"
+}
+
+test_harness_reads_what_a_step_hands_the_steps_after_it_line_by_line() {
+    workflow
+    use_workflow "$state/fixtures/w.yml"
+    select_step j 'name=github env'
+    run_step
+    assert_status 0
+    assert_runner_file GITHUB_ENV X=1 Y=2
+    assert_runner_file GITHUB_PATH /x/bin
+    select_step j name=plain
+    run_step
+    assert_status 0
+    assert_runner_file GITHUB_ENV
+    failed "select_step j 'name=github env'; run_step; assert_status 0; assert_runner_file GITHUB_ENV X=1" 'the step wrote $'\''X=1\nY=2\n'\'' to GITHUB_ENV, not $'\''X=1\n'\'''
+    failed "select_step j 'name=github env'; run_step; assert_status 0; assert_runner_file GITHUB_ENV X=1 Y=2" "the test never reads the GITHUB_PATH that the step wrote"
+    failed "select_step j 'name=github env'; run_step; assert_status 0; run_step; assert_status 0; assert_runner_file GITHUB_ENV X=1 Y=2; assert_runner_file GITHUB_PATH /x/bin" "the test never reads the GITHUB_ENV that the run before this one wrote"
 }
 
 test_harness_fails_a_test_that_would_pass_for_no_reason() {
