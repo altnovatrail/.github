@@ -25,10 +25,10 @@ test_go_is_called_with_same_bits_alone_no_secrets_and_gives_the_token_to_the_cov
 
 test_go_hands_the_report_of_the_test_job_alone_to_the_coverage_job() {
     use_workflow go.yml
-    assert_eq "$(wf '[.jobs.check.steps[-2:][] | .name]')" '["ci-${{ matrix.check }}","Coverage report"]' "the last steps of the checks"
-    assert_eq "$(wf '.jobs.check.steps[-1] | {if, uses: (.uses | sub("@[0-9a-f]{40}$"; "@<sha>"))}')" \
+    assert_eq "$(wf '[.jobs.check.steps[-3:][] | .name]')" '["ci-${{ matrix.check }}","Coverage report","Go caches into the cache"]' "the last steps of the checks"
+    assert_eq "$(wf '.jobs.check.steps[-2] | {if, uses: (.uses | sub("@[0-9a-f]{40}$"; "@<sha>"))}')" \
         '{"if":"matrix.check == '"'test'"'","uses":"actions/upload-artifact@<sha>"}' "the step that uploads the report"
-    assert_eq "$(wf '.jobs.check.steps[-1].with')" \
+    assert_eq "$(wf '.jobs.check.steps[-2].with')" \
         '{"name":"go-coverage","path":"coverage/go.out","retention-days":7,"if-no-files-found":"error"}' "its inputs"
     assert_eq "$(wf '[.jobs.check.steps[] | select(.uses // "" | startswith("actions/upload-artifact@"))] | length')" 1 "the steps that upload an artifact"
 }
@@ -120,7 +120,8 @@ test_go_runs_each_recipe_in_the_toolchain_stage_with_the_license_list_alone() {
         assert_status 0
         assert_calls docker 1
         assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env ALLOWED_LICENSES \
-            --volume "$step_workspace:/work" --workdir /work toolchain just "ci-$check"
+            "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
+            --workdir /work toolchain just "ci-$check"
         assert_call_record docker 1 env "ALLOWED_LICENSES=$allowed"
     done
 }
@@ -262,6 +263,173 @@ test_go_and_typescript_take_the_toolchain_stage_from_the_cache_in_every_job_that
     done
 }
 
+# The tests of the Go caches (T60; R41): the three steps round the work of every job that runs Go,
+# read as text, the step "Go caches" with what the cache restored, or nothing, and the flags of
+# every docker run of the jobs' own work.
+
+# The flags that point the container's Go at the caches, beside the volume that holds them.
+go_cache_env=(--env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint)
+
+# The restore and the save of the job check, with the SHA of the action as <sha>; the check in the
+# key is the job's own, and there is no restore key.
+go_cache_restore='{"name":"Go caches from the cache","id":"go-cache","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-${{ hashFiles('"'"'**/go.sum'"'"') }}"}}'
+go_cache_save='{"name":"Go caches into the cache","if":"steps.go-cache.outputs.cache-hit != '"'"'true'"'"' && github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"'","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"${{ steps.go-cache.outputs.cache-primary-key }}"}}'
+
+test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
+    local job check run sha runs mounts
+    use_workflow go.yml
+    run=$(wf '.jobs.check.steps[] | select(.name == "Go caches") | .run')
+    sha=$(wf_raw '.jobs.check.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
+    assert_eq "$(wf_raw '.jobs | to_entries[] | select(any(.value.steps[]; .name == "Go caches")) | .key' | tr '\n' ' ')" \
+        "check targets fma-diff arm64 rules " "the jobs with the Go caches"
+    for job in check targets fma-diff arm64 rules; do
+        check=$job
+        if [ "$job" = check ]; then check='${{ matrix.check }}'; fi
+        # Right after the toolchain stage, ahead of the work, and the save last of all.
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Toolchain image into the cache")) as $i | .[$i + 1:$i + 3]
+            | .[0] |= (.uses |= sub("@[0-9a-f]{40}$"; "@<sha>")) | .[1] |= {name}')" \
+            "[${go_cache_restore//<check>/$check},{\"name\":\"Go caches\"}]" "the restore of the Go caches in $job"
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[-1] | .uses |= sub("@[0-9a-f]{40}$"; "@<sha>")')" "$go_cache_save" "the save of the Go caches in $job"
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Go caches") | .run')" "$run" "the step Go caches of $job"
+        assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.uses // "" | startswith("actions/cache/")) | .uses | sub("^[^@]*@"; "")] | unique')" \
+            "[\"$sha\"]" "the one SHA of actions/cache in $job"
+        # Every docker run of the job's own work, after the step Go caches, mounts them.
+        runs=$(wf_raw --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' | grep -c 'docker run' || true)
+        mounts=$(wf_raw --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' \
+            | grep -Fxc "    --volume \"\$PWD:/work\" --volume \"\$RUNNER_TEMP/go-cache:/go-cache\" --workdir /work \\" || true)
+        assert_eq "$mounts" "$runs" "the docker runs of $job that mount the Go caches"
+        assert_eq "$(wf_raw --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' \
+            | grep -Fxc "    --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \\" || true)" \
+            "$runs" "the docker runs of $job that point Go at the caches"
+    done
+}
+
+go_cache_warning="::warning::The Go caches of go-Linux-X64-test-a-b did not pass go mod verify: they are deleted, and the job downloads and builds without them. An entry that fails on every run stays until it is deleted (gh cache delete) or go.sum or the Dockerfile changes."
+
+# The step "Go caches" of the job check, in a workspace that git tracks, with the key the cache
+# restored, or none.
+go_caches_step() {
+    use_workflow go.yml
+    select_step check 'name=Go caches'
+    ctx steps.go-cache.outputs.cache-matched-key "$1"
+    stub docker
+}
+
+# A repository of modules: at the root and in tools/x, which go mod verify takes, and in testdata/,
+# vendor/, .devcontainer/ and _old/, which ./... leaves out, and one git does not track.
+go_modules_workspace() {
+    local dir
+    for dir in . tools/x testdata/y vendor/z .devcontainer/gopls _old untracked; do
+        mkdir -p "$step_workspace/$dir"
+        printf 'module m\n' > "$step_workspace/$dir/go.mod"
+    done
+    git -C "$step_workspace" init --quiet
+    git -C "$step_workspace" add -- go.mod tools testdata vendor .devcontainer _old
+}
+
+# What the folder of the caches holds once the step is done.
+go_cache_listing() {
+    (cd -- "$step_temp/go-cache" && find . -mindepth 1 | sort | tr '\n' ' ')
+}
+
+test_go_caches_start_empty_on_a_miss_and_verify_nothing() {
+    go_modules_workspace
+    go_caches_step ""
+    run_step
+    assert_status 0
+    assert_calls docker 0
+    assert_line "Go caches: none in the cache; the job starts with empty ones."
+    assert_eq "$(go_cache_listing)" "./build ./lint ./mod " "the folders of the caches"
+}
+
+test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
+    go_modules_workspace
+    go_caches_step go-Linux-X64-test-a-b
+    mkdir -p "$step_temp/go-cache/mod/example.com" "$step_temp/go-cache/build/00" "$step_temp/go-cache/lint/00"
+    printf 'a build\n' > "$step_temp/go-cache/build/00/a-d"
+    printf 'a lint\n' > "$step_temp/go-cache/lint/00/b-d"
+    printf 'module example.com\n' > "$step_temp/go-cache/mod/example.com/go.mod"
+    touch -d '10 days ago' "$step_temp/go-cache/build/00/a-d" "$step_temp/go-cache/lint/00/b-d" "$step_temp/go-cache/mod/example.com/go.mod"
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+        "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" --workdir /work \
+        toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash . tools/x
+    assert_line "Go caches: go-Linux-X64-test-a-b, its modules verified."
+    assert_eq "$(go_cache_listing)" "./build ./build/00 ./build/00/a-d ./lint ./lint/00 ./lint/00/b-d ./mod ./mod/example.com ./mod/example.com/go.mod " "the caches, kept"
+    # go deletes a build not used for five days at the end of a command: the step touches the builds.
+    assert_eq "$(find "$step_temp/go-cache/build" "$step_temp/go-cache/lint" -type f -mmin +60 | wc -l)" 0 "the builds older than an hour"
+    assert_eq "$(find "$step_temp/go-cache/mod" -type f -mmin +60 | wc -l)" 1 "the modules older than an hour"
+}
+
+# The script the container runs verifies each module in turn and stops at the first that fails.
+run_verify_script() {
+    local -a argv
+    local at
+    mapfile -d '' -t argv < "$(harness_call docker 1).argv"
+    for at in "${!argv[@]}"; do
+        if [ "${argv[$at]}" = -c ]; then break; fi
+    done
+    at=$((at + 1))
+    stub go
+    script_status=0
+    (cd -- "$step_workspace" && /usr/bin/env -i "PATH=$state/bin:/usr/bin:/bin" "$@" \
+        /usr/bin/bash -c "${argv[$at]}" "${argv[@]:$at + 1}") > "$state/script.out" 2>&1 || script_status=$?
+}
+
+test_go_caches_verify_each_module_and_stop_at_the_first_that_fails() {
+    go_modules_workspace
+    go_caches_step go-Linux-X64-test-a-b
+    run_step
+    assert_status 0
+    run_verify_script
+    assert_eq "$script_status" 0 "the script's exit status"
+    assert_calls go 2
+    assert_call go 1 -C . mod verify
+    assert_call go 2 -C tools/x mod verify
+    printf 'GOOS=broken\n' > "$state/stub/go.fails"
+    rm -f "$state"/run/calls/*-go.*
+    run_verify_script GOOS=broken
+    assert_eq "$script_status" 1 "the script's exit status when a module fails"
+    assert_calls go 1
+}
+
+test_go_caches_that_do_not_verify_are_deleted_and_the_job_goes_on_without_them() {
+    go_modules_workspace
+    go_caches_step go-Linux-X64-test-a-b
+    # The module cache as go leaves it: folders and files no one may write.
+    mkdir -p "$step_temp/go-cache/mod/example.com/m@v1.0.0" "$step_temp/go-cache/build/00"
+    printf 'package m\n' > "$step_temp/go-cache/mod/example.com/m@v1.0.0/m.go"
+    chmod -R a-w "$step_temp/go-cache/mod/example.com"
+    stub_exit docker 1
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_line "$go_cache_warning"
+    refute_has "its modules verified"
+    assert_eq "$(go_cache_listing)" "./build ./lint ./mod " "the caches once deleted"
+}
+
+test_go_caches_that_git_cannot_list_the_modules_for_are_deleted_and_the_job_goes_on() {
+    go_caches_step go-Linux-X64-test-a-b
+    mkdir -p "$step_temp/go-cache/build/00"
+    run_step
+    assert_status 0
+    assert_calls docker 0
+    assert_line "$go_cache_warning"
+    assert_eq "$(go_cache_listing)" "./build ./lint ./mod " "the caches once deleted"
+}
+
+test_go_caches_without_a_module_to_verify_them_by_are_kept() {
+    git -C "$step_workspace" init --quiet
+    go_caches_step go-Linux-X64-test-a-b
+    run_step
+    assert_status 0
+    assert_calls docker 0
+    assert_line "Go caches: go-Linux-X64-test-a-b, with no module of the repository to verify them by."
+}
+
 # The tests of same-bits (T46; R107 in spec): learner-model's and engine's recipes test-targets
 # and fma-diff, as jobs of go.yml. A step hands its script to one toolchain container on stdin; the
 # cases run that script as the container would, with bash in the workspace, and with the stand-in
@@ -307,7 +475,8 @@ run_same_bits_step() {
     assert_status 0
     assert_calls docker 1
     assert_call docker 1 run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
-        --volume "$step_workspace:/work" --workdir /work toolchain bash -s -
+        "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
+        --workdir /work toolchain bash -s -
 }
 
 test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
@@ -319,7 +488,9 @@ test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
         assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[:4][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | tostring')" \
             "\"${same_bits_steps//\"/\\\"}]\"" "the first steps of $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[0].with')" '{"persist-credentials":false}' "the checkout of $job"
-        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | length')" 5 "the steps of $job"
+        assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[4:][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | del(.[2])')" \
+            '["actions/cache/restore@<sha>","Go caches","actions/cache/save@<sha>"]' "the Go caches round the step of $job"
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | length')" 8 "the steps of $job"
     done
 }
 
@@ -543,7 +714,7 @@ test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
     assert_eq "$(wf '.jobs.arm64 | {name, if, "runs-on", "timeout-minutes", permissions}')" \
         '{"name":"arm64","if":"inputs.same-bits","runs-on":"ubuntu-24.04-arm","timeout-minutes":45,"permissions":null}' "the job arm64"
     assert_eq "$(wf '[.jobs.arm64.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
-        '["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","ci-test","Tests on the targets"]' "its steps"
+        '["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","actions/cache/restore@<sha>","Go caches","ci-test","Tests on the targets","actions/cache/save@<sha>"]' "its steps"
     assert_eq "$(wf '.jobs.arm64.steps[0].with')" '{"persist-credentials":false}' "its checkout"
     # The targets as the job targets has them, word for word: one script for both hosts.
     assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .run')" "$(wf '.jobs.targets.steps[] | select(.name == "Tests on the targets") | .run')" "its tests on the targets"
@@ -557,7 +728,8 @@ test_go_arm64_runs_ci_test_in_the_toolchain_stage_without_the_license_list() {
     assert_status 0
     assert_calls docker 1
     assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-        --volume "$step_workspace:/work" --workdir /work toolchain just ci-test
+        "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
+        --workdir /work toolchain just ci-test
 }
 
 test_go_arm64_fails_with_ci_test() {
@@ -577,7 +749,7 @@ test_go_runs_rules_with_same_bits_alone_by_the_tool_of_its_own_version() {
     assert_eq "$(wf '.jobs.rules | {name, if, "runs-on", "timeout-minutes", permissions}')" \
         '{"name":"rules","if":"inputs.same-bits","runs-on":"ubuntu-24.04","timeout-minutes":20,"permissions":null}' "the job rules"
     assert_eq "$(wf '[.jobs.rules.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
-        '["actions/checkout@<sha>","actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","The rules of code"]' "its steps"
+        '["actions/checkout@<sha>","actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","actions/cache/restore@<sha>","Go caches","The rules of code","actions/cache/save@<sha>"]' "its steps"
     assert_eq "$(wf '.jobs.rules.steps[0].with')" '{"persist-credentials":false}' "the checkout of the caller"
     assert_eq "$(wf '.jobs.rules.steps[1].with')" \
         '{"repository":"${{ job.workflow_repository }}","ref":"${{ job.workflow_sha }}","path":".shared-github","persist-credentials":false}' "the checkout of .github"
@@ -602,7 +774,7 @@ test_go_rules_builds_the_tool_in_the_toolchain_stage_and_runs_it_on_the_module()
     assert_status 0
     assert_calls docker 1
     assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-        --volume "$step_workspace:/work" --workdir /work \
+        "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" --workdir /work \
         --volume "$step_temp/shared-github/tools/coderules:/tool:ro" \
         toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
     # .github's checkout is out of the caller's module, where the tool would see a nested module.
