@@ -48,7 +48,7 @@ jobs:
   # on a hit it does not run: nodejs.org, GitHub and the snapshot of Ubuntu's archive are not asked.
   # On a hit this job only looks the entry up, and each job after it restores the file. On a miss
   # it builds the image alone and hands the file to the jobs after it as an artifact of the run,
-  # kept a day and not compressed. Only a push to main saves the file into the cache: an entry of a
+  # kept a day and compressed fast. Only a push to main saves the file into the cache: an entry of a
   # pull request is "restored by re-runs of the pull request" alone, and the one of main, which
   # every pull request reads, its CI on a push to main saves. The path and the image's name are
   # those of spec's toolchain.sh, by which documents.yml and spec's CI build the stage, so that a
@@ -121,7 +121,7 @@ jobs:
           name: typescript-toolchain-image
           path: ${{ runner.temp }}/novatrail-toolchain.tar
           retention-days: 1
-          compression-level: 0
+          compression-level: 1
           overwrite: true
           if-no-files-found: ignore
 

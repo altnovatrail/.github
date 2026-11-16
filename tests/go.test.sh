@@ -300,7 +300,7 @@ test_go_and_typescript_build_the_toolchain_stage_in_the_job_toolchain_alone_and_
     for file in go.yml typescript.yml; do
         use_workflow "$file"
         artifact=${file%.yml}-toolchain-image
-        upload='{"name":"Toolchain image for the jobs after this one","id":"upload","if":"steps.image.outcome == '"'"'success'"'"'","continue-on-error":true,"uses":"actions/upload-artifact@<sha>","with":{"name":"'"$artifact"'","path":"${{ runner.temp }}/novatrail-toolchain.tar","retention-days":1,"compression-level":0,"overwrite":true,"if-no-files-found":"ignore"}}'
+        upload='{"name":"Toolchain image for the jobs after this one","id":"upload","if":"steps.image.outcome == '"'"'success'"'"'","continue-on-error":true,"uses":"actions/upload-artifact@<sha>","with":{"name":"'"$artifact"'","path":"${{ runner.temp }}/novatrail-toolchain.tar","retention-days":1,"compression-level":1,"overwrite":true,"if-no-files-found":"ignore"}}'
         assert_eq "$(wf '.jobs.toolchain | {name, "runs-on", needs, if, outputs}')" \
             '{"name":"toolchain","runs-on":"ubuntu-24.04","needs":null,"if":null,"outputs":{"artifact":"${{ steps.upload.outputs.artifact-id }}"}}' "the job toolchain of $file"
         assert_eq "$(toolchain_steps_of toolchain)" \
