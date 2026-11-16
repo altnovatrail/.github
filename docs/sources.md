@@ -52,6 +52,10 @@ Read 2026-11-01 (R28, T35):
 Read 2026-11-08 (R33, T48):
 - **`job.workflow_repository` and `job.workflow_sha`** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts) describes them: "The commit SHA of the workflow file that defines the current job" and "The `owner/repo` of the repository containing the workflow file that defines the current job". That actionlint 1.7.12 does not know them — measurements 2.5.
 
+Read 2026-11-16 (the 2026-11-16 amendment to R19, T64):
+- **the contexts of a matrix** — github/docs at 6d84733, `content/actions/reference/workflows-and-actions/contexts.md`, Context availability: "`jobs.<job_id>.strategy` | `github, needs, vars, inputs`";
+- **`fromJSON`** — the same commit, `expressions.md`: "Returns a JSON object or JSON data type for `value`. You can use this function to provide a JSON object as an evaluated expression or to convert any data type that can be represented in JSON or JavaScript, such as strings, booleans, null values, arrays, and objects", and its example sets a matrix by it: "`matrix: ${{ fromJSON(needs.job1.outputs.matrix) }}`".
+
 ### 2.3. The step's shell and `set -e`
 
 Read 2026-10-20 (R10):
@@ -494,6 +498,10 @@ Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
   - `docs/guide/coverage.md`: "By default Vitest will show only files that were imported during test run. To include uncovered files in the report, you'll need to configure `coverage.include` with a pattern that will pick your source files";
   - `docs/config/coverage.md`: `coverage.reportsDirectory` has "Default: `'./coverage'`", and "Vitest will delete this directory before running tests if `coverage.clean` is enabled (default value)";
   - the file's name — istanbuljs/istanbuljs on `main` 28ffdbc, `packages/istanbul-reports`: `lcovonly` writes `opts.file || 'lcov.info'`, and `lcov` the same `lcov.info` and HTML in `lcov-report`.
+
+Read 2026-11-16 (the 2026-11-16 amendment to R19, T64):
+- **the V8 coverage** — vitest-dev/vitest at the tag v5.1.0, commit 7a38449, `docs/guide/coverage.md`, V8 Provider: "This provider requires Javascript runtime that's implemented on top of V8 engine, such as NodeJS, Deno or any Chromium based browsers such as Google Chrome";
+- **the engines at the callers** — `ci-test` of `app`, `main` 9e55f30, runs `vitest run --coverage --project node --project '*(chromium)'`, then `vitest run --project '*(webkit)' --project '*(firefox)'`, "without it: Vitest's v8 coverage works in Chromium alone", citing its own `R45` and `sources 2.5`; `ci-test` of `canvas`, `main` 9c75901, the same with `'* chromium'`, `'* webkit'` and `'* firefox'`. `skill-map`, `main` of 2026-11-16, runs `vitest run --coverage` alone.
 
 ### 9.4. OSV-Scanner
 

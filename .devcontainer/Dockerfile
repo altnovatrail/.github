@@ -138,9 +138,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # whose ID is raised by hand like a version (R40) — with the image above, or when a newer base
 # image needs a newer archive. apt checks the archive's signatures as it does on any update.
 ARG UBUNTU_SNAPSHOT=20261021T000000Z
-RUN apt-get update --snapshot "$UBUNTU_SNAPSHOT"; \
+# Trial only: snapshot.ubuntu.com answered 500 and 502 on 2026-11-16, so the live archive.
+RUN apt-get update; \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        --snapshot "$UBUNTU_SNAPSHOT" \
         libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libatspi2.0-0t64 libcairo2 \
         libcups2t64 libdbus-1-3 libdrm2 libgbm1 libglib2.0-0t64 libnspr4 libnss3 \
         libpango-1.0-0 libx11-6 libxcb1 libxcomposite1 libxdamage1 libxext6 libxfixes3 \
