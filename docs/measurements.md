@@ -406,6 +406,11 @@ Measured 2026-11-16 (R46, T67):
 - **the draft** — `just new-repo-draft .github docs 3.11 v0.18.4` and `… v0.18.3` on clones of `spec` at those tags in a temporary folder: the two drafts differ in `.devcontainer/Dockerfile` and in the name of the tag alone; the new Dockerfile differs from the former one of `.github` by the stage `toolchain-core` and its comments alone, and `devcontainer.json`, `host-network.sh`, `.claude/settings.json` and AGENTS.md are the same as the draft's;
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.18.4 and yq 4.54.1 by the sum of `self-ci.yml` — 204 tests, 0 failed; `docs-check-repo` on v0.18.4 ok; the step "Go of the caller's toolchain stage" of `codeql.yml`, taken out of its file, on the new Dockerfile with the real go.dev — `go version go1.27.4 linux/amd64`, read from `toolchain-core` through `toolchain`. The devcontainer has no Docker, so the stages are first built by the checks of the pull request.
 
+Measured 2026-11-16 (R48, T68):
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.18.6` and `… v0.18.4` on clones of `spec` at those tags in a temporary folder: the two drafts differ in the comment of the stage `toolchain` of `.devcontainer/Dockerfile`, in `shutdownAction` of `devcontainer.json` and in the name of the tag alone; the new two files differ from the former ones of `.github` by those lines alone, and `host-network.sh` and `.claude/settings.json` are the same as the draft's;
+- **the hook** — `spec/tools/session/main.mjs` at v0.18.6 on a trial transcript with the prompt «Выполни задачу T68 из RUN.md»: a prompt with T69 and no `NOVATRAIL_RUN_TASKS` — `"decision":"block"`; with `NOVATRAIL_RUN_TASKS="T68 T69"` it passes; a prompt with T70 under the same variable — `"decision":"block"`;
+- **the checks** — the suite `tests/run.sh` with the submodule at v0.18.6 and yq 4.54.1 by the sum of `self-ci.yml` — 218 tests, 0 failed; `docs-check-repo` on v0.18.6 ok before the edits and after.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55
