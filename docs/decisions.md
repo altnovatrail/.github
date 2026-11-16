@@ -1677,6 +1677,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 
 — *Consequence:* RUN.md; `run/`; `DEBT.md` removed; `docs/plan/E18.md`, `E19.md`, `E20.md` and `history.md`; CLAUDE.md; README.md; `profile/README.md`; CONTRIBUTING.md; `.devcontainer/`; `docs-budgets.json`; R38; architecture: status; sources 12.13; measurements 9.1, 11.2.
 
+— *Amendment 2026-11-16:* `.github` is on v0.18.4 (R46). What is said above about v0.18.3 as the tag of `.github` and about its devcontainer is history: the Dockerfile has three stages, `toolchain` built over `toolchain-core`, by the template of v0.18.4. The layout of the plan, the rules of RUN.md and the differences from the template stand as above. — R46; `.devcontainer/Dockerfile`.
+
 ## The Go caches
 
 **R41. The jobs of the shared `go.yml` that run Go — `check`, `targets`, `fma-diff`, `arm64` and `rules` — take the caches of Go from the caller's cache of GitHub Actions: one folder `${{ runner.temp }}/go-cache`, outside the checkout, with `mod`, `build` and `lint` for `GOMODCACHE`, `GOCACHE` and `GOLANGCI_LINT_CACHE`, which every `docker run` of the job's work mounts at `/go-cache` and points the three variables into. The key is `go-<OS>-<architecture>-<check>-<hash of .devcontainer/Dockerfile>-<hash of **/go.sum>`, with no restore key. What the cache gave, `go mod verify` checks in every module of the caller before the work, and the builds of verified caches are touched. Only a push to `main` saves, after the work passed and only on a miss of the exact key; a pull request and every other event read. `release.yml` takes no cache.** Task T60, epic E21; by row 7.13 of COORDINATION.md spec and measurements 3.1 spec.
@@ -1824,6 +1826,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 
 — *Amendment 2026-11-16:* the release came out — `v0.1.30`, commit 8311cbf, the merge commit of pull request 132, immutable and Latest; `gh release verify` confirms it. Of the shared workflows it differs from `v0.1.29` in `codeql.yml` alone (`git diff v0.1.29 v0.1.30`). The template of architecture 3.3 calls `codeql.yml` by this SHA, where it called `v0.1.0`: the call needs the same permissions, and `languages` stays optional. Task T67.
 
+— *Amendment 2026-11-16:* `.github`'s own Dockerfile installs Go in the stage `toolchain-core` too, under `toolchain`, by the template of `spec` v0.18.4 (R46): what is said above of the `toolchain` stage holds for the stages it is built from, which the step reads, and on `.github`, as on `spec`, it takes `GO_VERSION` and `GO_SHA256_AMD64` from `toolchain-core` (measurements 9.1). Task T67.
+
 ## The `spec` tag v0.18.4
 
 **R46. `.github` is on `spec` v0.18.4: the submodule `spec/` is at this tag, and the links to `spec` pinned to a tag name it. With the tag `.devcontainer/Dockerfile` takes the stage `toolchain-core` — Node, just, Go and buf, what a release needs —, and `toolchain` is built `FROM toolchain-core` and adds nothing, as the draft of the template gives it for `.github` (the 2026-11-16 amendment to R31 spec). No shared workflow changes, and no release of `.github` follows: they build `toolchain` as before, and which of them take `toolchain-core` is T66.** Task T67, epic E21; wave 0 of «Сделай эпик E14» `spec` (R156 spec) and row 7.13 of COORDINATION.md `spec`, whose last item waits on the tag of T166 `spec`.
@@ -1837,7 +1841,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
   - `spec/` — at v0.18.4, commit 5867a6c; the tag — in README.md, `profile/README.md`, CLAUDE.md and at the start of RUN.md. The release is immutable and Latest, and `gh release verify v0.18.4 -R altnovatrail/spec` confirms it;
   - `.devcontainer/Dockerfile` — the draft's of `just new-repo-draft .github docs 3.11 v0.18.4` on a clone of `spec` at the tag in a temporary folder, word for word: the heading of three stages, `toolchain-core` where `toolchain` began, and `toolchain` over it with no lines of its own. `devcontainer.json` and `host-network.sh` are the same as the draft's;
   - RUN.md — T67 in table 1 of E21, before T66, which depends on it; archived in `docs/plan/E21.md`.
-- **What the step of CodeQL reads.** The step of R45 follows `toolchain` to the stage its `FROM` names, so on the new Dockerfile it takes `GO_VERSION` and `GO_SHA256_AMD64` from `toolchain-core`, as it does on `spec`'s (sources 13.7).
+- **What the step of CodeQL reads.** The step of R45 follows `toolchain` to the stage its `FROM` names, so on the new Dockerfile it takes `GO_VERSION` and `GO_SHA256_AMD64` from `toolchain-core`, as it does on `spec`'s (sources 13.7; the second 2026-11-16 amendment to R45).
+- **The heading of the Dockerfile runs ahead until T66.** It says, as the template does, that a release builds `toolchain-core` alone (R31 spec): in `spec` it does, and in `.github` `self-release.yml` runs `toolchain.sh build` with no `TOOLCHAIN_STAGE`, and the shared `release.yml` builds `--target toolchain` for its callers, until T66. The text stays the template's, word for word, rather than a wording of `.github`'s own that T66 would take back. The comment on `toolchain` speaks of `spec`'s tests and of `repo-template/kinds.json`, as in every copy: row В39 of `run/QUESTIONS.md`, «В реестр spec».
 
 — *Why now:* the author's word of 2026-11-16, «Сделай эпик E14», wave 0 for every repository: the orchestrator first moves each repository to the newest tag of `spec` (R156 spec); and T66 needs the stage in `.github`'s own Dockerfile, on which `self-ci.yml` runs the shared workflows. v0.18.4 is the newest release.
 
@@ -1845,4 +1850,4 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 - the move as a part of T66: a move to a tag is a task of its own (RULES.md spec, Across repositories), and T66 changes shared workflows, with their cases, trial pull requests and a release — more than one review with the move (rule 11 of RUN.md);
 - the submodule at v0.18.4 with the former Dockerfile, `toolchain` alone: `toolchain.sh` would build `toolchain` with a notice wherever T66 asks for the core, `self-ci.yml` would never run the shared workflows on the stage they are to take, and the copy would drift from the template with no decision that holds it.
 
-— *Consequence:* `spec/`; `.devcontainer/Dockerfile`; README.md; `profile/README.md`; CLAUDE.md; RUN.md, T67; `docs/plan/E21.md`; R45; architecture: status, 3.3; sources 12.14; measurements 9.1.
+— *Consequence:* `spec/`; `.devcontainer/Dockerfile`; README.md; `profile/README.md`; CLAUDE.md; RUN.md, T67; `docs/plan/E21.md`; `run/QUESTIONS.md`, В39; R40, R45; architecture: status, 3.3; sources 12.14; measurements 9.1.
