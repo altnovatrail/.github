@@ -1,0 +1,17 @@
+# Trial (T64, never merged): the shared typescript.yml without engines, in a run of its own, since
+# a run calls each wrapper once (R42): the four checks as before.
+name: TypeScript trial without engines
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  typescript:
+    name: TypeScript
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/typescript.yml

@@ -1,0 +1,19 @@
+# Trial (T64, never merged): the shared typescript.yml with engines, called by local path from this
+# pull request, on the trial package at the root (R19).
+name: TypeScript trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  typescript:
+    name: TypeScript
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/typescript.yml
+    with:
+      engines: true
