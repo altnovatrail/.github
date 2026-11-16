@@ -209,6 +209,26 @@ Read 2026-11-01 (R29, T37):
   - `required` — "Prevents form submission until element is completed. Only for public repositories".
 - **a blank issue** — [GitHub Docs, Configuring issue templates for your repository](https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository): with `blank_issues_enabled: false` "users with write access or above (Write, Maintain, or Admin roles) will still see the Blank issue option in the template chooser, labeled Maintainers only", and `contact_links` lead outside.
 
+### 3.5. `gh release verify` and `verify-asset`
+
+Read 2026-11-16 (R44, T63):
+- **the `gh` of the runner** — the image `ubuntu-24.04`, version 20261111.370.1: "GitHub CLI 2.103.3" (actions/runner-images at e130079, `images/ubuntu/Ubuntu2404-Readme.md`);
+- **`gh release verify-asset`** — cli/cli at the tag v2.103.3, 63837fb, `pkg/cmd/release/verify-asset/verify_asset.go`: `Use: "verify-asset [<tag>] <file-path>"`, `Args: cobra.MaximumNArgs(2)` — one file a call. Each call works out the file's digest, then `shared.FetchRefSHA(ctx, config.HttpClient, baseRepo, tagName)`, then `config.AttClient.GetByDigest(api.FetchParams{… PredicateType: "release" …})` for the tag's commit, keeps the attestations of the tag, then `shared.FilterAttestationsByFileDigest(filteredAttestations, fileDigest.Digest())` — "attestation for %s does not contain subject %s" when none —, and verifies the one left by `config.AttVerifier.VerifyAttestation(releaseRefDigest, filteredAttestations[0])`. The file's name is not compared: only the digest;
+- **`gh release verify`** — the same tag, `pkg/cmd/release/verify/verify.go`: the same `FetchRefSHA` and `GetByDigest`, "duplicate attestations found for release %s in %s" when the tag has more than one, the same `VerifyAttestation`, and then `if opts.Exporter != nil { return opts.Exporter.Write(config.IO, verified) }` — with `--format json` the result of the verification is printed; without it, `printVerifiedSubjects` reads `statementData.Subject` from the verified envelope and prints each subject that has a name, "Name" and "Digest".
+
+### 3.6. The rate limits of the REST API
+
+Read 2026-11-16 (R44, T63):
+- [GitHub Docs, Rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api):
+  - "The rate limit for `GITHUB_TOKEN` is 1,000 requests per hour per repository. For requests to resources that belong to a GitHub Enterprise Cloud account, the limit is 15,000 requests per hour per repository";
+  - the secondary rate limits: "No more than 100 concurrent requests are allowed", no more than 900 points per minute for REST API endpoints, "No more than 90 seconds of CPU time per 60 seconds of real time is allowed", "No more than 80 content-generating requests per minute and no more than 500 content-generating requests per hour are allowed";
+  - the points: "Most REST API `GET`, `HEAD`, and `OPTIONS` requests" — 1, "Most REST API `POST`, `PATCH`, `PUT`, or `DELETE` requests" — 5, and "Some REST API endpoints have a different point cost that is not shared publicly".
+
+### 3.7. The names of release assets
+
+Read 2026-11-16 (R44, T63):
+- [GitHub Docs, REST API endpoints for release assets](https://docs.github.com/en/rest/releases/assets), Upload a release asset: "GitHub renames asset filenames that have special characters, non-alphanumeric characters, and leading or trailing periods. The "List release assets" endpoint lists the renamed filenames".
+
 ## 4. Dependabot
 
 ### 4.1. GitHub Docs on Dependabot
@@ -335,6 +355,14 @@ Read 2026-10-19 (architecture 2.3):
 - [Fulcio, OID information](https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md), section Mapping OIDC token claims to Fulcio OIDs: `job_workflow_ref` is the Build Signer URI, "Reference to specific build instructions that are responsible for signing. Can be the same as Build Config URI. For example a reusable workflow in GitHub Actions or a Circle CI Orbs"; `workflow_ref` is the Build Config URI, "A reference to the initiating build instructions"; `repository` is the Source Repository URI.
 
 So, together with GitHub's `job_workflow_ref` (sources 2.5), the signature of the shared release names the shared workflow, and the caller's workflow and its repository are in the Build Config URI and the Source Repository URI.
+
+### 7.3. Calls of cosign at once
+
+Read 2026-11-16 (R44, T63):
+- **the limits of Sigstore's public instance** — none in numbers in what was read: [Sigstore FAQ](https://docs.sigstore.dev/about/faq/) and [sigstore/community, ROADMAP.md](https://github.com/sigstore/community/blob/main/ROADMAP.md) have no word of rate limits. cosign 3.1.4 prints on `sign-blob` that the service "is provided pursuant to the Hosted Project Tools Terms of Use" (the log of the trial #127, measurements 5.12). [LF Projects, Hosted Project Tools Terms of Use](https://lfprojects.org/policies/hosted-project-tools-terms-of-use/), last updated 2023-02-21: "Such access and use shall not exceed a reasonable degree of use appropriate to the nature of the particular Hosted Project Tool", and "The Provider may … suspend access to the Hosted Project Tool if the Provider determines that Your use thereof poses a security or other risk";
+- **cosign's TUF cache** — cosign at the tag v3.1.4, commit 0e48502 (the tag object 8843105), `pkg/cosign/tuf.go`: "The cache directory is provided by the user as an environment variable TUF_ROOT, or the default $HOME/.sigstore/root is used", by `opts := tuf.DefaultOptions()` of sigstore-go and `opts.CachePath = tufCacheDir`; its `go.mod` requires `github.com/sigstore/sigstore-go v1.3.0` and `github.com/theupdateframework/go-tuf/v2 v2.4.2`;
+- **sigstore-go** v1.3.0, `pkg/tuf/options.go`: "CacheValidity period in days (default 0)", and `DefaultOptions` sets no other — so every call refreshes the metadata; `pkg/tuf/client.go`: the cache lies in `filepath.Join(opts.CachePath, URLToPath(opts.RepositoryBaseURL))`;
+- **go-tuf** v2.4.2: `metadata/updater/updater.go`, `persistMetadata` writes a file of metadata to `os.CreateTemp(update.cfg.LocalMetadataDir, "tuf_tmp")`, renames it into place, reads it back and fails — "failed to persist metadata" — when what it reads is not what it wrote; a target, such as the trusted root, is written by `os.WriteFile(filePath, data, 0644)`, in place. `metadata/config/config.go`, `EnsurePathsExist` creates the folders of the cache with `os.MkdirAll(path, 0700)`, so a `TUF_ROOT` that does not exist yet is made.
 
 ## 8. npm
 

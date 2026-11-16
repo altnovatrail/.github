@@ -56,7 +56,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T60 | Кеш Go в `go.yml` | Claude | — | — |
 | [x] | T61 | Один файл образа `toolchain` во всех workflow | Claude | да | T60 |
 | [x] | T62 | «Go / targets» матрицей, «Go / fma-diff» параллельно | Claude | — | T61 |
-| [ ] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
+| [x] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
 | [ ] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
 | [ ] | T65 | CodeQL (go) — Go из архива Dockerfile, без образа | Claude | да | — |
 | [ ] | T66 | Стадия `toolchain-core` в релизе и проверках | Claude | да | T60–T65; строка 7.14 COORDINATION.md spec |
@@ -70,14 +70,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик не меняет.
 
 **Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec.
-
-#### T63. Сверка и подписи `release.yml` параллельно
-
-- **Цель:** `release.yml` сверяет файлы релиза — `gh release verify-asset` — одним вызовом или параллельно, а подписывает и проверяет подписи — `cosign sign-blob` и `verify-blob` — параллельно. Вердикт тот же: отказ на любом файле — красный шаг с именем файла.
-- **Почему:** строка 7.13 COORDINATION.md spec; measurements 3.1 spec — у `api` 282 вызова `gh release verify-asset` подряд, 633 с, и 141 `cosign sign-blob`, около 1,4 с каждый.
-- **Сделать:** шаги «Sign every file» и «Verify the release»; берёт ли `gh` раннера много файлов одним вызовом и какой параллелизм выдерживают Sigstore и API GitHub — записи sources по первоисточнику; иначе `xargs -P` с пределом; случаи (R28) с поломками; пробный pull request по образцу measurements 5.3; поправка к R18; architecture 3.1.
-- **Как проверить:** как T60.
-- **Разделы:** строка 7.13 COORDINATION.md spec; R18; R77 spec; architecture 3.1; measurements 5.
 
 #### T64. WebKit и Firefox — своей проверкой `typescript.yml`
 
