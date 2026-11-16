@@ -1,5 +1,7 @@
 {
-  "entry": 50,
+  "entries": {
+    "R18": 50
+  },
   "sections": {
     "architecture 3.3": 37
   }

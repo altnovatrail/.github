@@ -342,6 +342,10 @@ Measured 2026-11-12 (R38, T54):
 - **the hook** — `spec/tools/session/main.mjs` on a trial transcript with the prompt «Выполни задачу T54 из RUN.md»: a prompt with T55 — `"decision":"block"` and "This prompt starts T55, and this session has led T54: one task is one session (RULES.md, How we work). Run /clear, or open a new session, and send the prompt there."; the same task and a prompt with no task pass;
 - **the checks** — the suite `tests/run.sh` with the script of the submodule at v0.16.3 and yq 4.54.1 by the sum of `self-ci.yml` — 156 tests, 0 failed; `docs-check-repo` on v0.16.3 ok both before the edits and after.
 
+Measured 2026-11-16 (R40, T59):
+- **the checks** — the suite `tests/run.sh` with the submodule at v0.18.3 and yq 4.54.1 by the sum of `self-ci.yml` — 158 tests, 0 failed; `docs-check-repo` on v0.18.3 ok before the edits, with RUN.md and `DEBT.md` read from their old place, and after, with `run/`;
+- **the budgets** — with `"entries": {"R18": 50}` in place of `"entry": 50`, nothing over: every other entry keeps within the 40 KB of the block `repository`.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55

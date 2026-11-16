@@ -651,6 +651,13 @@ Read 2026-11-12 (R38, T54):
 - **what changed** (`git diff --stat v0.13.0 v0.16.3`) — 77 commits, 302 files: RULES.md, CLAUDE.md and the rules `.claude/rules/` of `spec`, `docs/` in English with `docs/sources.md` and `docs/measurements.md`, `DEBT.md`, the parts `consent-age/` and `export/`, `legal/` of version 2, the contracts, `repo-template/`, `tools/docs-check/`, `tools/session/`, `tools/tokens/`, `tools/translation/`, `tools/release/` and `.devcontainer/Dockerfile` — Go 1.27.4. `tools/toolchain/` did not change;
 - **Go 1.27.4** — the sums of the archives by `https://go.dev/dl/?mode=json`: `linux-amd64` — `7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840`, `linux-arm64` — `3392582988a273a87ab5043ee1b2c9c17a2c3c00580bf9326c47a2e0aaaeac92`, the same as in the Dockerfile of `spec` v0.16.3.
 
+### 12.13. `spec` v0.18.3
+
+Read 2026-11-16 (R40, T59):
+- **the tag** — v0.18.3, commit 922886a, the merge of pull request 162 of `spec`, came out 2026-11-16 at 00:42 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.3 -R altnovatrail/spec` — "Release v0.18.3 verified!";
+- **what changed** (`git log --oneline v0.16.3..v0.18.3`, `git diff --stat v0.16.3 v0.18.3`) — 77 commits, 258 files: RULES.md, `repo-template/` — RUN.md in English, the tables in `run/`, the alias in the network —, `run/` of `spec` itself, `.devcontainer/` — the base image `devcontainers/base:3.0.13-noble` and the stage `orchestrator` —, `tools/docs-check/` — the layout of `run/` and the key `entries` —, `tools/session/`, `tools/new-repo/` and the new `tools/orchestrator/` and `tools/mockup/`. `tools/toolchain/` adds a test alone, and `tools/licenses/` did not change;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag: Д88, Д134, Д146, Д195, Д213, Д217, Д236 and Д250; table 5 of `run/INBOX.md` answers В37 and В38 by T149; row 7.13 of COORDINATION.md is `.github`'s, «задачи нет».
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
