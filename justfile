@@ -59,3 +59,11 @@ ci-licenses:
     # the module is built from — the standard library, as go.mod requires nothing — is checked.
     go -C {{ MODULE }} run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES" \
         --ignore github.com/altnovatrail/.github/tools/coderules
+
+# A trial for T66 of RUN.md, never merged: two files.
+release-files version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p dist
+    printf 'go %s\n' "$(go version)" > dist/go.txt
+    printf 'file of %s\n' {{ quote(version) }} > dist/file.txt

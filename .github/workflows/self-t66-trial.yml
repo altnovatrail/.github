@@ -1,0 +1,43 @@
+# A trial for T66 of RUN.md, never merged: go.yml with same-bits, typescript.yml and release.yml,
+# called by local path on the trial module of #123, with a line more in the stage toolchain of the
+# Dockerfile, so that the core is a stage of its own (R47). typescript.yml runs .github's Go
+# recipes, which write no lcov report and get no ALLOWED_LICENSES: its test and licenses are red.
+name: Stage trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_LINE: "0.1"
+
+jobs:
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/go.yml
+    with:
+      same-bits: true
+
+  typescript:
+    name: TypeScript
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/typescript.yml
+
+  release:
+    name: Release
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      paths: |
+        .
+      publish: false
