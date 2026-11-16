@@ -1,6 +1,6 @@
 # RUN.md — work plan of .github
 
-What .github does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.3: the component's card — architecture 3.11 spec; the platform's decisions — spec's log. Small tasks, one at a time, each reviewed by the author; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md).
+What .github does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.18.4: the component's card — architecture 3.11 spec; the platform's decisions — spec's log. Small tasks, one at a time, each reviewed by the author; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md).
 
 Language (R154 spec): rules and tables in English, terse, for the session; the bodies of tasks in table 1 in Russian — the author writes and reviews them.
 
@@ -45,7 +45,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E20, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T66: next — T67.
+- **Done epics:** E1–E15 and E17–E20, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T67: next — T68.
 
 ## Table 1. Current epic — E21. Скорость CI общих workflow
 
@@ -59,23 +59,24 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
 | [x] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
 | [x] | T65 | CodeQL (go) — Go из архива Dockerfile, без образа | Claude | да | — |
-| [ ] | T66 | Стадия `toolchain-core` в релизе и проверках | Claude | да | T60–T65; строка 7.14 COORDINATION.md spec |
+| [x] | T67 | Переход на тег `spec` v0.18.4 | Claude | — | — |
+| [ ] | T66 | Стадия `toolchain-core` в релизе и проверках | Claude | да | T60–T65, T67; строка 7.14 COORDINATION.md spec |
 
-**Почему такой порядок.** Каждый мерж, что меняет общий workflow, выпускает релиз сам (R10), поэтому порядок задач — порядок релизов. Первым — кеш Go: его ждут строки 7.15–7.21, все репозитории с Go. Затем образ — строки 7.23–7.25, и он меняет те же шаги `go.yml`, что T60, и шаги `typescript.yml`, что T64. Затем цели — строка 7.19 `sim`; сверка релиза — строка 7.15 `api`; движки — строки 7.22 и 7.23, которые ждут и строку 7.14; CodeQL не ждёт никто. `toolchain-core` — последней: её ждёт строка 7.14, T166 spec, которая идёт параллельно.
+**Почему такой порядок.** Каждый мерж, что меняет общий workflow, выпускает релиз сам (R10), поэтому порядок задач — порядок релизов. Первым — кеш Go: его ждут строки 7.15–7.21, все репозитории с Go. Затем образ — строки 7.23–7.25, и он меняет те же шаги `go.yml`, что T60, и шаги `typescript.yml`, что T64. Затем цели — строка 7.19 `sim`; сверка релиза — строка 7.15 `api`; движки — строки 7.22 и 7.23, которые ждут и строку 7.14; CodeQL не ждёт никто. `toolchain-core` — последней: её ждёт строка 7.14, T166 spec, которая шла параллельно; её тег v0.18.4 `.github` берёт перед ней, T67.
 
 ## Epic E21. Скорость CI общих workflow
 
 **Почему эпик такой.** Слово автора 2026-11-16 (прогон «Сделай эпик» `spec`, T171; R156 spec): ускорение CI — сейчас. Строка 7.13 COORDINATION.md spec, по замеру measurements 3.1 spec, просит у `.github` релиз общих workflow, а Д217 spec — браузеры договора обёртки TypeScript (R19); эпик E21 в `run/EPICS.md` их соединил (R40). Задача — одна проверка из строки 7.13 и одно ревью (правило 11).
 
-**Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик не меняет.
+**Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик меняет одной задачей — T67, переходом на тег `spec` v0.18.4 (слово автора 2026-11-16).
 
-**Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec.
+**Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec; `.github` берёт её из шаблона переходом на тег, T67.
 
 #### T66. Стадия `toolchain-core` в релизе и проверках
 
 - **Цель:** `release.yml` строит стадию `toolchain-core` Dockerfile вызывающего, без кеша, а проверки без браузера и Go-тестов — lint, vuln, licenses и документы — идут в ней; у Dockerfile без этой стадии — как прежде.
 - **Почему:** строка 7.13 COORDINATION.md spec — «с тегом `spec` строки 7.14»; строка 7.14 — стадия `toolchain-core` в Dockerfile `spec` и шаблона, T166 spec; measurements 3.1 spec — снимок Ubuntu: «Work out the version» `app` — 391 с, а сборка стадии в релизе `canvas` — 826 с.
-- **Сделать:** что даёт тег `spec` строки 7.14 — имя стадии, что в ней, поправка к R31 spec; если `.github` нужен сам тег — переход своей задачей перед этой (RULES.md spec, Across repositories); шаги `release.yml`, `go.yml`, `typescript.yml` и `documents.yml`; ключ и файл образа стадии — по T61; случаи (R28); пробные pull request; решение журнала; architecture 3.1.
+- **Сделать:** что даёт тег `spec` строки 7.14 — имя стадии, что в ней, поправка к R31 spec; если `.github` нужен сам тег — переход своей задачей перед этой (RULES.md spec, Across repositories), T67; шаги `release.yml`, `go.yml`, `typescript.yml` и `documents.yml`; ключ и файл образа стадии — по T61; случаи (R28); пробные pull request; решение журнала; architecture 3.1.
 - **Решить при планировании:** узнаёт ли workflow стадию по Dockerfile или по входу; какие проверки идут в ней у Go и у TypeScript.
 - **Как проверить:** как T60.
 - **Разделы:** строки 7.13 и 7.14 COORDINATION.md spec; R31 spec; R18, R36; architecture 3.1.
