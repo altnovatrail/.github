@@ -1,0 +1,73 @@
+# The trial of T69, never merged: go.yml with same-bits pinned by a SHA as a caller pins it, whose
+# job arm64 takes the composite action by $/, and a caller's own job that takes the action by the
+# same SHA, twice: the second job finds the Go caches the first saved into the pull request's scope
+# by a step of the trial's own, as a push to main would save them for main.
+name: Trial T69
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: altnovatrail/.github/.github/workflows/go.yml@dea3c7d173b2e92913e2f2e822ad7645f7223299
+    with:
+      same-bits: true
+
+  own-first:
+    name: Own / first
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: altnovatrail/.github/.github/actions/toolchain@dea3c7d173b2e92913e2f2e822ad7645f7223299
+        with:
+          check: trial
+      - name: Work
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
+              novatrail-toolchain go -C tools/coderules build ./...
+          du -sh "$RUNNER_TEMP/go-cache/build"
+      - uses: altnovatrail/.github/.github/actions/toolchain@dea3c7d173b2e92913e2f2e822ad7645f7223299
+        with:
+          check: trial
+          save: "true"
+      - name: Trial save into the pull request's scope
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: go-${{ runner.os }}-${{ runner.arch }}-trial-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+
+  own-second:
+    name: Own / second
+    needs: own-first
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: altnovatrail/.github/.github/actions/toolchain@dea3c7d173b2e92913e2f2e822ad7645f7223299
+        with:
+          check: trial
+      - name: Work
+        run: |
+          du -sh "$RUNNER_TEMP/go-cache/build"
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
+              novatrail-toolchain go -C tools/coderules build -x ./... 2>&1 | grep -c '^compile\|/compile ' || true
+      - uses: altnovatrail/.github/.github/actions/toolchain@dea3c7d173b2e92913e2f2e822ad7645f7223299
+        with:
+          check: trial
+          save: "true"
