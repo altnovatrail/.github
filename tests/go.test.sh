@@ -18,7 +18,7 @@ test_go_is_called_with_same_bits_alone_no_secrets_and_gives_the_token_to_the_cov
     assert_eq "$(wf '.on.workflow_call | keys')" '["inputs"]' "what the call takes"
     assert_eq "$(wf '.on.workflow_call.inputs | map_values({type, default})')" '{"same-bits":{"type":"boolean","default":false}}' "the inputs"
     assert_eq "$(wf '.permissions')" '{"contents":"read"}' "the workflow's permissions"
-    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","rules","targets"]' "the jobs"
+    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","rules","targets","toolchain"]' "the jobs"
     assert_eq "$(wf '[.jobs | to_entries[] | select(.value | has("permissions")) | .key]')" '["coverage"]' "the jobs with permissions of their own"
     assert_eq "$(wf '.jobs.coverage.permissions')" '{"contents":"read","id-token":"write"}' "the coverage job's permissions"
 }
@@ -121,7 +121,7 @@ test_go_runs_each_recipe_in_the_toolchain_stage_with_the_license_list_alone() {
         assert_calls docker 1
         assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env ALLOWED_LICENSES \
             "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
-            --workdir /work toolchain just "ci-$check"
+            --workdir /work novatrail-toolchain just "ci-$check"
         assert_call_record docker 1 env "ALLOWED_LICENSES=$allowed"
     done
 }
@@ -136,130 +136,232 @@ test_go_fails_the_check_with_the_recipe() {
     assert_status 3
 }
 
-# The tests of the cache of the toolchain stage (T52; R36): the step "Toolchain image" with the
-# file the step before it restored, or none, and the three steps every job that builds the stage
-# has, in go.yml and typescript.yml alike, read as text.
+# The tests of the image of the toolchain stage (T52, T61; R36, R42): the step "Toolchain image",
+# one script in every job that builds the stage, with the file the steps before it restored or
+# downloaded, or none, and with SAVE as its job gives it; and, read as text, the job toolchain that
+# builds the image once for the jobs on amd64, the steps of the jobs after it, and the job arm64,
+# which builds its own, in go.yml and typescript.yml alike.
 
-# The step "Toolchain image" of the job check, a Dockerfile in the workspace, and, with a word, the
-# file the cache restored.
+# The step "Toolchain image" of a job of go.yml, a Dockerfile in the workspace, and, with a word,
+# the file that came from the cache or from the job toolchain.
 toolchain_step() {
     use_workflow go.yml
-    select_step check 'name=Toolchain image'
+    select_step "$1" 'name=Toolchain image'
     mkdir -p "$step_workspace/.devcontainer"
     printf 'FROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
-    if [ "$#" -gt 0 ]; then
-        printf '%s\n' "$1" > "$step_temp/toolchain.tar"
+    if [ "$#" -gt 1 ]; then
+        printf '%s\n' "$2" > "$step_temp/novatrail-toolchain.tar"
     fi
     stub docker
 }
 
-# What the file of the cache holds once the step is done, or none.
+# What the file holds once the step is done, or none.
 toolchain_file() {
-    if [ -e "$step_temp/toolchain.tar" ]; then cat "$step_temp/toolchain.tar"; else echo none; fi
+    if [ -e "$step_temp/novatrail-toolchain.tar" ]; then cat "$step_temp/novatrail-toolchain.tar"; else echo none; fi
 }
 
-test_go_builds_the_toolchain_stage_from_the_dockerfile_alone_and_saves_it_on_a_miss() {
-    toolchain_step
+toolchain_unloaded="::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
+
+test_go_toolchain_builds_the_stage_from_the_dockerfile_alone_and_writes_its_file_on_a_miss() {
+    toolchain_step toolchain
     run_step
     assert_status 0
     assert_calls docker 2
-    assert_call docker 1 build --target toolchain --tag toolchain -
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
     assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
-    assert_call docker 2 save --output "$step_temp/toolchain.tar" toolchain
-    assert_eq "$(toolchain_file)" "an image" "the file the cache saves"
+    assert_call docker 2 save --output "$step_temp/novatrail-toolchain.tar" novatrail-toolchain
+    assert_eq "$(toolchain_file)" "an image" "the file the job hands on and the cache saves"
 }
 
-test_go_loads_the_toolchain_stage_from_the_cache_without_building_it() {
-    toolchain_step "a cached image"
-    run_step
-    assert_status 0
-    assert_calls docker 2
-    assert_call docker 1 load --quiet --input "$step_temp/toolchain.tar"
-    assert_call docker 2 image inspect toolchain
-    assert_line "Toolchain image: loaded from the cache."
-    assert_eq "$(toolchain_file)" none "the file once loaded"
-}
-
-# A file of the cache came with a hit, whose entry no save replaces: the step builds the image and
-# writes no file for the save step, which does not run on a hit.
-test_go_builds_the_toolchain_stage_when_the_file_of_the_cache_does_not_load() {
-    toolchain_step "a broken image"
-    stub_exit_on docker load 1
-    run_step
-    assert_status 0
-    assert_calls docker 2
-    assert_call docker 1 load --quiet --input "$step_temp/toolchain.tar"
-    assert_line "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile, on every run until the entry is deleted (gh cache delete) or the Dockerfile changes."
-    assert_call docker 2 build --target toolchain --tag toolchain -
-    assert_eq "$(toolchain_file)" none "the file that did not load"
-}
-
-test_go_builds_the_toolchain_stage_when_the_file_of_the_cache_holds_no_image_toolchain() {
-    toolchain_step "an image of another name"
-    stub_exit_on docker image 1
-    run_step
-    assert_status 0
-    assert_calls docker 3
-    assert_call docker 2 image inspect toolchain
-    assert_line "::warning::The cache's file of the toolchain stage does not load as the image toolchain: the image is built from the Dockerfile, on every run until the entry is deleted (gh cache delete) or the Dockerfile changes."
-    assert_call docker 3 build --target toolchain --tag toolchain -
-    assert_eq "$(toolchain_file)" none "the file that did not load"
-}
-
-test_go_fails_with_the_build_of_the_toolchain_stage() {
-    toolchain_step
-    stub_exit_on docker build 1
-    run_step
-    assert_status 1
-    assert_calls docker 1
-    assert_eq "$(toolchain_file)" none "the file of the cache"
-}
-
-test_go_drops_the_file_of_the_cache_that_does_not_load_even_when_the_build_fails() {
-    toolchain_step "a broken image"
-    stub_exit_on docker load 1
-    stub_exit_on docker build 1
-    run_step
-    assert_status 1
-    assert_calls docker 2
-    assert_eq "$(toolchain_file)" none "the file that did not load"
-}
-
-test_go_goes_on_without_the_cache_when_the_image_cannot_be_saved() {
-    toolchain_step
+test_go_toolchain_goes_on_without_a_file_when_the_image_cannot_be_saved() {
+    toolchain_step toolchain
     stub_exit_on docker save 1
     run_step
     assert_status 0
     assert_calls docker 2
-    assert_line "::warning::The image of the toolchain stage could not be saved for the cache: the next run builds it again."
+    assert_line "::warning::The image of the toolchain stage could not be saved: the jobs after this one and the next run build it again."
     assert_eq "$(toolchain_file)" none "the part docker save wrote"
 }
 
-# The three steps around the build, from the job check of go.yml, with the SHA of the action as
-# <sha>: Dependabot moves it, and both steps have to name the same one.
-cache_steps='[{"name":"Toolchain image from the cache","id":"toolchain","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/toolchain.tar","key":"toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}"}},{"name":"Toolchain image"},{"name":"Toolchain image into the cache","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"'","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/toolchain.tar","key":"${{ steps.toolchain.outputs.cache-primary-key }}"}}]'
+test_go_loads_the_toolchain_stage_from_its_file_without_building_it() {
+    toolchain_step check "a cached image"
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 load --quiet --input "$step_temp/novatrail-toolchain.tar"
+    assert_call docker 2 image inspect novatrail-toolchain
+    assert_line "Toolchain image: loaded from its file."
+    assert_eq "$(toolchain_file)" none "the file once loaded"
+}
 
-test_go_and_typescript_take_the_toolchain_stage_from_the_cache_in_every_job_that_builds_it() {
-    local file jobs job run sha
+# The job toolchain gave no file, or one that could not be downloaded: the job builds the image
+# itself and writes no file, which no step of it saves.
+test_go_builds_the_toolchain_stage_without_a_file_and_writes_none_in_a_job_after_the_job_toolchain() {
+    toolchain_step check
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
+    assert_eq "$(toolchain_file)" none "the file of the job"
+}
+
+test_go_builds_the_toolchain_stage_when_its_file_does_not_load() {
+    toolchain_step check "a broken image"
+    stub_exit_on docker load 1
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 load --quiet --input "$step_temp/novatrail-toolchain.tar"
+    assert_line "$toolchain_unloaded"
+    assert_call docker 2 build --target toolchain --tag novatrail-toolchain -
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+test_go_builds_the_toolchain_stage_when_its_file_holds_no_image_novatrail_toolchain() {
+    toolchain_step check "an image of another name"
+    stub_exit_on docker image 1
+    run_step
+    assert_status 0
+    assert_calls docker 3
+    assert_call docker 2 image inspect novatrail-toolchain
+    assert_line "$toolchain_unloaded"
+    assert_call docker 3 build --target toolchain --tag novatrail-toolchain -
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+test_go_fails_with_the_build_of_the_toolchain_stage() {
+    toolchain_step check
+    stub_exit_on docker build 1
+    run_step
+    assert_status 1
+    assert_calls docker 1
+    assert_eq "$(toolchain_file)" none "the file of the job"
+}
+
+test_go_drops_the_file_that_does_not_load_even_when_the_build_fails() {
+    toolchain_step check "a broken image"
+    stub_exit_on docker load 1
+    stub_exit_on docker build 1
+    run_step
+    assert_status 1
+    assert_calls docker 2
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+# arm64 builds its own image, and writes the file only where its job saves it, on a push to main.
+test_go_arm64_writes_the_file_of_the_toolchain_stage_only_where_it_saves_it() {
+    toolchain_step arm64
+    set_env SAVE true
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 2 save --output "$step_temp/novatrail-toolchain.tar" novatrail-toolchain
+    assert_eq "$(toolchain_file)" "an image" "the file of a push to main"
+    rm -f -- "$step_temp/novatrail-toolchain.tar"
+    set_env SAVE false
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
+    assert_eq "$(toolchain_file)" none "the file of a pull request"
+}
+
+# A file that came with a hit has its entry, which no save replaces: after it fails to load, the
+# job that saves builds the image and writes no file.
+test_go_writes_no_file_after_one_from_the_cache_that_does_not_load() {
+    toolchain_step arm64 "a broken image"
+    set_env SAVE true
+    stub_exit_on docker load 1
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 2 build --target toolchain --tag novatrail-toolchain -
+    assert_eq "$(toolchain_file)" none "the file that did not load"
+}
+
+# The steps, read as text with the SHAs of the actions as <sha>: Dependabot moves them, and every
+# step of one action names the same SHA.
+toolchain_restore='{"name":"Toolchain image from the cache","id":"toolchain","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/novatrail-toolchain.tar","key":"toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}"}}'
+toolchain_save='{"name":"Toolchain image into the cache","if":"","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/novatrail-toolchain.tar","key":"${{ steps.toolchain.outputs.cache-primary-key }}"}}'
+on_main="github.event_name == 'push' && github.ref == 'refs/heads/main'"
+
+# A job's steps with the SHAs of their actions as <sha>, and the run of "Toolchain image" left out:
+# the case below holds it the same everywhere.
+toolchain_steps_of() {
+    wf --arg j "$1" '[.jobs[$j].steps[] | if .uses then .uses |= sub("@[0-9a-f]{40}$"; "@<sha>") else . end
+        | if .name == "Toolchain image" then del(.run) else . end]'
+}
+
+test_go_and_typescript_build_the_toolchain_stage_in_the_job_toolchain_alone_and_hand_it_on() {
+    local file artifact restore save image upload
+    restore=$(jq -c '.with["lookup-only"] = true' <<< "$toolchain_restore")
+    save=$(jq -c --arg if "steps.image.outcome == 'success' && $on_main" '.if = $if' <<< "$toolchain_save")
+    image='{"name":"Toolchain image","id":"image","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"'","continue-on-error":true,"env":{"SAVE":"true"}}'
+    for file in go.yml typescript.yml; do
+        use_workflow "$file"
+        artifact=${file%.yml}-toolchain-image
+        upload='{"name":"Toolchain image for the jobs after this one","id":"upload","if":"steps.image.outcome == '"'"'success'"'"'","continue-on-error":true,"uses":"actions/upload-artifact@<sha>","with":{"name":"'"$artifact"'","path":"${{ runner.temp }}/novatrail-toolchain.tar","retention-days":1,"compression-level":1,"overwrite":true,"if-no-files-found":"ignore"}}'
+        assert_eq "$(wf '.jobs.toolchain | {name, "runs-on", needs, if, outputs}')" \
+            '{"name":"toolchain","runs-on":"ubuntu-24.04","needs":null,"if":null,"outputs":{"artifact":"${{ steps.upload.outputs.artifact-id }}"}}' "the job toolchain of $file"
+        assert_eq "$(toolchain_steps_of toolchain)" \
+            "[{\"uses\":\"actions/checkout@<sha>\",\"with\":{\"sparse-checkout\":\".devcontainer/Dockerfile\",\"sparse-checkout-cone-mode\":false,\"persist-credentials\":false}},$restore,$image,$save,$upload]" "the steps of the job toolchain of $file"
+    done
+}
+
+test_go_and_typescript_take_the_toolchain_stage_from_the_cache_or_the_job_toolchain_in_every_job_after_it() {
+    local file job jobs download image
+    download='{"name":"Toolchain image from the job toolchain","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"' && needs.toolchain.outputs.artifact != '"'"''"'"'","continue-on-error":true,"uses":"actions/download-artifact@<sha>","with":{"artifact-ids":"${{ needs.toolchain.outputs.artifact }}","path":"${{ runner.temp }}"}}'
+    image='{"name":"Toolchain image","env":{"SAVE":"false"}}'
+    for file in go.yml typescript.yml; do
+        use_workflow "$file"
+        jobs=$(wf_raw '.jobs | to_entries[] | select(.value.needs == "toolchain") | .key' | tr '\n' ' ')
+        case $file in
+            go.yml) assert_eq "$jobs" "check targets fma-diff rules " "the jobs of $file after the job toolchain" ;;
+            *) assert_eq "$jobs" "check " "the jobs of $file after the job toolchain" ;;
+        esac
+        for job in $jobs; do
+            # A job after a toolchain job that failed still runs: one skipped would pass as a
+            # required check.
+            assert_eq "$(wf_raw --arg j "$job" '.jobs[$j].if | test("^\\$\\{\\{ !cancelled\\(\\)( && inputs\\.same-bits)? \\}\\}$")')" true "the condition of $job in $file"
+            assert_eq "$(toolchain_steps_of "$job" | jq -c '(map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1]')" \
+                "[$toolchain_restore,$download,$image]" "the image of $job in $file"
+            assert_eq "$(toolchain_steps_of "$job" | jq -c '[.[] | select(.name == "Toolchain image into the cache")] | length')" 0 "the saves of the image in $job of $file"
+        done
+    done
+}
+
+test_go_arm64_builds_the_toolchain_stage_of_its_own_and_saves_it_on_main_alone() {
+    local save
+    save=$(jq -c --arg if "steps.toolchain.outputs.cache-hit != 'true' && $on_main" '.if = $if' <<< "$toolchain_save")
     use_workflow go.yml
-    run=$(wf '.jobs.check.steps[] | select(.name == "Toolchain image") | .run')
-    sha=$(wf_raw '.jobs.check.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
+    assert_eq "$(wf '.jobs.arm64.needs')" null "what arm64 waits for"
+    assert_eq "$(toolchain_steps_of arm64 | jq -c '(map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]')" \
+        "[$toolchain_restore,{\"name\":\"Toolchain image\",\"env\":{\"SAVE\":\"\${{ $on_main }}\"}},$save]" "the image of arm64"
+}
+
+test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_image() {
+    local file job jobs run sha
+    use_workflow go.yml
+    run=$(wf '.jobs.toolchain.steps[] | select(.name == "Toolchain image") | .run')
+    sha=$(wf_raw '.jobs.toolchain.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
     for file in go.yml typescript.yml; do
         use_workflow "$file"
         jobs=$(wf_raw '.jobs | to_entries[] | select(any(.value.steps[]; .name == "Toolchain image" or ((.run // "") | test("docker build")))) | .key' | tr '\n' ' ')
         case $file in
-            go.yml) assert_eq "$jobs" "check targets fma-diff arm64 rules " "the jobs of $file that build the stage" ;;
-            *) assert_eq "$jobs" "check " "the jobs of $file that build the stage" ;;
+            go.yml) assert_eq "$jobs" "toolchain check targets fma-diff arm64 rules " "the jobs of $file that build the stage" ;;
+            *) assert_eq "$jobs" "toolchain check " "the jobs of $file that build the stage" ;;
         esac
         for job in $jobs; do
             assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.name == "Toolchain image")] | length')" 1 "the builds of $job in $file"
-            assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]
-                | map(if .uses then .uses |= sub("@[0-9a-f]{40}$"; "@<sha>") else {name} end)')" \
-                "$cache_steps" "the cache of $job in $file"
+            assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Toolchain image") | .run')" "$run" "the build of $job in $file"
             assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.uses // "" | startswith("actions/cache/")) | .uses | sub("^[^@]*@"; "")] | unique')" \
                 "[\"$sha\"]" "the one SHA of actions/cache in $job of $file"
-            assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Toolchain image") | .run')" "$run" "the build of $job in $file"
         done
+        # Every container runs the image the step builds, and no file of the former path is left.
+        assert_eq "$(wf_raw '[.jobs[].steps[].run // empty] | join("\n")' | grep -c 'docker run' || true)" \
+            "$(wf_raw '[.jobs[].steps[].run // empty] | join("\n")' | grep -Ec '^ *(.*--workdir /work )?novatrail-toolchain (just|bash) ' || true)" "the containers of $file in the image novatrail-toolchain"
+        assert_eq "$(grep -c 'toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" \
+            "$(grep -c 'novatrail-toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" "the files of the image in $file"
     done
 }
 
@@ -285,8 +387,9 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
     for job in check targets fma-diff arm64 rules; do
         check=$job
         if [ "$job" = check ]; then check='${{ matrix.check }}'; fi
-        # Right after the toolchain stage, ahead of the work, and the save last of all.
-        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Toolchain image into the cache")) as $i | .[$i + 1:$i + 3]
+        # Right after the toolchain stage, ahead of the work, and the save last of all; in arm64 the
+        # image is saved first.
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | map(.name) as $n | ($n | index("Toolchain image")) as $b | ($b + if $n[$b + 1] == "Toolchain image into the cache" then 1 else 0 end) as $i | .[$i + 1:$i + 3]
             | .[0] |= (.uses |= sub("@[0-9a-f]{40}$"; "@<sha>")) | .[1] |= {name}')" \
             "[${go_cache_restore//<check>/$check},{\"name\":\"Go caches\"}]" "the restore of the Go caches in $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[-1] | .uses |= sub("@[0-9a-f]{40}$"; "@<sha>")')" "$go_cache_save" "the save of the Go caches in $job"
@@ -355,7 +458,7 @@ test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
     assert_calls docker 1
     assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
         "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" --workdir /work \
-        toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash . tools/x
+        novatrail-toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash . tools/x
     assert_line "Go caches: go-Linux-X64-test-a-b, its modules verified."
     assert_eq "$(go_cache_listing)" "./build ./build/00 ./build/00/a-d ./lint ./lint/00 ./lint/00/b-d ./mod ./mod/example.com ./mod/example.com/go.mod " "the caches, kept"
     # go deletes a build not used for five days at the end of a command: the step touches the builds.
@@ -438,7 +541,7 @@ test_go_caches_without_a_module_to_verify_them_by_are_kept() {
 
 # The job's steps, as the jobs of the checks have them: the checkout without credentials, the
 # toolchain stage from the cache, then one step of its own.
-same_bits_steps='["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>"'
+same_bits_steps='["actions/checkout@<sha>","actions/cache/restore@<sha>","actions/download-artifact@<sha>","Toolchain image"'
 
 # Run the script that the first docker call of the step read on stdin, as the container would.
 run_container_script() {
@@ -476,15 +579,15 @@ run_same_bits_step() {
     assert_calls docker 1
     assert_call docker 1 run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
         "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
-        --workdir /work toolchain bash -s -
+        --workdir /work novatrail-toolchain bash -s -
 }
 
 test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
     use_workflow go.yml
     local job
     for job in targets fma-diff; do
-        assert_eq "$(wf --arg j "$job" '.jobs[$j] | {name, if, "runs-on", "timeout-minutes", permissions}')" \
-            "{\"name\":\"$job\",\"if\":\"inputs.same-bits\",\"runs-on\":\"ubuntu-24.04\",\"timeout-minutes\":30,\"permissions\":null}" "the job $job"
+        assert_eq "$(wf --arg j "$job" '.jobs[$j] | {name, needs, if, "runs-on", "timeout-minutes", permissions}')" \
+            "{\"name\":\"$job\",\"needs\":\"toolchain\",\"if\":\"\${{ !cancelled() && inputs.same-bits }}\",\"runs-on\":\"ubuntu-24.04\",\"timeout-minutes\":30,\"permissions\":null}" "the job $job"
         assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[:4][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | tostring')" \
             "\"${same_bits_steps//\"/\\\"}]\"" "the first steps of $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[0].with')" '{"persist-credentials":false}' "the checkout of $job"
@@ -729,7 +832,7 @@ test_go_arm64_runs_ci_test_in_the_toolchain_stage_without_the_license_list() {
     assert_calls docker 1
     assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
         "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
-        --workdir /work toolchain just ci-test
+        --workdir /work novatrail-toolchain just ci-test
 }
 
 test_go_arm64_fails_with_ci_test() {
@@ -746,10 +849,10 @@ test_go_arm64_fails_with_ci_test() {
 
 test_go_runs_rules_with_same_bits_alone_by_the_tool_of_its_own_version() {
     use_workflow go.yml
-    assert_eq "$(wf '.jobs.rules | {name, if, "runs-on", "timeout-minutes", permissions}')" \
-        '{"name":"rules","if":"inputs.same-bits","runs-on":"ubuntu-24.04","timeout-minutes":20,"permissions":null}' "the job rules"
+    assert_eq "$(wf '.jobs.rules | {name, needs, if, "runs-on", "timeout-minutes", permissions}')" \
+        '{"name":"rules","needs":"toolchain","if":"${{ !cancelled() && inputs.same-bits }}","runs-on":"ubuntu-24.04","timeout-minutes":20,"permissions":null}' "the job rules"
     assert_eq "$(wf '[.jobs.rules.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
-        '["actions/checkout@<sha>","actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","actions/cache/restore@<sha>","Go caches","The rules of code","actions/cache/save@<sha>"]' "its steps"
+        '["actions/checkout@<sha>","actions/checkout@<sha>","actions/cache/restore@<sha>","actions/download-artifact@<sha>","Toolchain image","actions/cache/restore@<sha>","Go caches","The rules of code","actions/cache/save@<sha>"]' "its steps"
     assert_eq "$(wf '.jobs.rules.steps[0].with')" '{"persist-credentials":false}' "the checkout of the caller"
     assert_eq "$(wf '.jobs.rules.steps[1].with')" \
         '{"repository":"${{ job.workflow_repository }}","ref":"${{ job.workflow_sha }}","path":".shared-github","persist-credentials":false}' "the checkout of .github"
@@ -776,7 +879,7 @@ test_go_rules_builds_the_tool_in_the_toolchain_stage_and_runs_it_on_the_module()
     assert_call docker 1 run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
         "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" --workdir /work \
         --volume "$step_temp/shared-github/tools/coderules:/tool:ro" \
-        toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
+        novatrail-toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
     # .github's checkout is out of the caller's module, where the tool would see a nested module.
     assert_eq "$(if [ -e "$step_workspace/.shared-github" ]; then echo there; else echo gone; fi)" gone "the checkout in the workspace"
     assert_eq "$(if [ -f "$step_temp/shared-github/tools/coderules/go.mod" ]; then echo moved; else echo not; fi)" moved "the checkout in RUNNER_TEMP"
