@@ -1,0 +1,29 @@
+# Trial (T61, never merged): the shared go.yml with same-bits and typescript.yml, called by local
+# path from this pull request, on the trial module at the root: the image of the toolchain stage,
+# built once by the job toolchain of each and handed on by an artifact of the run (R42).
+# typescript.yml runs .github's Go recipes, which write no lcov report, so its test job is red at
+# "Coverage report": the trial is of the image.
+name: Toolchain image trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/go.yml
+    with:
+      same-bits: true
+
+  typescript:
+    name: TypeScript
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/typescript.yml
