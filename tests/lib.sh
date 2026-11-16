@@ -128,6 +128,21 @@ use_workflow() {
     harness_index=""
 }
 
+# A composite action of .github/actions/ by its folder's name, or a path to its action.yml: what wf
+# reads is the file as it is, and its steps are those of the one job action, which select_step
+# takes as a job's, on ubuntu-24.04: the runner of the job that calls the action is the caller's
+# to give (R49).
+use_action() {
+    local file=$1
+    [[ $file == /* ]] || file="$HARNESS_ROOT/.github/actions/$file/action.yml"
+    [ -f "$file" ] || harness_refuse "there is no action $file"
+    harness_json="$state/workflow.json"
+    "$YQ" -o=json '. + {"jobs": {"action": {"runs-on": "ubuntu-24.04", "steps": .runs.steps}}}' "$file" > "$harness_json" \
+        || harness_refuse "yq could not read $file"
+    harness_job=""
+    harness_index=""
+}
+
 # jq over the workflow, compact or raw: wf '.jobs.check.name'.
 wf() {
     jq -c "$@" "$harness_json"

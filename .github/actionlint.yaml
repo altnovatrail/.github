@@ -6,7 +6,11 @@
 # and job.workflow_repository of the same context, "The commit SHA of the workflow file that
 # defines the current job" and "The owner/repo of the repository containing the workflow file that
 # defines the current job" (read 2026-11-08), by which go.yml checks out the tool of its own
-# version. Only those complaints, only in the workflows that use them, are waived.
+# version; nor the self repository reference $/, which "references an action stored in the same
+# repository as the workflow or action that is currently running, and resolves to that repository
+# at the running commit" (GitHub Docs, Workflow syntax, read 2026-11-16; sources 2.12), by which
+# go.yml takes the composite action of its own version (R49). Only those complaints, only in the
+# workflows that use them, are waived.
 paths:
   .github/workflows/self-release.yml:
     ignore:
@@ -19,3 +23,4 @@ paths:
     ignore:
       - 'property "workflow_repository" is not defined in object type'
       - 'property "workflow_sha" is not defined in object type'
+      - 'specifying action "\$/\.github/actions/toolchain" in invalid format because ref is missing'

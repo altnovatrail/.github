@@ -61,15 +61,17 @@ test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_th
     assert_eq "$(wf '.jobs["docs-check-repo"].steps[0].with')" '{"submodules":true,"persist-credentials":false}' "the checkout"
 }
 
-# The restore and the save of the cache are those of go.yml's job arm64, which builds its own image
-# too: the same file, the same key, the action at the same SHA, and only a push to main saves (R42).
-# The variable the script reads names that same file. documents.yml takes them for the stage its
-# step "Toolchain stages" names, by the file and the key that name it, as go.yml's job check does
-# (R47); the job Workflows of .github, whose toolchain adds nothing to its core, for toolchain.
+# The restore and the save of the cache are those by which go.yml's job arm64 builds its own image
+# too, the steps of the composite action without its input save: the same file, the same key, the
+# action at the same SHA, and only a push to main saves (R42, R49). The variable the script reads
+# names that same file. documents.yml takes them for the stage its step "Toolchain stages" names, by
+# the file and the key that name it, as go.yml's job check does (R47); the job Workflows of
+# .github, whose toolchain adds nothing to its core, for toolchain.
 test_documents_caches_the_stage_as_go_does_in_the_same_file() {
     local go documents workflows job file stage env
-    use_workflow go.yml
-    go=$(wf '[.jobs.arm64.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/novatrail-toolchain.tar"))]')
+    use_action toolchain
+    go=$(wf '[.runs.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/novatrail-toolchain.tar"))
+        | .if |= sub("^inputs\\.save != '"'"'true'"'"'( && )?"; "") | if .if == "" then del(.if) else . end]')
     for file in documents.yml self-ci.yml; do
         use_workflow "$file"
         env='{"TOOLCHAIN_IMAGE_FILE":"${{ runner.temp }}/novatrail-toolchain.tar","SAVE":"${{ github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"' }}"}'

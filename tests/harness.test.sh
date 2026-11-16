@@ -479,3 +479,38 @@ test_harness_takes_the_yq_that_self_ci_pins_and_no_other() {
     assert_status 2
     assert_has 'version v0.0.1", and self-ci.yml pins yq'
 }
+
+# A composite action is read as the one job action, whose steps run as a job's do: in the shell
+# the step names, with its env, inputs among the ctx (R49). One that is not there stops the test.
+test_harness_runs_a_step_of_a_composite_action_as_one_of_a_job() {
+    mkdir -p "$state/fixtures"
+    cat > "$state/fixtures/action.yml" <<'YAML'
+name: fixture
+description: a composite action of the harness's own
+inputs:
+  word:
+    description: a word
+runs:
+  using: composite
+  steps:
+    - name: say
+      shell: bash
+      env:
+        WORD: ${{ inputs.word }}
+      run: printf '%s\n' "$WORD"
+YAML
+    use_action "$state/fixtures/action.yml"
+    assert_eq "$(wf_raw '.runs.using')" composite "what wf reads"
+    select_step action name=say
+    ctx inputs.word hello
+    run_step
+    assert_status 0
+    assert_line hello
+    suite case <<YAML
+    test_case() {
+        use_action missing
+    }
+YAML
+    assert_status 1
+    assert_line "  | harness: there is no action $HARNESS_ROOT/.github/actions/missing/action.yml"
+}

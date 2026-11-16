@@ -45,8 +45,24 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E21, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T68: next — T69.
+- **Done epics:** E1–E15 and E17–E21, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T69: next — T70.
 
-## Table 1. Current epic — none
+## Table 1. Current epic — E22. Составное действие `toolchain`
 
-The last done epic is E21, its archive [docs/plan/E21.md](docs/plan/E21.md).
+**Результат:** релиз `.github` с составным действием `.github/actions/toolchain` — образ стадии `toolchain` и кеши Go для своего job вызывающего, тем же действием, что берёт job `arm64` общего `go.yml`. Его ждёт строка 3.11 COORDINATION.md spec — переход `module-kit`.
+
+| Статус | ID | Задача | Кто | План | Зависит от |
+|---|---|---|---|---|---|
+| [ ] | T69 | Составное действие: образ `toolchain` и кеши Go для своего job вызывающего | Claude | да | — |
+
+**Почему эпик такой.** Строка 2.5 COORDINATION.md spec — по тексту T172 spec и ответу автора на строку `module-kit` В36: вариант 1, составное действие; отвергнуты копия со стражем в каждом вызывающем и вход `go.yml`. Прогон всего «Порядка» оркестратором (R156 spec; слово автора 2026-11-16): одна задача — один релиз.
+
+**Не входит:** переход `module-kit` на действие — строка 3.11, задача `module-kit`; `typescript.yml` и `documents.yml` действие не берут.
+
+#### T69. Составное действие: образ `toolchain` и кеши Go для своего job вызывающего
+
+- **Цель:** job вызывающего репозитория, что идёт в стадии `toolchain`, берёт образ и кеши Go тем же шагом, что общий `go.yml`, а не копией его шагов; pull request Dependabot группы `shared-workflows` проходит сам.
+- **Почему:** строка `module-kit` В36, R76 `spec`, строка 2.5 COORDINATION.md `spec`; T172 `spec`. «Binaries / build» `module-kit` копирует шесть шагов job `arm64` общего `go.yml`, и страж держит копию у закреплённого `go.yml` (R58, R61 module-kit): переход `.github`, что их меняет, красит обязательную проверку, пока сессия не поправит копию.
+- **Сделать:** составное действие в `.github` — образ `toolchain` из кеша по ключу общих workflow, кеши Go (`GOMODCACHE`, `GOCACHE`) из кеша, их сохранение только на push в `main`; общий `go.yml` сам берёт это действие, чтобы шаги не расходились; вызывающий берёт его по SHA, и Dependabot двигает его в группе `shared-workflows`; решение в журнале `.github`; релиз.
+- **Как проверить:** проверки `.github` по его RUN.md; пробный вызов из репозитория с своим job в `toolchain` — зелёный, кеши попадают.
+- **Разделы:** строка 2.5 COORDINATION.md `spec`; R31, R48, R76 `spec`; строка `module-kit` В36.
