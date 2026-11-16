@@ -60,7 +60,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
 | [x] | T65 | CodeQL (go) — Go из архива Dockerfile, без образа | Claude | да | — |
 | [x] | T67 | Переход на тег `spec` v0.18.4 | Claude | — | — |
-| [ ] | T66 | Стадия `toolchain-core` в релизе и проверках | Claude | да | T60–T65, T67; строка 7.14 COORDINATION.md spec |
+| [x] | T66 | Стадия `toolchain-core` в релизе и проверках | Claude | да | T60–T65, T67; строка 7.14 COORDINATION.md spec |
 
 **Почему такой порядок.** Каждый мерж, что меняет общий workflow, выпускает релиз сам (R10), поэтому порядок задач — порядок релизов. Первым — кеш Go: его ждут строки 7.15–7.21, все репозитории с Go. Затем образ — строки 7.23–7.25, и он меняет те же шаги `go.yml`, что T60, и шаги `typescript.yml`, что T64. Затем цели — строка 7.19 `sim`; сверка релиза — строка 7.15 `api`; движки — строки 7.22 и 7.23, которые ждут и строку 7.14; CodeQL не ждёт никто. `toolchain-core` — последней: её ждёт строка 7.14, T166 spec, которая шла параллельно; её тег v0.18.4 `.github` берёт перед ней, T67.
 
@@ -71,12 +71,3 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик меняет одной задачей — T67, переходом на тег `spec` v0.18.4 (слово автора 2026-11-16).
 
 **Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec; `.github` берёт её из шаблона переходом на тег, T67.
-
-#### T66. Стадия `toolchain-core` в релизе и проверках
-
-- **Цель:** `release.yml` строит стадию `toolchain-core` Dockerfile вызывающего, без кеша, а проверки без браузера и Go-тестов — lint, vuln, licenses и документы — идут в ней; у Dockerfile без этой стадии — как прежде.
-- **Почему:** строка 7.13 COORDINATION.md spec — «с тегом `spec` строки 7.14»; строка 7.14 — стадия `toolchain-core` в Dockerfile `spec` и шаблона, T166 spec; measurements 3.1 spec — снимок Ubuntu: «Work out the version» `app` — 391 с, а сборка стадии в релизе `canvas` — 826 с.
-- **Сделать:** что даёт тег `spec` строки 7.14 — имя стадии, что в ней, поправка к R31 spec; если `.github` нужен сам тег — переход своей задачей перед этой (RULES.md spec, Across repositories), T67; шаги `release.yml`, `go.yml`, `typescript.yml` и `documents.yml`; ключ и файл образа стадии — по T61; случаи (R28); пробные pull request; решение журнала; architecture 3.1.
-- **Решить при планировании:** узнаёт ли workflow стадию по Dockerfile или по входу; какие проверки идут в ней у Go и у TypeScript.
-- **Как проверить:** как T60.
-- **Разделы:** строки 7.13 и 7.14 COORDINATION.md spec; R31 spec; R18, R36; architecture 3.1.

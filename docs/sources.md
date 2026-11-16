@@ -872,8 +872,6 @@ Read 2026-11-16 (R47, T66), `justfile`, `.github/workflows/ci.yml`, `.github/wor
 - **what `release-files` runs** — `app`: `node scripts/release.ts`, after `build`; `canvas`: `node scripts/package.ts`, `npm pack`, `node scripts/release.ts`, `just synthetic`, `node scripts/archive.ts`, `scripts/page.ts` and `scripts/generator.ts`, after `build`, `tsc -p tsconfig.build.json`; `skill-map`: `node scripts/package.ts`, `npm pack` and `node scripts/consumer.ts --release`, whose comment reads "tsc checks scripts/consumer/main.ts there twice, as NodeNext and as Bundler resolve modules"; `api` and `module-kit`: `go build -trimpath` for their platforms; `modules`: its `_modules-check` over the modules' files.
 - **what the stage `toolchain` installs beyond the four** — the one stage before `devcontainer` in every caller. `modules`: `module-kit` at `ARG MODULE_KIT_VERSION=v0.3.0`, by the `RUN` that installs Node, just, Go and buf, and its `release-files` runs `_modules-check`, which stops with "module-kit cannot be run; the toolchain stage installs it" without it; `tutor`: golangci-lint at `ARG GOLANGCI_LINT_VERSION=2.15.0`, by the same `RUN`, for its `ci-lint`; `api`: nss_wrapper by apt from the snapshot, "for the tests of the database"; `infra`: actionlint, OpenTofu and ShellCheck; `app`, `canvas` and `skill-map`: Playwright's three browsers by `COPY --from=mcr.microsoft.com/playwright:v1.65.0-noble@sha256:…` and their system packages by apt from the snapshot. `engine`, `learner-model`, `module-kit` and `sim` install the four alone.
 
-
-
 ## 14. MathTrail and patterns outside NovaTrail
 
 ### 14.1. canvas-api
