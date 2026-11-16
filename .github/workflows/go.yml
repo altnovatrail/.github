@@ -25,7 +25,7 @@
 # With same-bits, four more jobs hold the caller's bits the same on every build (R107 in spec), as
 # learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
 # "Go / targets" holds the tests on the builds where the bits are most at risk, wasip1 among them,
-# which run at once, a job "Go / target <target>" each (R43); "Go / fma-diff" compares the
+# which run at once, a job "Go / target (<target>)" each (R43); "Go / fma-diff" compares the
 # assembler of each package with fusion and without it, on its targets at once, with a control of
 # its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
 # runner; "Go / rules" holds the code to the rules of code by the tool tools/coderules of .github,
