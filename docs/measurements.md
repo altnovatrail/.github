@@ -406,6 +406,11 @@ Measured 2026-11-16 (R46, T67):
 - **the draft** — `just new-repo-draft .github docs 3.11 v0.18.4` and `… v0.18.3` on clones of `spec` at those tags in a temporary folder: the two drafts differ in `.devcontainer/Dockerfile` and in the name of the tag alone; the new Dockerfile differs from the former one of `.github` by the stage `toolchain-core` and its comments alone, and `devcontainer.json`, `host-network.sh`, `.claude/settings.json` and AGENTS.md are the same as the draft's;
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.18.4 and yq 4.54.1 by the sum of `self-ci.yml` — 204 tests, 0 failed; `docs-check-repo` on v0.18.4 ok; the step "Go of the caller's toolchain stage" of `codeql.yml`, taken out of its file, on the new Dockerfile with the real go.dev — `go version go1.27.4 linux/amd64`, read from `toolchain-core` through `toolchain`. The devcontainer has no Docker, so the stages are first built by the checks of the pull request.
 
+Measured 2026-11-16 (R48, T68):
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.18.6` and `… v0.18.4` on clones of `spec` at those tags in a temporary folder: the two drafts differ in the comment of the stage `toolchain` of `.devcontainer/Dockerfile`, in `shutdownAction` of `devcontainer.json` and in the name of the tag alone; the new two files differ from the former ones of `.github` by those lines alone, and `host-network.sh` and `.claude/settings.json` are the same as the draft's;
+- **the hook** — `spec/tools/session/main.mjs` at v0.18.6 on a trial transcript with the prompt «Выполни задачу T68 из RUN.md»: a prompt with T69 and no `NOVATRAIL_RUN_TASKS` — `"decision":"block"`; with `NOVATRAIL_RUN_TASKS="T68 T69"` it passes; a prompt with T70 under the same variable — `"decision":"block"`;
+- **the checks** — the suite `tests/run.sh` with the submodule at v0.18.6 and yq 4.54.1 by the sum of `self-ci.yml` — 218 tests, 0 failed; `docs-check-repo` on v0.18.6 ok before the edits and after.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55
@@ -434,11 +439,13 @@ Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-
 | `-workspaces--github` — E18, T54 to T57 | 2026-11-12T14:27 … 2026-11-13T04:44 | 4 | 410 / 353 | 188.8 / 78.5 | 1 | $49.77 |
 | `-workspaces--github` — E19, T58 | 2026-11-13T04:44 … 2026-11-13T05:35 | 2 | 171 / 30 | 170.2 / 70.2 | 0 | $11.31 |
 | `-workspaces--github` — E20, T59 | 2026-11-13T05:35 … 2026-11-16T02:52 | 2 | 90 / 16 | 157.3 / 71.1 | 0 | $6.46 |
+| `-workspaces--github` — E21, T60 to T68 | 2026-11-16T02:52 … 2026-11-16T22:28 | 10 | 1,206 / 170 | 190.6 / 62.9 | 1 | $91.67 |
 
 - The context of a call of the main session fell from 397.5 to 188.8 thousand tokens, of a subagent from 124.0 to 78.5. The window "before" holds a month of the tasks of every kind, and the row of E18 four tasks of documents, so the comparison across the sessions after the epic is T124 `spec`'s;
 - the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row;
 - the row of E19 is by `tokens-report --since 2026-11-13T04:44 --row`, measured 2026-11-13 at the archive of E19, while the session of T58 ran: its two sessions are the end of T57's and T58's, and what T58 spent after 05:35 — the record of the release and the archive — goes into the next row. The threshold of R145 spec is not reached: 171 main calls, fewer than 300, and no budget was raised in the epic; so no epic of analysis goes into table 2 of RUN.md.
 - the row of E20 is by `tokens-report --since 2026-11-13T05:35 --row`, measured 2026-11-16 at the archive of E20, while the session of T59 ran, after its review and before the fixes and the pull request: its two sessions are the end of T58's — the record of the release and the archive of E19 — and T59's. The threshold of R145 spec is not reached: 90 main calls, and no budget was raised — the key `entries` narrowed one (R40). From T59 the rule for this row is in RUN.md, Epics, and an epic of analysis goes to `run/EPICS.md`.
+- the row of E21 is by `tokens-report --since 2026-11-16T02:52 --row`, measured 2026-11-16 at the archive of E21, while the session of T68 ran, after its review and before the fixes and the pull request: its ten sessions are the end of T59's and the eight tasks' T60–T68, run by the orchestrator. The threshold of R145 spec is not reached: 190.6 thousand a main call over 1,206 calls is below the reference of `.github`, 191.4 thousand of its T124 (measurements 1.9 spec), and one budget was raised in the epic, `R18` to 51 KB in T66; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 
 ## 12. The Go caches
 
