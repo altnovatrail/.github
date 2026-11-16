@@ -1066,6 +1066,8 @@ What is said in the amendment above — "Whether they fit 'free terms for open s
 
 — *Consequence:* `typescript.yml`; `tests/typescript.test.sh`; architecture 3.1, 3.3; sources 2.2, 9.3; measurements 3.5; RUN.md, T64. A caller without the input changes nothing but the SHA, which Dependabot raises. `app` and `canvas` take it by their tasks of rows 7.22 and 7.23: the reference to a release with the input, `engines: true`, `ci-engines`, and `ci-test` without WebKit and Firefox, in one pull request — an older release rejects an unknown input —, then "TypeScript / engines" into the ruleset.
 
+— *Amendment 2026-11-16:* the release came out — `v0.1.29`, commit 228890c, the merge commit of pull request 130, immutable and Latest; `gh release verify` confirms it. Of the shared workflows it differs from `v0.1.28` in `typescript.yml` alone (`git diff v0.1.28 v0.1.29`). The template of architecture 3.3 calls `typescript.yml` by this SHA, where it called `v0.1.26`, and names `v0.1.29` as the release a caller with the input `engines` takes. Task T65.
+
 ## The `spec` tag v0.2.14
 
 **R20. `.github` is on `spec` v0.2.14: the submodule `spec/` is at this tag, and the links to `spec` pinned to a tag name it.**
