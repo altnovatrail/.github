@@ -79,8 +79,12 @@ jobs:
       # The artifact the jobs after this one download, or nothing when there is none.
       artifact: ${{ steps.upload.outputs.artifact-id }}
     steps:
+      # The Dockerfile alone, which the key hashes and the build reads: a sparse checkout fetches
+      # no other file of the caller's tree.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          sparse-checkout: .devcontainer/Dockerfile
+          sparse-checkout-cone-mode: false
           persist-credentials: false
 
       - name: Toolchain image from the cache
@@ -107,7 +111,7 @@ jobs:
                   echo "Toolchain image: loaded from its file."
                   exit 0
               fi
-              echo "::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+              echo "::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile
@@ -190,7 +194,7 @@ jobs:
                   echo "Toolchain image: loaded from its file."
                   exit 0
               fi
-              echo "::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+              echo "::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile
@@ -413,7 +417,7 @@ jobs:
                   echo "Toolchain image: loaded from its file."
                   exit 0
               fi
-              echo "::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+              echo "::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile
@@ -569,7 +573,7 @@ jobs:
                   echo "Toolchain image: loaded from its file."
                   exit 0
               fi
-              echo "::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+              echo "::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile
@@ -753,7 +757,7 @@ jobs:
                   echo "Toolchain image: loaded from its file."
                   exit 0
               fi
-              echo "::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+              echo "::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile
@@ -932,7 +936,7 @@ jobs:
                   echo "Toolchain image: loaded from its file."
                   exit 0
               fi
-              echo "::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+              echo "::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
               rm -f -- "$tar"
           fi
           docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile

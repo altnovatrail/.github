@@ -126,7 +126,7 @@ jobs:
       # built by spec's script, as spec's recipes run wherever they run (R31 in spec): the next
       # step asks one of them for spec's list. Its image comes from the cache as documents.yml's
       # does, by the same three steps, so the jobs share one entry, and only a push to main saves
-      # it (R36, R42).
+      # it (R36, R42). .github's own submodule has the script, so the step does not look for it.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -139,10 +139,6 @@ jobs:
           TOOLCHAIN_IMAGE_FILE: ${{ runner.temp }}/novatrail-toolchain.tar
           SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
-          if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
-              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 in spec): move the spec submodule to v0.2.17 or newer, then run the check again."
-              exit 1
-          fi
           if [ "$SAVE" != true ] && [ ! -f "$TOOLCHAIN_IMAGE_FILE" ]; then
               unset TOOLCHAIN_IMAGE_FILE
           fi

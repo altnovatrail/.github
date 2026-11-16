@@ -160,7 +160,7 @@ toolchain_file() {
     if [ -e "$step_temp/novatrail-toolchain.tar" ]; then cat "$step_temp/novatrail-toolchain.tar"; else echo none; fi
 }
 
-toolchain_unloaded="::warning::The file of the toolchain stage, from the cache or from the job toolchain, does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A cache entry that gives such a file is hit on every run until it is deleted (gh cache delete) or the Dockerfile changes."
+toolchain_unloaded="::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
 
 test_go_toolchain_builds_the_stage_from_the_dockerfile_alone_and_writes_its_file_on_a_miss() {
     toolchain_step toolchain
@@ -304,7 +304,7 @@ test_go_and_typescript_build_the_toolchain_stage_in_the_job_toolchain_alone_and_
         assert_eq "$(wf '.jobs.toolchain | {name, "runs-on", needs, if, outputs}')" \
             '{"name":"toolchain","runs-on":"ubuntu-24.04","needs":null,"if":null,"outputs":{"artifact":"${{ steps.upload.outputs.artifact-id }}"}}' "the job toolchain of $file"
         assert_eq "$(toolchain_steps_of toolchain)" \
-            "[{\"uses\":\"actions/checkout@<sha>\",\"with\":{\"persist-credentials\":false}},$restore,$image,$save,$upload]" "the steps of the job toolchain of $file"
+            "[{\"uses\":\"actions/checkout@<sha>\",\"with\":{\"sparse-checkout\":\".devcontainer/Dockerfile\",\"sparse-checkout-cone-mode\":false,\"persist-credentials\":false}},$restore,$image,$save,$upload]" "the steps of the job toolchain of $file"
     done
 }
 

@@ -55,7 +55,7 @@ test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_th
 # too: the same file, the same key, the action at the same SHA, and only a push to main saves (R42).
 # The variable the script reads names that same file.
 test_documents_caches_the_stage_as_go_does_in_the_same_file() {
-    local go documents job file
+    local go documents workflows job file
     use_workflow go.yml
     go=$(wf '[.jobs.arm64.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/novatrail-toolchain.tar"))]')
     for file in documents.yml self-ci.yml; do
@@ -72,9 +72,13 @@ test_documents_caches_the_stage_as_go_does_in_the_same_file() {
     done
     use_workflow documents.yml
     documents=$(wf_raw '.jobs["docs-check-repo"].steps[] | select(.name == "Toolchain image") | .run')
+    # The build of the job Workflows is the end of documents.yml's, after its check of the script,
+    # which .github's own submodule has.
     use_workflow self-ci.yml
-    assert_eq "$(wf_raw '.jobs.workflows.steps[] | select(.name == "Toolchain image") | .run')" \
-        "$documents" "the build of the job Workflows"
+    workflows=$(wf_raw '.jobs.workflows.steps[] | select(.name == "Toolchain image") | .run')
+    assert_eq "$(grep -c . <<< "$workflows")" 4 "the lines of the build of the job Workflows"
+    assert_eq "${documents%"$workflows"}$workflows" "$documents" "the build of the job Workflows"
+    assert_eq "$(grep -c "toolchain.sh build" <<< "$workflows")" 1 "the script the job Workflows builds by"
 }
 
 test_documents_builds_the_stage_and_writes_the_file_of_the_cache_on_a_miss() {
