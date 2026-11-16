@@ -17,22 +17,32 @@ documents_workspace() {
 }
 
 # The step "Toolchain image" of a run that saves, true on a push to main, and the file the cache
-# restored when the case gives one.
+# restored when the case gives one, of the stage the step "Toolchain stages" named: STAGE, or
+# toolchain.
 run_toolchain_image() {
+    local stage=${STAGE:-toolchain}
     use_workflow documents.yml
     select_step docs-check-repo 'name=Toolchain image'
     ctx runner.temp "$step_temp"
+    ctx steps.stages.outputs.core "$stage"
     set_env SAVE "$1"
     if [ "$#" -gt 1 ]; then
-        printf '%s\n' "$2" > "$step_temp/novatrail-toolchain.tar"
+        printf '%s\n' "$2" > "$step_temp/novatrail-$stage.tar"
     fi
     stub docker
     run_step
 }
 
-# What the file of the cache holds once the step is done, or none.
+# What the file of the cache of a stage holds once the step is done, or none: image_file, or
+# image_file core.
 image_file() {
-    if [ -e "$step_temp/novatrail-toolchain.tar" ]; then cat "$step_temp/novatrail-toolchain.tar"; else echo none; fi
+    local file=$step_temp/novatrail-toolchain${1:+-$1}.tar
+    if [ -e "$file" ]; then cat "$file"; else echo none; fi
+}
+
+# The caller's Dockerfile with the stage toolchain-core, under a toolchain that adds to it.
+core_dockerfile() {
+    printf 'FROM scratch AS toolchain-core\nFROM toolchain-core AS toolchain\nRUN true\n' > "$step_workspace/.devcontainer/Dockerfile"
 }
 
 run_documents() {
@@ -47,29 +57,42 @@ script_missing="::error::spec/ has no executable tools/toolchain/toolchain.sh, w
 test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_the_check() {
     use_workflow documents.yml
     assert_eq "$(wf '[.jobs["docs-check-repo"].steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
-        '["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","Documents"]' "the steps"
+        '["actions/checkout@<sha>","Toolchain stages","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","Documents"]' "the steps"
     assert_eq "$(wf '.jobs["docs-check-repo"].steps[0].with')" '{"submodules":true,"persist-credentials":false}' "the checkout"
 }
 
 # The restore and the save of the cache are those of go.yml's job arm64, which builds its own image
 # too: the same file, the same key, the action at the same SHA, and only a push to main saves (R42).
-# The variable the script reads names that same file.
+# The variable the script reads names that same file. documents.yml takes them for the stage its
+# step "Toolchain stages" names, by the file and the key that name it, as go.yml's job check does
+# (R47); the job Workflows of .github, whose toolchain adds nothing to its core, for toolchain.
 test_documents_caches_the_stage_as_go_does_in_the_same_file() {
-    local go documents workflows job file
+    local go documents workflows job file stage env
     use_workflow go.yml
     go=$(wf '[.jobs.arm64.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/novatrail-toolchain.tar"))]')
     for file in documents.yml self-ci.yml; do
         use_workflow "$file"
+        env='{"TOOLCHAIN_IMAGE_FILE":"${{ runner.temp }}/novatrail-toolchain.tar","SAVE":"${{ github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"' }}"}'
         case $file in
-            documents.yml) job=docs-check-repo ;;
-            *) job=workflows ;;
+            documents.yml)
+                job=docs-check-repo
+                stage='${{ steps.stages.outputs.core }}'
+                documents=$(wf --arg s "$stage" '[.jobs["docs-check-repo"].steps[] | select(.uses // "" | startswith("actions/cache/"))
+                    | .with.path |= sub("/novatrail-\\$\\{\\{ steps\\.stages\\.outputs\\.core \\}\\}\\.tar$"; "/novatrail-toolchain.tar")
+                    | if .with.key | startswith($s + "-") then .with.key |= "toolchain-" + ltrimstr($s + "-") else . end]')
+                env=$(jq -c --arg s "$stage" '{TOOLCHAIN_STAGE: $s} + . | .TOOLCHAIN_IMAGE_FILE = "${{ runner.temp }}/novatrail-\($s).tar"' <<< "$env")
+                ;;
+            *)
+                job=workflows
+                documents=$(wf '[.jobs.workflows.steps[] | select(.uses // "" | startswith("actions/cache/"))]')
+                ;;
         esac
-        documents=$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.uses // "" | startswith("actions/cache/"))]')
         assert_eq "$documents" "$go" "the cache of $job in $file"
-        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Toolchain image") | .env')" \
-            '{"TOOLCHAIN_IMAGE_FILE":"${{ runner.temp }}/novatrail-toolchain.tar","SAVE":"${{ github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"' }}"}' "the file the script of $job in $file reads"
+        assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Toolchain image") | .env')" "$env" "the file the script of $job in $file reads"
         assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select((.run // "") | test("toolchain\\.sh build"))] | length')" 1 "the builds of $job in $file"
     done
+    use_workflow documents.yml
+    assert_eq "$(wf -r '[.jobs["docs-check-repo"].steps[] | select(.uses // "" | startswith("actions/cache/")) | .with.path, .with.key] | map(select(contains("steps.stages.outputs.core"))) | length')" 3 "the stage in the path of the restore and the save and in the key"
     use_workflow documents.yml
     documents=$(wf_raw '.jobs["docs-check-repo"].steps[] | select(.name == "Toolchain image") | .run')
     # The build of the job Workflows is the end of documents.yml's, after its check of the script,
@@ -157,6 +180,47 @@ test_documents_builds_the_stage_by_a_script_that_knows_no_cache() {
     assert_calls docker 1
     assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
     assert_eq "$(image_file)" none "the file of the cache"
+}
+
+# The core, where the Dockerfile has one of its own: the real script builds that stage and writes
+# its file, and loads it from there on a hit (R47).
+test_documents_builds_the_core_and_writes_its_file_on_a_miss() {
+    documents_workspace
+    core_dockerfile
+    STAGE=toolchain-core run_toolchain_image true
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 build --target toolchain-core --tag novatrail-toolchain -
+    assert_call docker 2 save --output "$step_temp/novatrail-toolchain-core.tar" novatrail-toolchain
+    assert_eq "$(image_file core)" "an image" "the file of the core the cache saves"
+    assert_eq "$(image_file)" none "the file of toolchain"
+}
+
+test_documents_loads_the_core_from_its_file_without_building_it() {
+    documents_workspace
+    core_dockerfile
+    STAGE=toolchain-core run_toolchain_image false "a cached core"
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 load --quiet --input "$step_temp/novatrail-toolchain-core.tar"
+    assert_call docker 2 image inspect novatrail-toolchain
+    assert_eq "$(image_file core)" none "the file once loaded"
+}
+
+# A submodule at a tag from v0.13.0 to before v0.18.4 has a script that writes the file and knows no
+# TOOLCHAIN_STAGE: here a script of that shape. It builds toolchain, which holds all the core does,
+# and the entry of the core holds it: the check passes, and the entry costs its size.
+test_documents_builds_toolchain_into_the_file_of_the_core_by_a_script_that_knows_no_stage() {
+    documents_workspace
+    core_dockerfile
+    printf '#!/bin/sh\ndocker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile\nexec docker save --output "$TOOLCHAIN_IMAGE_FILE" novatrail-toolchain\n' \
+        > "$step_workspace/spec/tools/toolchain/toolchain.sh"
+    STAGE=toolchain-core run_toolchain_image true
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
+    assert_call docker 2 save --output "$step_temp/novatrail-toolchain-core.tar" novatrail-toolchain
+    assert_eq "$(image_file core)" "an image" "the file of the core"
 }
 
 test_documents_stops_on_a_submodule_without_the_script() {

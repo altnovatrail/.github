@@ -16,10 +16,13 @@ release_repository() {
     git -C "$step_workspace" config user.email trial@example.invalid
     git -C "$step_workspace" config user.name trial
     mkdir -p "$step_workspace/spec/tools/toolchain"
-    # spec's script, as the step calls it: build, a dry run of release-refusal, and release-version,
-    # which prints the version to come after v0.1.0.
+    # spec's script, as the step calls it: build, which writes down the stage it is asked for, a dry
+    # run of release-refusal, and release-version, which prints the version to come after v0.1.0.
     cat > "$step_workspace/spec/tools/toolchain/toolchain.sh" <<'SCRIPT'
 #!/usr/bin/env bash
+if [ "$1" = build ]; then
+    printf '%s\n' "${TOOLCHAIN_STAGE-unset}" > "$RUNNER_TEMP/built-stage"
+fi
 if [ "$1 $2" = "spec release-version" ]; then
     echo version=v0.1.1
     echo previous=v0.1.0
@@ -67,6 +70,8 @@ test_self_release_releases_a_change_of_a_shared_workflow() {
     release_repository .github/workflows/go.yml
     run_version_step
     assert_released
+    # The stage of spec's recipes is the core, all a release needs (R47).
+    assert_eq "$(cat "$step_temp/built-stage")" toolchain-core "the stage spec's script builds"
 }
 
 test_self_release_releases_a_change_of_the_tool_of_the_rules_of_code() {

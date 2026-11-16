@@ -85,16 +85,16 @@ test_typescript_checks_the_submodule_out_for_the_licenses_job_alone() {
         '{"submodules":"${{ matrix.check == '"'licenses'"' }}","persist-credentials":false}' "the checkout's inputs"
 }
 
-# The stage, its cache and the job toolchain are go.yml's, step for step, but for the name of the
-# artifact: the cases of go.yml run them, and the tests there hold the jobs of both files to the
+# The stages, their cache and the job toolchain are go.yml's, step for step, but for the names of
+# the artifacts: the cases of go.yml run them, and the tests there hold the jobs of both files to the
 # same steps (R36, R42).
 test_typescript_builds_the_toolchain_stage_and_caches_it_as_go_does() {
     local go typescript
     use_workflow go.yml
-    go=$(wf '{toolchain: .jobs.toolchain, check: (.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1])}')
+    go=$(wf '{toolchain: .jobs.toolchain, check: (.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 3:$i + 1])}')
     use_workflow typescript.yml
-    typescript=$(wf '{toolchain: .jobs.toolchain, check: (.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1])}
-        | .toolchain.steps[-1].with.name |= sub("^typescript-"; "go-")')
+    typescript=$(wf '{toolchain: .jobs.toolchain, check: (.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 3:$i + 1])}
+        | (.toolchain.steps[] | select(.uses // "" | startswith("actions/upload-artifact@")) | .with.name) |= sub("^typescript-"; "go-")')
     assert_eq "$typescript" "$go" "the toolchain stage, its cache and the job toolchain"
 }
 

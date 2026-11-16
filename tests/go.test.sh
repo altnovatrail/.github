@@ -136,28 +136,37 @@ test_go_fails_the_check_with_the_recipe() {
     assert_status 3
 }
 
-# The tests of the image of the toolchain stage (T52, T61; R36, R42): the step "Toolchain image",
-# one script in every job that builds the stage, with the file the steps before it restored or
-# downloaded, or none, and with SAVE as its job gives it; and, read as text, the job toolchain that
-# builds the image once for the jobs on amd64, the steps of the jobs after it, and the job arm64,
-# which builds its own, in go.yml and typescript.yml alike.
+# The tests of the image of the toolchain stage (T52, T61, T66; R36, R42, R47): the step "Toolchain
+# image", one script in every job that builds a stage, with the file the steps before it restored
+# or downloaded, or none, with the stages STAGES names and with SAVE as its job gives it; the step
+# "Toolchain stages", which finds the stage of the checks without a browser in the Dockerfile; the
+# step "Toolchain stage" of the job check; and, read as text, the job toolchain that builds the
+# images once for the jobs on amd64, the steps of the jobs after it, and the job arm64, which builds
+# its own, in go.yml and typescript.yml alike.
 
 # The step "Toolchain image" of a job of go.yml, a Dockerfile in the workspace, and, with a word,
-# the file that came from the cache or from the job toolchain.
+# the file of the toolchain stage that came from the cache or from the job toolchain. The job
+# toolchain is given the stages its two lookups missed, and the job check its stage, toolchain,
+# until the case says otherwise.
 toolchain_step() {
     use_workflow go.yml
     select_step "$1" 'name=Toolchain image'
+    case $1 in
+        toolchain) set_env STAGES "toolchain " ;;
+        check) ctx steps.stage.outputs.stage toolchain ;;
+    esac
     mkdir -p "$step_workspace/.devcontainer"
-    printf 'FROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
+    printf 'FROM scratch AS toolchain-core\nFROM toolchain-core AS toolchain\nRUN true\n' > "$step_workspace/.devcontainer/Dockerfile"
     if [ "$#" -gt 1 ]; then
         printf '%s\n' "$2" > "$step_temp/novatrail-toolchain.tar"
     fi
     stub docker
 }
 
-# What the file holds once the step is done, or none.
+# What the file of a stage holds once the step is done, or none: toolchain_file, toolchain_file core.
 toolchain_file() {
-    if [ -e "$step_temp/novatrail-toolchain.tar" ]; then cat "$step_temp/novatrail-toolchain.tar"; else echo none; fi
+    local file=$step_temp/novatrail-toolchain${1:+-$1}.tar
+    if [ -e "$file" ]; then cat "$file"; else echo none; fi
 }
 
 toolchain_unloaded="::warning::The file of the toolchain stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
@@ -171,16 +180,72 @@ test_go_toolchain_builds_the_stage_from_the_dockerfile_alone_and_writes_its_file
     assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
     assert_call docker 2 save --output "$step_temp/novatrail-toolchain.tar" novatrail-toolchain
     assert_eq "$(toolchain_file)" "an image" "the file the job hands on and the cache saves"
+    assert_eq "$(toolchain_file core)" none "the file of the core, which no lookup missed"
+}
+
+# Both entries missed: toolchain, then the core, each built and saved into a file of its own, as
+# the one image novatrail-toolchain.
+test_go_toolchain_builds_both_stages_into_their_files_when_both_entries_miss() {
+    toolchain_step toolchain
+    set_env STAGES "toolchain toolchain-core"
+    run_step
+    assert_status 0
+    assert_calls docker 4
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
+    assert_call docker 2 save --output "$step_temp/novatrail-toolchain.tar" novatrail-toolchain
+    assert_call docker 3 build --target toolchain-core --tag novatrail-toolchain -
+    assert_call_stdin docker 3 "$step_workspace/.devcontainer/Dockerfile"
+    assert_call docker 4 save --output "$step_temp/novatrail-toolchain-core.tar" novatrail-toolchain
+    assert_eq "$(toolchain_file)" "an image" "the file of toolchain"
+    assert_eq "$(toolchain_file core)" "an image" "the file of the core"
+}
+
+# The entry of toolchain was found and that of the core missed: the expression gives a blank first.
+test_go_toolchain_builds_the_core_alone_when_its_entry_alone_misses() {
+    toolchain_step toolchain
+    set_env STAGES " toolchain-core"
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 build --target toolchain-core --tag novatrail-toolchain -
+    assert_call docker 2 save --output "$step_temp/novatrail-toolchain-core.tar" novatrail-toolchain
+    assert_eq "$(toolchain_file)" none "the file of toolchain, whose entry was found"
+    assert_eq "$(toolchain_file core)" "an image" "the file of the core"
 }
 
 test_go_toolchain_goes_on_without_a_file_when_the_image_cannot_be_saved() {
     toolchain_step toolchain
+    set_env STAGES "toolchain toolchain-core"
     stub_exit_on docker save 1
     run_step
     assert_status 0
-    assert_calls docker 2
+    assert_calls docker 4
     assert_line "::warning::The image of the toolchain stage could not be saved: the jobs after this one and the next run build it again."
-    assert_eq "$(toolchain_file)" none "the part docker save wrote"
+    assert_line "::warning::The image of the toolchain-core stage could not be saved: the jobs after this one and the next run build it again."
+    assert_eq "$(toolchain_file)" none "the part docker save wrote of toolchain"
+    assert_eq "$(toolchain_file core)" none "the part docker save wrote of the core"
+}
+
+# A build that fails stops the step at its stage: the job's outcome is a failure, and nothing of it
+# is saved or handed on.
+test_go_toolchain_stops_at_the_first_build_that_fails() {
+    toolchain_step toolchain
+    set_env STAGES "toolchain toolchain-core"
+    stub_exit_on docker build 1
+    run_step
+    assert_status 1
+    assert_calls docker 1
+    assert_eq "$(toolchain_file core)" none "the file of the core"
+}
+
+test_go_refuses_a_stage_that_is_neither_toolchain_nor_its_core() {
+    toolchain_step toolchain
+    set_env STAGES "toolchain devcontainer"
+    run_step
+    assert_status 1
+    assert_line "::error::STAGES names devcontainer, which is neither toolchain nor toolchain-core."
+    assert_calls docker 2
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
 }
 
 test_go_loads_the_toolchain_stage_from_its_file_without_building_it() {
@@ -190,8 +255,28 @@ test_go_loads_the_toolchain_stage_from_its_file_without_building_it() {
     assert_calls docker 2
     assert_call docker 1 load --quiet --input "$step_temp/novatrail-toolchain.tar"
     assert_call docker 2 image inspect novatrail-toolchain
-    assert_line "Toolchain image: loaded from its file."
+    assert_line "Toolchain image: toolchain loaded from its file."
     assert_eq "$(toolchain_file)" none "the file once loaded"
+}
+
+# A check of the core takes the core's file, and builds the core without one; the file of
+# toolchain, were one there, is not its own.
+test_go_check_of_the_core_loads_or_builds_the_core() {
+    toolchain_step check "an image of toolchain"
+    ctx steps.stage.outputs.stage toolchain-core
+    printf '%s\n' "a cached core" > "$step_temp/novatrail-toolchain-core.tar"
+    run_step
+    assert_status 0
+    assert_calls docker 2
+    assert_call docker 1 load --quiet --input "$step_temp/novatrail-toolchain-core.tar"
+    assert_line "Toolchain image: toolchain-core loaded from its file."
+    assert_eq "$(toolchain_file core)" none "the file of the core once loaded"
+    assert_eq "$(toolchain_file)" "an image of toolchain" "the file of toolchain"
+    run_step
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 build --target toolchain-core --tag novatrail-toolchain -
+    assert_eq "$(toolchain_file core)" none "the file of a job after the job toolchain"
 }
 
 # The job toolchain gave no file, or one that could not be downloaded: the job builds the image
@@ -206,7 +291,7 @@ test_go_builds_the_toolchain_stage_without_a_file_and_writes_none_in_a_job_after
 }
 
 test_go_builds_the_toolchain_stage_when_its_file_does_not_load() {
-    toolchain_step check "a broken image"
+    toolchain_step target "a broken image"
     stub_exit_on docker load 1
     run_step
     assert_status 0
@@ -239,7 +324,7 @@ test_go_fails_with_the_build_of_the_toolchain_stage() {
 }
 
 test_go_drops_the_file_that_does_not_load_even_when_the_build_fails() {
-    toolchain_step check "a broken image"
+    toolchain_step rules "a broken image"
     stub_exit_on docker load 1
     stub_exit_on docker build 1
     run_step
@@ -279,39 +364,119 @@ test_go_writes_no_file_after_one_from_the_cache_that_does_not_load() {
     assert_eq "$(toolchain_file)" none "the file that did not load"
 }
 
+# The step "Toolchain stages" of the job toolchain on the Dockerfile stdin holds, or on none when
+# the stage is given as a second word, none: the stage it names for the checks without a browser.
+toolchain_stages() {
+    use_workflow go.yml
+    select_step toolchain 'name=Toolchain stages'
+    if [ "${2-}" != none ]; then
+        mkdir -p "$step_workspace/.devcontainer"
+        cat > "$step_workspace/.devcontainer/Dockerfile"
+    fi
+    run_step
+    assert_status 0
+    assert_output core "$1"
+    assert_line "The checks without a browser run in the stage $1."
+}
+
+# The Dockerfile of the kind typescript: .github's, of the template of spec, with the kind's lines
+# at the end of the stage toolchain, before devcontainer, as the template puts them.
+typescript_dockerfile() {
+    sed '/^FROM toolchain AS devcontainer$/,$d' "$HARNESS_ROOT/.devcontainer/Dockerfile"
+    cat "$HARNESS_ROOT/spec/repo-template/kinds/typescript.Dockerfile"
+    sed -n '/^FROM toolchain AS devcontainer$/,$p' "$HARNESS_ROOT/.devcontainer/Dockerfile"
+}
+
+test_go_toolchain_stages_name_toolchain_without_a_core_of_its_own() {
+    toolchain_stages toolchain none
+    printf 'FROM base AS toolchain\nRUN make\nFROM toolchain AS devcontainer\nRUN more\n' | toolchain_stages toolchain
+    # The core, but a toolchain over it that adds nothing to it but its SHELL, comments and blank
+    # lines: .github's own Dockerfile, of the template of spec, is so.
+    toolchain_stages toolchain < "$HARNESS_ROOT/.devcontainer/Dockerfile"
+    printf 'FROM base AS toolchain-core\nRUN make\n\nFROM toolchain-core AS toolchain\n\n# a comment\n  SHELL ["/bin/bash", "-c"]\nFROM toolchain AS devcontainer\nRUN more\n' \
+        | toolchain_stages toolchain
+    # Lines that end in a carriage return, and stages named in another case.
+    printf 'FROM base AS Toolchain-Core\r\nfrom --platform=linux/amd64 TOOLCHAIN-CORE as Toolchain\r\nshell ["/bin/sh", "-c"]\r\n' | toolchain_stages toolchain
+    # A Dockerfile without a stage toolchain gives the checks nothing to run in, whatever its core.
+    printf 'FROM base AS toolchain-core\nRUN make\n' | toolchain_stages toolchain
+    # A stage whose name only begins with toolchain-core is not the core.
+    printf 'FROM base AS toolchain-core-old\nFROM toolchain-core-old AS toolchain\nRUN make\n' | toolchain_stages toolchain
+}
+
+test_go_toolchain_stages_name_the_core_where_toolchain_holds_more() {
+    printf 'FROM base AS toolchain-core\nRUN make\nFROM toolchain-core AS toolchain\nSHELL ["/bin/bash", "-c"]\nRUN apt-get install x\nFROM toolchain AS devcontainer\n' \
+        | toolchain_stages toolchain-core
+    printf 'FROM base AS toolchain-core\nFROM toolchain-core AS toolchain\nENV A=b\n' | toolchain_stages toolchain-core
+    printf 'from base as toolchain-core\r\nfrom toolchain-core as toolchain\r\n  run x \\\r\n    y\r\n' | toolchain_stages toolchain-core
+    # A toolchain on another base than the core is no superset of it.
+    printf 'FROM base AS toolchain-core\nFROM base AS toolchain\nSHELL ["/bin/bash", "-c"]\n' | toolchain_stages toolchain-core
+    typescript_dockerfile | toolchain_stages toolchain-core
+}
+
+# The step "Toolchain stage" of the job check, for each check of the matrix and each name the job
+# toolchain gives: lint, vuln and licenses alone take the core, and only when it names one.
+test_go_and_typescript_run_the_checks_without_a_browser_alone_in_the_core() {
+    local file check core stage
+    for file in go.yml typescript.yml; do
+        use_workflow "$file"
+        select_step check 'name=Toolchain stage'
+        for check in lint test engines vuln licenses; do
+            for core in toolchain-core toolchain ""; do
+                stage=toolchain
+                case $check:$core in lint:toolchain-core | vuln:toolchain-core | licenses:toolchain-core) stage=toolchain-core ;; esac
+                ctx matrix.check "$check"
+                ctx needs.toolchain.outputs.core "$core"
+                run_step
+                assert_status 0
+                assert_output stage "$stage"
+                assert_line "ci-$check runs in the stage $stage."
+            done
+        done
+    done
+}
+
 # The steps, read as text with the SHAs of the actions as <sha>: Dependabot moves them, and every
 # step of one action names the same SHA.
 toolchain_restore='{"name":"Toolchain image from the cache","id":"toolchain","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/novatrail-toolchain.tar","key":"toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}"}}'
 toolchain_save='{"name":"Toolchain image into the cache","if":"","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/novatrail-toolchain.tar","key":"${{ steps.toolchain.outputs.cache-primary-key }}"}}'
 on_main="github.event_name == 'push' && github.ref == 'refs/heads/main'"
+core_missed="steps.stages.outputs.core == 'toolchain-core' && steps.core.outputs.cache-hit != 'true'"
 
-# A job's steps with the SHAs of their actions as <sha>, and the run of "Toolchain image" left out:
-# the case below holds it the same everywhere.
+# A job's steps with the SHAs of their actions as <sha>, and the runs of "Toolchain image" and
+# "Toolchain stages" left out: the cases below hold them the same everywhere.
 toolchain_steps_of() {
     wf --arg j "$1" '[.jobs[$j].steps[] | if .uses then .uses |= sub("@[0-9a-f]{40}$"; "@<sha>") else . end
-        | if .name == "Toolchain image" then del(.run) else . end]'
+        | if .name == "Toolchain image" or .name == "Toolchain stages" then del(.run) else . end]'
 }
 
 test_go_and_typescript_build_the_toolchain_stage_in_the_job_toolchain_alone_and_hand_it_on() {
-    local file artifact restore save image upload
+    local file artifact restore core save core_save image upload core_upload
     restore=$(jq -c '.with["lookup-only"] = true' <<< "$toolchain_restore")
-    save=$(jq -c --arg if "steps.image.outcome == 'success' && $on_main" '.if = $if' <<< "$toolchain_save")
-    image='{"name":"Toolchain image","id":"image","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"'","continue-on-error":true,"env":{"SAVE":"true"}}'
+    core=$(jq -c --arg if "steps.stages.outputs.core == 'toolchain-core'" '.name = "Core image from the cache" | .id = "core" | {name, id, if: $if, uses, with}
+        | .with.path = "${{ runner.temp }}/novatrail-toolchain-core.tar" | .with.key |= "toolchain-core-" + ltrimstr("toolchain-")' <<< "$restore")
+    save=$(jq -c --arg if "steps.image.outcome == 'success' && steps.toolchain.outputs.cache-hit != 'true' && $on_main" '.if = $if' <<< "$toolchain_save")
+    core_save=$(jq -c --arg if "steps.image.outcome == 'success' && $core_missed && $on_main" '.name = "Core image into the cache" | .if = $if
+        | .with = {path: "${{ runner.temp }}/novatrail-toolchain-core.tar", key: "${{ steps.core.outputs.cache-primary-key }}"}' <<< "$toolchain_save")
+    image=$(jq -nc --arg if "steps.toolchain.outputs.cache-hit != 'true' || ($core_missed)" \
+        --arg stages "\${{ steps.toolchain.outputs.cache-hit != 'true' && 'toolchain' || '' }} \${{ $core_missed && 'toolchain-core' || '' }}" \
+        '{name: "Toolchain image", id: "image", if: $if, "continue-on-error": true, env: {SAVE: "true", STAGES: $stages}}')
     for file in go.yml typescript.yml; do
         use_workflow "$file"
         artifact=${file%.yml}-toolchain-image
         upload='{"name":"Toolchain image for the jobs after this one","id":"upload","if":"steps.image.outcome == '"'"'success'"'"'","continue-on-error":true,"uses":"actions/upload-artifact@<sha>","with":{"name":"'"$artifact"'","path":"${{ runner.temp }}/novatrail-toolchain.tar","retention-days":1,"compression-level":1,"overwrite":true,"if-no-files-found":"ignore"}}'
+        core_upload=$(jq -c --arg if "steps.image.outcome == 'success' && steps.stages.outputs.core == 'toolchain-core'" --arg name "${file%.yml}-toolchain-core-image" \
+            '.name = "Core image for the jobs after this one" | .id = "upload-core" | .if = $if | .with.name = $name | .with.path = "${{ runner.temp }}/novatrail-toolchain-core.tar"' <<< "$upload")
         assert_eq "$(wf '.jobs.toolchain | {name, "runs-on", needs, if, outputs}')" \
-            '{"name":"toolchain","runs-on":"ubuntu-24.04","needs":null,"if":null,"outputs":{"artifact":"${{ steps.upload.outputs.artifact-id }}"}}' "the job toolchain of $file"
+            '{"name":"toolchain","runs-on":"ubuntu-24.04","needs":null,"if":null,"outputs":{"core":"${{ steps.stages.outputs.core }}","toolchain":"${{ steps.upload.outputs.artifact-id }}","toolchain-core":"${{ steps.upload-core.outputs.artifact-id }}"}}' "the job toolchain of $file"
         assert_eq "$(toolchain_steps_of toolchain)" \
-            "[{\"uses\":\"actions/checkout@<sha>\",\"with\":{\"sparse-checkout\":\".devcontainer/Dockerfile\",\"sparse-checkout-cone-mode\":false,\"persist-credentials\":false}},$restore,$image,$save,$upload]" "the steps of the job toolchain of $file"
+            "[{\"uses\":\"actions/checkout@<sha>\",\"with\":{\"sparse-checkout\":\".devcontainer/Dockerfile\",\"sparse-checkout-cone-mode\":false,\"persist-credentials\":false}},{\"name\":\"Toolchain stages\",\"id\":\"stages\"},$restore,$core,$image,$save,$core_save,$upload,$core_upload]" "the steps of the job toolchain of $file"
     done
 }
 
 test_go_and_typescript_take_the_toolchain_stage_from_the_cache_or_the_job_toolchain_in_every_job_after_it() {
-    local file job jobs download image
-    download='{"name":"Toolchain image from the job toolchain","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"' && needs.toolchain.outputs.artifact != '"'"''"'"'","continue-on-error":true,"uses":"actions/download-artifact@<sha>","with":{"artifact-ids":"${{ needs.toolchain.outputs.artifact }}","path":"${{ runner.temp }}"}}'
-    image='{"name":"Toolchain image","env":{"SAVE":"false"}}'
+    local file job jobs download image restore stage
+    download='{"name":"Toolchain image from the job toolchain","if":"steps.toolchain.outputs.cache-hit != '"'"'true'"'"' && needs.toolchain.outputs.toolchain != '"'"''"'"'","continue-on-error":true,"uses":"actions/download-artifact@<sha>","with":{"artifact-ids":"${{ needs.toolchain.outputs.toolchain }}","path":"${{ runner.temp }}"}}'
+    image='{"name":"Toolchain image","env":{"SAVE":"false","STAGES":"toolchain"}}'
     for file in go.yml typescript.yml; do
         use_workflow "$file"
         jobs=$(wf_raw '.jobs | to_entries[] | select(.value.needs == "toolchain") | .key' | tr '\n' ' ')
@@ -323,8 +488,16 @@ test_go_and_typescript_take_the_toolchain_stage_from_the_cache_or_the_job_toolch
             # A job after a toolchain job that failed still runs: one skipped would pass as a
             # required check.
             assert_eq "$(wf_raw --arg j "$job" '.jobs[$j].if | test("^\\$\\{\\{ !cancelled\\(\\)( && inputs\\.same-bits)? \\}\\}$")')" true "the condition of $job in $file"
-            assert_eq "$(toolchain_steps_of "$job" | jq -c '(map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1]')" \
-                "[$toolchain_restore,$download,$image]" "the image of $job in $file"
+            if [ "$job" = check ]; then
+                # The stage of the check, in the path, the key, the artifact and the build.
+                stage='${{ steps.stage.outputs.stage }}'
+                restore=$(jq -c --arg s "$stage" '.with.path = "${{ runner.temp }}/novatrail-\($s).tar" | .with.key |= $s + ltrimstr("toolchain")' <<< "$toolchain_restore")
+                assert_eq "$(toolchain_steps_of check | jq -c '(map(.name) | index("Toolchain image")) as $i | .[$i - 3:$i + 1] | .[0] |= del(.run)')" \
+                    "[{\"name\":\"Toolchain stage\",\"id\":\"stage\",\"env\":{\"CHECK\":\"\${{ matrix.check }}\",\"CORE\":\"\${{ needs.toolchain.outputs.core }}\"}},$restore,$(jq -c '.if |= sub("outputs.toolchain"; "outputs[steps.stage.outputs.stage]") | .with["artifact-ids"] = "${{ needs.toolchain.outputs[steps.stage.outputs.stage] }}"' <<< "$download"),$(jq -c --arg s "$stage" '.env.STAGES = $s' <<< "$image")]" "the image of check in $file"
+            else
+                assert_eq "$(toolchain_steps_of "$job" | jq -c '(map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1]')" \
+                    "[$toolchain_restore,$download,$image]" "the image of $job in $file"
+            fi
             assert_eq "$(toolchain_steps_of "$job" | jq -c '[.[] | select(.name == "Toolchain image into the cache")] | length')" 0 "the saves of the image in $job of $file"
         done
     done
@@ -336,14 +509,20 @@ test_go_arm64_builds_the_toolchain_stage_of_its_own_and_saves_it_on_main_alone()
     use_workflow go.yml
     assert_eq "$(wf '.jobs.arm64.needs')" null "what arm64 waits for"
     assert_eq "$(toolchain_steps_of arm64 | jq -c '(map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]')" \
-        "[$toolchain_restore,{\"name\":\"Toolchain image\",\"env\":{\"SAVE\":\"\${{ $on_main }}\"}},$save]" "the image of arm64"
+        "[$toolchain_restore,{\"name\":\"Toolchain image\",\"env\":{\"SAVE\":\"\${{ $on_main }}\",\"STAGES\":\"toolchain\"}},$save]" "the image of arm64"
 }
 
 test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_image() {
-    local file job jobs run sha
+    local file job jobs run sha stages
     use_workflow go.yml
     run=$(wf '.jobs.toolchain.steps[] | select(.name == "Toolchain image") | .run')
+    stages=$(wf '.jobs.toolchain.steps[] | select(.name == "Toolchain stages") | .run')
     sha=$(wf_raw '.jobs.toolchain.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
+    for file in go.yml typescript.yml documents.yml; do
+        use_workflow "$file"
+        # One reading of the Dockerfile for the stage of the checks without a browser.
+        assert_eq "$(wf '[.jobs[].steps[] | select(.name == "Toolchain stages") | .run]')" "[$stages]" "the reading of the stages in $file"
+    done
     for file in go.yml typescript.yml; do
         use_workflow "$file"
         jobs=$(wf_raw '.jobs | to_entries[] | select(any(.value.steps[]; .name == "Toolchain image" or ((.run // "") | test("docker build")))) | .key' | tr '\n' ' ')
@@ -357,11 +536,13 @@ test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_im
             assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.uses // "" | startswith("actions/cache/")) | .uses | sub("^[^@]*@"; "")] | unique')" \
                 "[\"$sha\"]" "the one SHA of actions/cache in $job of $file"
         done
-        # Every container runs the image the step builds, and no file of the former path is left.
+        # Every container runs the image the step builds, and every file of an image is named by
+        # its stage, novatrail-<stage>.tar.
         assert_eq "$(wf_raw '[.jobs[].steps[].run // empty] | join("\n")' | grep -c 'docker run' || true)" \
             "$(wf_raw '[.jobs[].steps[].run // empty] | join("\n")' | grep -Ec '^ *(.*--workdir /work )?novatrail-toolchain (just|bash) ' || true)" "the containers of $file in the image novatrail-toolchain"
+        assert_eq "$(grep '\.tar\b' "$HARNESS_ROOT/.github/workflows/$file" | grep -vc 'novatrail-' || true)" 0 "the files of the images in $file not named novatrail-<stage>.tar"
         assert_eq "$(grep -c 'toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" \
-            "$(grep -c 'novatrail-toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" "the files of the image in $file"
+            "$(grep -c 'novatrail-toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" "the files of the toolchain stage in $file"
     done
 }
 
