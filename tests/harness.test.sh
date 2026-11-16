@@ -481,7 +481,8 @@ test_harness_takes_the_yq_that_self_ci_pins_and_no_other() {
 }
 
 # A composite action is read as the one job action, whose steps run as a job's do: in the shell
-# the step names, with its env, inputs among the ctx (R49). One that is not there stops the test.
+# the step names — bash -e {0} as the one a step without a shell gets —, with its env, inputs among
+# the ctx (R49). One that is not there stops the test.
 test_harness_runs_a_step_of_a_composite_action_as_one_of_a_job() {
     mkdir -p "$state/fixtures"
     cat > "$state/fixtures/action.yml" <<'YAML'
@@ -498,6 +499,13 @@ runs:
       env:
         WORD: ${{ inputs.word }}
       run: printf '%s\n' "$WORD"
+    - name: shell
+      shell: bash -e {0}
+      run: |
+        false | true
+        echo went on
+        false
+        echo stopped
 YAML
     use_action "$state/fixtures/action.yml"
     assert_eq "$(wf_raw '.runs.using')" composite "what wf reads"
@@ -506,6 +514,12 @@ YAML
     run_step
     assert_status 0
     assert_line hello
+    # bash -e {0}, the shell a step that names none runs in: no pipefail, but -e.
+    select_step action name=shell
+    run_step
+    assert_status 1
+    assert_line "went on"
+    refute_has stopped
     suite case <<YAML
     test_case() {
         use_action missing

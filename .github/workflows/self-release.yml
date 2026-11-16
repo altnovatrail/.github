@@ -226,10 +226,10 @@ jobs:
 
       # Every release is marked Latest: its number is the highest so far, since a release never
       # comes out below the newest one, and, unlike spec's, the tip of main may get no release of
-      # its own when it changes no shared workflow. The notes run from the release before this
-      # one. The Releases API refuses GITHUB_TOKEN a commit that "adds or modifies any file under
-      # .github/workflows/ relative to the repository's default branch", with 404 or, on some
-      # paths, 403 "Resource not accessible by integration" (GitHub Docs, REST releases, read
+      # its own when it changes no shared workflow, action or tool. The notes run from the release
+      # before this one. The Releases API refuses GITHUB_TOKEN a commit that "adds or modifies any
+      # file under .github/workflows/ relative to the repository's default branch", with 404 or, on
+      # some paths, 403 "Resource not accessible by integration" (GitHub Docs, REST releases, read
       # 2026-10-20): a commit that is no longer the tip then waits for the next release, which
       # covers it, since the change it brought is still there since the release before.
       - id: publish

@@ -517,24 +517,102 @@ test_go_arm64_takes_the_toolchain_stage_and_the_go_caches_by_the_composite_actio
         "the steps of arm64"
 }
 
-# The composite action's steps, read as text: those of go.yml's jobs, each under the input save —
-# the image, then the Go caches by the check the input names, without it; the save of the Go
-# caches with it, on a push to main and a miss of the exact key, which the cache is asked again.
+# The composite action's steps, read as text: the check of its inputs, then those of go.yml's jobs,
+# each under the input save — the image, then the Go caches by the check the input names, and the
+# key they were asked by, without it; with it, that key and the save by it, on a push to main and
+# a miss. Every run step names bash -e {0}, the shell of go.yml's steps (R49).
 test_go_composite_action_takes_the_toolchain_stage_and_the_go_caches_as_go_yml_does() {
-    local restore image save go_restore go_lookup go_save
-    local before="inputs.save != 'true'" after="inputs.save == 'true'"
+    local restore image save go_restore go_caches go_key go_to_save go_save
+    local before="inputs.save != 'true'" after="inputs.save == 'true'" shell="bash -e {0}"
     restore=$(jq -c --arg if "$before" '{name, id, if: $if, uses, with}' <<< "$toolchain_restore")
-    image=$(jq -nc --arg if "$before" --arg save "\${{ $on_main }}" '{name: "Toolchain image", if: $if, shell: "bash", env: {SAVE: $save, STAGES: "toolchain"}}')
+    image=$(jq -nc --arg if "$before" --arg shell "$shell" --arg save "\${{ $on_main }}" '{name: "Toolchain image", if: $if, shell: $shell, env: {SAVE: $save, STAGES: "toolchain"}}')
     save=$(jq -c --arg if "$before && steps.toolchain.outputs.cache-hit != 'true' && $on_main" '.if = $if' <<< "$toolchain_save")
     go_restore=$(jq -c --arg if "$before" '{name, id, if: $if, uses, with}' <<< "${go_cache_restore//<check>/\$\{\{ inputs.check \}\}}")
-    go_lookup=$(jq -c --arg if "$after && $on_main" '{name: "Go caches in the cache", id: "go-cache-saved", if: $if, uses, with: (.with + {"lookup-only": true})}' <<< "$go_restore")
-    go_save=$(jq -c --arg if "$after && steps.go-cache-saved.outputs.cache-hit != 'true' && $on_main" '.if = $if | .with.key = "${{ steps.go-cache-saved.outputs.cache-primary-key }}"' <<< "$go_cache_save")
+    go_caches=$(jq -nc --arg if "$before" --arg shell "$shell" '{name: "Go caches", if: $if, shell: $shell, env: {RESTORED: "${{ steps.go-cache.outputs.cache-matched-key }}"}}')
+    go_key=$(jq -nc --arg if "$before" --arg shell "$shell" '{name: "Go caches key", if: $if, shell: $shell, env: {KEY: "${{ steps.go-cache.outputs.cache-primary-key }}", HIT: "${{ steps.go-cache.outputs.cache-hit }}"}}')
+    go_to_save=$(jq -nc --arg if "$after" --arg shell "$shell" '{name: "Go caches to save", id: "go-cache-key", if: $if, shell: $shell}')
+    go_save=$(jq -c --arg if "$after && steps.go-cache-key.outputs.key != '' && $on_main" '.if = $if | .with.key = "${{ steps.go-cache-key.outputs.key }}"' <<< "$go_cache_save")
     use_action toolchain
     assert_eq "$(wf '.runs.using')" '"composite"' "the kind of the action"
     assert_eq "$(wf '.inputs | map_values(del(.description))')" '{"check":{"required":true},"save":{"required":false,"default":"false"}}' "the inputs"
-    assert_eq "$(toolchain_steps_of action | jq -c 'map(if .name == "Go caches" then del(.run) else . end)')" \
-        "[$restore,$image,$save,$go_restore,{\"name\":\"Go caches\",\"if\":\"$before\",\"shell\":\"bash\",\"env\":{\"RESTORED\":\"\${{ steps.go-cache.outputs.cache-matched-key }}\"}},$go_lookup,$go_save]" \
+    assert_eq "$(toolchain_steps_of action | jq -c 'map(if .run then del(.run) else . end)')" \
+        "[{\"name\":\"Inputs\",\"shell\":\"$shell\",\"env\":{\"CHECK\":\"\${{ inputs.check }}\",\"SAVE\":\"\${{ inputs.save }}\"}},$restore,$image,$save,$go_restore,$go_caches,$go_key,$go_to_save,$go_save]" \
         "the steps of the action"
+}
+
+# The step "Inputs" of the composite action with these inputs; a third word leaves the key of a
+# call before it in RUNNER_TEMP.
+action_inputs_step() {
+    use_action toolchain
+    select_step action name=Inputs
+    ctx inputs.check "$1"
+    ctx inputs.save "$2"
+    if [ "$#" -gt 2 ]; then printf 'go-key\nfalse\n' > "$step_temp/novatrail-go-cache.key"; fi
+}
+
+test_go_composite_action_takes_a_check_of_its_own_and_save_true_or_false() {
+    local check
+    for check in binaries arm64 target-js-wasm a.b_c; do
+        action_inputs_step "$check" false
+        run_step
+        assert_status 0
+    done
+    action_inputs_step binaries true more
+    run_step
+    assert_status 0
+}
+
+test_go_composite_action_refuses_another_save_a_check_no_key_holds_and_a_second_call_before_the_work() {
+    local check
+    action_inputs_step binaries yes
+    run_step
+    assert_status 1
+    assert_line '::error::save is "yes", not true or false (R49).'
+    for check in "" "a,b" "a b" 'a$b'; do
+        action_inputs_step "$check" false
+        run_step
+        assert_status 1
+        assert_line "::error::check is \"${check}\", not a word of letters, digits, ., _ and -, which names the job in the key of its Go caches (R49)."
+    done
+    action_inputs_step binaries false more
+    run_step
+    assert_status 1
+    assert_line '::error::The job has taken the Go caches by this action already: call it once before the work, and once after it with save: "true" (R49).'
+}
+
+# The key of the restore, and whether it hit — none on a miss, as actions/cache/restore leaves it —,
+# written for the call after the work, which reads it back.
+test_go_composite_action_hands_the_key_of_the_restore_to_the_call_after_the_work() {
+    local hit
+    for hit in "" true; do
+        use_action toolchain
+        select_step action 'name=Go caches key'
+        ctx steps.go-cache.outputs.cache-primary-key "go-Linux-X64-binaries-a-b"
+        ctx steps.go-cache.outputs.cache-hit "$hit"
+        run_step
+        assert_status 0
+        assert_eq "$(cat "$step_temp/novatrail-go-cache.key")" "$(printf 'go-Linux-X64-binaries-a-b\n%s' "${hit:-false}")" "the key handed on"
+        select_step action 'name=Go caches to save'
+        run_step
+        assert_status 0
+        if [ -z "$hit" ]; then
+            assert_output key go-Linux-X64-binaries-a-b
+            assert_line "Go caches: go-Linux-X64-binaries-a-b missed, and a push to main saves it."
+        else
+            refute_output key
+            assert_line "Go caches: go-Linux-X64-binaries-a-b came from the cache whole and is not saved again."
+        fi
+        rm -f -- "$step_temp/novatrail-go-cache.key"
+    done
+}
+
+test_go_composite_action_saves_nothing_without_the_call_before_the_work() {
+    use_action toolchain
+    select_step action 'name=Go caches to save'
+    run_step
+    assert_status 1
+    refute_output key
+    assert_line "::error::The job has not taken the Go caches by this action before its work, so it has none to save: call it without save first (R49)."
 }
 
 test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_image() {
@@ -592,7 +670,7 @@ go_cache_restore='{"name":"Go caches from the cache","id":"go-cache","uses":"act
 go_cache_save='{"name":"Go caches into the cache","if":"steps.go-cache.outputs.cache-hit != '"'"'true'"'"' && github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"'","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"${{ steps.go-cache.outputs.cache-primary-key }}"}}'
 
 test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
-    local job check run sha runs mounts
+    local job check run sha runs mounts work
     use_workflow go.yml
     run=$(wf '.jobs.check.steps[] | select(.name == "Go caches") | .run')
     sha=$(wf_raw '.jobs.check.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
@@ -625,12 +703,13 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
     use_action toolchain
     assert_eq "$(wf '.runs.steps[] | select(.name == "Go caches") | .run')" "$run" "the step Go caches of the composite action"
     use_workflow go.yml
-    runs=$(wf_raw '.jobs.arm64.steps | (map(.name) | index("Toolchain image and Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' | grep -c 'docker run' || true)
+    work=$(wf_raw '.jobs.arm64.steps | (map(.name) | index("Toolchain image and Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")')
+    runs=$(grep -c 'docker run' <<< "$work" || true)
     assert_eq "$runs" 2 "the docker runs of arm64"
-    assert_eq "$(wf_raw '.jobs.arm64.steps | (map(.name) | index("Toolchain image and Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' \
-        | grep -Fxc "    --volume \"\$PWD:/work\" --volume \"\$RUNNER_TEMP/go-cache:/go-cache\" --workdir /work \\" || true)" "$runs" "the docker runs of arm64 that mount the Go caches"
-    assert_eq "$(wf_raw '.jobs.arm64.steps | (map(.name) | index("Toolchain image and Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' \
-        | grep -Fxc "    --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \\" || true)" "$runs" "the docker runs of arm64 that point Go at the caches"
+    assert_eq "$(grep -Fxc "    --volume \"\$PWD:/work\" --volume \"\$RUNNER_TEMP/go-cache:/go-cache\" --workdir /work \\" <<< "$work" || true)" \
+        "$runs" "the docker runs of arm64 that mount the Go caches"
+    assert_eq "$(grep -Fxc "    --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \\" <<< "$work" || true)" \
+        "$runs" "the docker runs of arm64 that point Go at the caches"
 }
 
 go_cache_warning="::warning::The Go caches of go-Linux-X64-test-a-b did not pass go mod verify: they are deleted, and the job downloads and builds without them. An entry that fails on every run stays until it is deleted (gh cache delete) or go.sum or the Dockerfile changes."

@@ -378,11 +378,12 @@ run_step() {
         [ -z "${names[$name]+x}" ] || harness_refuse "runner_env $name: the step's env names $name, so give its expressions with ctx or set_env"
         envs+=("$name=${HARNESS_RUNNER[$name]}")
     done
-    # GitHub's shells on Linux: bash -e {0} when the step names none, bash --noprofile --norc -eo
-    # pipefail {0} for shell: bash (sources 2.3).
+    # GitHub's shells on Linux: bash -e {0} when the step names none, and for shell: bash -e {0}, the
+    # same template named, as the steps of a composite action name it (R49); bash --noprofile --norc
+    # -eo pipefail {0} for shell: bash (sources 2.3).
     shell=$(harness_step -r '.jobs[$j].steps[$i].shell // .jobs[$j].defaults.run.shell // .defaults.run.shell // ""')
     case $shell in
-        "") command=(/usr/bin/bash -e) ;;
+        "" | "bash -e {0}") command=(/usr/bin/bash -e) ;;
         bash) command=(/usr/bin/bash --noprofile --norc -eo pipefail) ;;
         *) harness_refuse "the step runs in the shell $shell, which the harness does not run" ;;
     esac
