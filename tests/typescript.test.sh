@@ -22,9 +22,15 @@ typescript_checks() {
     without=${lists#*"$between"}
     [ "$head$with$between$without$tail" = "$expression" ] && [[ $with$without != *"'"* ]] ||
         fail "the matrix of check chooses its checks otherwise than by inputs.engines: $expression"
+    # As matrix_values holds a literal matrix: a list, not empty, of strings alone.
+    for lists in "$with" "$without"; do
+        jq -e 'type == "array" and length > 0 and all(type == "string")' <<< "$lists" > /dev/null 2>&1 ||
+            fail "the matrix of check gives no list of strings: $lists"
+    done
     case $1 in
         with) jq -r '.[]' <<< "$with" ;;
         without) jq -r '.[]' <<< "$without" ;;
+        *) harness_refuse "typescript_checks takes with or without, not $1" ;;
     esac
 }
 
