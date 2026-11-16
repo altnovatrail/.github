@@ -215,7 +215,7 @@ jobs:
       # re-runs alone, so a pull request and every other event only read (R41). A save that fails
       # costs the next run its speed, not this one its verdict. release.yml takes no cache.
       - name: Go caches into the cache
-        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.go-cache.outputs.cache-hit != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
@@ -428,7 +428,7 @@ jobs:
 
       # The Go caches into the cache, as in the job check (R41).
       - name: Go caches into the cache
-        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.go-cache.outputs.cache-hit != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
@@ -614,7 +614,7 @@ jobs:
 
       # The Go caches into the cache, as in the job check (R41).
       - name: Go caches into the cache
-        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.go-cache.outputs.cache-hit != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
@@ -772,7 +772,7 @@ jobs:
 
       # The Go caches into the cache, as in the job check (R41).
       - name: Go caches into the cache
-        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.go-cache.outputs.cache-hit != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
@@ -913,7 +913,7 @@ jobs:
 
       # The Go caches into the cache, as in the job check (R41).
       - name: Go caches into the cache
-        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.go-cache.outputs.cache-hit != 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
