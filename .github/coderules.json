@@ -1,0 +1,10 @@
+{
+  "code-imports": ["golang.org/x/mod/semver"],
+  "test-imports": ["testing"],
+  "requires": ["golang.org/x/mod"],
+  "nested-modules": [
+    "tools/coderules",
+    "tools/coderules/testdata/engine/nested",
+    "tools/coderules/testdata/learner-model/.devcontainer/gopls"
+  ]
+}
