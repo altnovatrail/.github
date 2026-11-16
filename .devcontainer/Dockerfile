@@ -116,9 +116,6 @@ FROM toolchain-core AS toolchain
 
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
-# The trial of T66: a line more, so that the core is a stage of its own.
-RUN echo t66 > /tmp/t66-trial
-
 # -- devcontainer: the toolchain, plus what a person works with --------------
 
 FROM toolchain AS devcontainer
