@@ -96,6 +96,7 @@ test_codeql_takes_the_archive_and_the_sum_of_an_arm64_runner() {
 test_codeql_reads_the_args_before_the_first_from_and_of_a_lowercase_toolchain_stage() {
     go_archive 1.28rc1 amd64
     dockerfile <<EOF
+# escape=\\
 ARG GO_VERSION=1.28rc1
 ARG GO_SHA256_AMD64=${archive_sum}
 FROM --platform=linux/amd64 ubuntu:24.04 as Toolchain
@@ -128,6 +129,9 @@ FROM golang:1.27.4 AS builder
 FROM builder AS devcontainer
 EOF
     stops_before_curl ".devcontainer/Dockerfile has no stage toolchain, FROM ... AS toolchain."
+    spec_dockerfile
+    sed -i '1i # escape=`' "$step_workspace/.devcontainer/Dockerfile"
+    stops_before_curl '.devcontainer/Dockerfile sets another escape character than \, and CodeQL reads its continued lines by \.'
 }
 
 test_codeql_stops_on_a_dockerfile_that_pins_go_otherwise() {

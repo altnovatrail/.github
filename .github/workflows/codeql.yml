@@ -153,12 +153,14 @@ jobs:
       # go.dev that the stage installs, by the ARGs that pin it there, checked against the same
       # sum and unpacked onto the runner ahead of the runner's own Go. The ARGs are read from the
       # stage toolchain and the stages it is built from — FROM <stage> AS ... —, and from before the
-      # first FROM, with comments dropped and continued lines joined, as Docker reads them: each
-      # once, as ARG <name>=<value>. A Dockerfile that installs Go otherwise names none of them,
-      # and the step stops, saying so. The image would hand the build its GO and CGO_ variables,
-      # and those stages set none but GOTOOLCHAIN=local, which the step sets itself, to keep the
-      # go command on this Go rather than on one a go.mod would have it fetch: one they set
-      # besides, which the step cannot work out without the image, stops it too, by its name.
+      # first FROM, with comments dropped and continued lines joined, as Docker reads them by its
+      # default escape character, \, which the Dockerfile has to keep: each once, as
+      # ARG <name>=<value>. A Dockerfile that installs Go otherwise names none of them, and the
+      # step stops, saying so. The image would hand the build its GO and CGO_ variables, which a
+      # stage inherits from those it is built from, and those stages set none but
+      # GOTOOLCHAIN=local, which the step sets itself, to keep the go command on this Go rather
+      # than on one a go.mod would have it fetch: one they set besides, which the step cannot work
+      # out without the image, stops it too, by its name.
       - name: Go of the caller's toolchain stage
         if: matrix.language == 'go'
         run: |
@@ -168,6 +170,9 @@ jobs:
               exit 1
           }
           [ -f "$dockerfile" ] || stop "CodeQL takes the Go of the toolchain stage of ${dockerfile}, and the repository has no ${dockerfile}."
+          if grep -qiE '^#[[:space:]]*escape[[:space:]]*=[[:space:]]*[^\[:space:]]' "$dockerfile"; then
+              stop "${dockerfile} sets another escape character than \\, and CodeQL reads its continued lines by \\."
+          fi
           stages=$(sed -e '/^[[:space:]]*#/d' "$dockerfile" | sed -e ':a' -e '/\\$/N' -e 's/\\\n/ /' -e 'ta' | awk '
               BEGIN { stage = 0 }
               toupper($1) == "FROM" {
