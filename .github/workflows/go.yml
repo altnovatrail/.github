@@ -24,9 +24,10 @@
 #
 # With same-bits, four more jobs hold the caller's bits the same on every build (R107 in spec), as
 # learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
-# "Go / targets" runs the tests on the builds where the bits are most at risk, wasip1 among them;
-# "Go / fma-diff" compares the assembler of each package with fusion and without it, with a
-# control of its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
+# "Go / targets" holds the tests on the builds where the bits are most at risk, wasip1 among them,
+# which run at once, a job "Go / target (<target>)" each (R43); "Go / fma-diff" compares the
+# assembler of each package with fusion and without it, on its targets at once, with a control of
+# its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
 # runner; "Go / rules" holds the code to the rules of code by the tool tools/coderules of .github,
 # of this workflow's own version, and the caller's lists, .github/coderules.json (R33). Without the
 # input the workflow is what it was.
@@ -375,14 +376,24 @@ jobs:
   # knows only runtimes the stage does not have (sources 10.1); wasip1 is vetted too. A host other
   # than amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off. The
   # list is learner-model's and engine's recipe test-targets (R107 in spec), with wasip1 run by the
-  # amendment of 2026-11-11 to it (R39), and the script goes to the container on stdin, so that one
-  # container keeps the build cache from run to run.
-  targets:
-    name: targets
+  # amendment of 2026-11-11 to it (R39). Each target is a job of the matrix, so that they run at
+  # once, and the job targets after them is the one check of the caller's ruleset (R43). The script
+  # is one for the matrix and arm64: it runs the targets TARGETS names, in order, in one container
+  # on stdin, so that arm64's three keep one build cache.
+  target:
+    # GitHub adds the target to the name, "Go / target (amd64-v3)": none of these is a check of the
+    # ruleset, "Go / targets" is. A name with the matrix in it would be shown unexpanded on every
+    # call without same-bits, which skips the job before the matrix is worked out.
+    name: target
     needs: toolchain
     if: ${{ !cancelled() && inputs.same-bits }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      # Every target reports on its own, rather than the first one to fail cancelling the rest.
+      fail-fast: false
+      matrix:
+        target: [amd64-v3, cpu-off, "386", js-wasm, wasip1]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -428,13 +439,13 @@ jobs:
               rm -f -- "$tar"
           fi
 
-      # The Go caches from the cache, as in the job check (R41).
+      # The Go caches from the cache, as in the job check (R41), an entry for each target (R43).
       - name: Go caches from the cache
         id: go-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
-          key: go-${{ runner.os }}-${{ runner.arch }}-targets-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          key: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
 
       # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
       # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
@@ -484,28 +495,52 @@ jobs:
           rm -rf -- "$cache"
           mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
 
+      # TARGETS names the targets, in the order they run; the first that fails stops the script.
+      # cpu-off is the host's own build with cpu.all=off, at GOAMD64 v1 on amd64; amd64-v3 and 386
+      # run on an amd64 host alone.
       - name: Tests on the targets
+        env:
+          TARGETS: ${{ matrix.target }}
         run: |
-          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
+          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp --env TARGETS \
               --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
               --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               novatrail-toolchain bash -s - <<'SCRIPT'
           set -euo pipefail
           run() { echo "== $*" >&2; env "$@"; }
-          if [ "$(go env GOHOSTARCH)" = amd64 ]; then
-              run GOAMD64=v3 go test -count=1 ./...
-              run GOAMD64=v1 GODEBUG=cpu.all=off go test -count=1 ./...
-              run GOARCH=386 go test -count=1 ./...
-          else
-              run GODEBUG=cpu.all=off go test -count=1 ./...
+          read -r -a targets <<< "${TARGETS-}"
+          if [ "${#targets[@]}" = 0 ]; then
+              echo "targets: TARGETS names no target" >&2
+              exit 1
           fi
-          run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
-          # wasip1 in node:wasi, by an executor written outside the checkout: the test binary with its
-          # arguments, the environment, where go test sets PWD to the package's folder, and the whole
-          # file system; the code wasi.start returns is the process's. Node has the stack
-          # go_js_wasm_exec gives it for js/wasm (R39).
-          wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
-          cat > "$wasi" <<'JS'
+          host=$(go env GOHOSTARCH)
+          for target in "${targets[@]}"; do
+              case $target in
+                  amd64-v3 | 386)
+                      if [ "$host" != amd64 ]; then
+                          echo "targets: $target runs on an amd64 host, not on $host" >&2
+                          exit 1
+                      fi
+                      ;;
+              esac
+              case $target in
+                  amd64-v3) run GOAMD64=v3 go test -count=1 ./... ;;
+                  cpu-off)
+                      if [ "$host" = amd64 ]; then
+                          run GOAMD64=v1 GODEBUG=cpu.all=off go test -count=1 ./...
+                      else
+                          run GODEBUG=cpu.all=off go test -count=1 ./...
+                      fi
+                      ;;
+                  386) run GOARCH=386 go test -count=1 ./... ;;
+                  js-wasm) run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./... ;;
+                  wasip1)
+                      # wasip1 in node:wasi, by an executor written outside the checkout: the test
+                      # binary with its arguments, the environment, where go test sets PWD to the
+                      # package's folder, and the whole file system; the code wasi.start returns is
+                      # the process's. Node has the stack go_js_wasm_exec gives it for js/wasm (R39).
+                      wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
+                      cat > "$wasi" <<'JS'
           import { readFile } from "node:fs/promises";
           import { WASI } from "node:wasi";
           const args = process.argv.slice(2);
@@ -513,8 +548,15 @@ jobs:
           const { instance } = await WebAssembly.instantiate(await readFile(args[0]), wasi.getImportObject());
           process.exitCode = wasi.start(instance);
           JS
-          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
-          run GOOS=wasip1 GOARCH=wasm go vet ./...
+                      run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
+                      run GOOS=wasip1 GOARCH=wasm go vet ./...
+                      ;;
+                  *)
+                      echo "targets: no target $target" >&2
+                      exit 1
+                      ;;
+              esac
+          done
           SCRIPT
 
       # The Go caches into the cache, as in the job check (R41).
@@ -524,6 +566,28 @@ jobs:
         with:
           path: ${{ runner.temp }}/go-cache
           key: ${{ steps.go-cache.outputs.cache-primary-key }}
+
+  # "Go / targets", the one check of the targets in the caller's ruleset: green when every job of
+  # the matrix target passed, red otherwise — a target that failed, was cancelled or did not run
+  # (R43). It runs whatever came before it, a cancelled run too, which a skipped check would pass
+  # as "Success"; it checks nothing out and only reads the result, so nothing in it can hang.
+  targets:
+    name: targets
+    needs: target
+    if: ${{ always() && inputs.same-bits }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every target
+        env:
+          RESULT: ${{ needs.target.result }}
+        run: |
+          if [ "$RESULT" = success ]; then
+              echo "targets: every target passed."
+              exit 0
+          fi
+          echo "::error::The targets are ${RESULT:-of no result}, not success: the jobs \"target …\" of this run say which and why."
+          exit 1
 
   # Each package of the caller's module with code is compiled for every target whose compiler fuses
   # a multiplication with an addition or a subtraction, twice: as it is, and with -d=fmahash=n,
@@ -678,11 +742,12 @@ jobs:
               fi
               echo "$out"
           }
-          status=0
-          for target in arm64 ppc64le s390x riscv64 loong64 amd64/v3; do
+          # One target: its packages and the control, as a process of its own, which fails when
+          # the target does.
+          check() {
+              local target=$1 ok=1 pkgs pkg fused plain
               export GOOS=linux GOARCH="${target%%/*}" GOAMD64=v1
               if [ "$target" = amd64/v3 ]; then GOAMD64=v3; fi
-              ok=1
               # The packages with code for this target: one of tests alone has nothing to build, and
               # build constraints may leave a package out of a target.
               pkgs="$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...)"
@@ -703,7 +768,29 @@ jobs:
                   echo "fma-diff: $target: the control was not caught: the check sees no fusion" >&2
                   ok=0
               fi
-              if [ "$ok" = 1 ]; then echo "fma-diff: $target: ok" >&2; else status=1; fi
+              if [ "$ok" = 1 ]; then echo "fma-diff: $target: ok" >&2; else return 1; fi
+          }
+          # The targets at once, each in the background with its output in a file of its own; then
+          # each target's output, whole, in the order of the targets, as soon as it has ended (R43).
+          # Each stops at 25 minutes, inside the job's 30: a job that times out has its processes
+          # killed, and the files of the targets that ended before the one that hangs would never
+          # be printed.
+          export -f asm check
+          export control
+          targets=(arm64 ppc64le s390x riscv64 loong64 amd64/v3)
+          logs="$(mktemp -d)"
+          pids=()
+          for i in "${!targets[@]}"; do
+              timeout 1500 bash -euo pipefail -c 'check "$1"' bash "${targets[$i]}" > "$logs/$i" 2>&1 &
+              pids+=("$!")
+          done
+          status=0
+          for i in "${!targets[@]}"; do
+              code=0
+              wait "${pids[$i]}" || code=$?
+              cat -- "$logs/$i" >&2
+              if [ "$code" = 124 ]; then echo "fma-diff: ${targets[$i]}: did not end in 25 minutes" >&2; fi
+              if [ "$code" != 0 ]; then status=1; fi
           done
           exit "$status"
           SCRIPT
@@ -726,8 +813,8 @@ jobs:
     name: arm64
     if: inputs.same-bits
     runs-on: ubuntu-24.04-arm
-    # ci-test, which check gives 20 minutes, and the targets, which targets gives 30, one after the
-    # other.
+    # ci-test, which check gives 20 minutes, then three targets one after the other, where a job of
+    # target gets 30 minutes for one.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -838,28 +925,52 @@ jobs:
               --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               novatrail-toolchain just ci-test
 
+      # TARGETS names the targets, in the order they run; the first that fails stops the script.
+      # cpu-off is the host's own build with cpu.all=off, at GOAMD64 v1 on amd64; amd64-v3 and 386
+      # run on an amd64 host alone.
       - name: Tests on the targets
+        env:
+          TARGETS: cpu-off js-wasm wasip1
         run: |
-          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
+          docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp --env TARGETS \
               --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
               --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               novatrail-toolchain bash -s - <<'SCRIPT'
           set -euo pipefail
           run() { echo "== $*" >&2; env "$@"; }
-          if [ "$(go env GOHOSTARCH)" = amd64 ]; then
-              run GOAMD64=v3 go test -count=1 ./...
-              run GOAMD64=v1 GODEBUG=cpu.all=off go test -count=1 ./...
-              run GOARCH=386 go test -count=1 ./...
-          else
-              run GODEBUG=cpu.all=off go test -count=1 ./...
+          read -r -a targets <<< "${TARGETS-}"
+          if [ "${#targets[@]}" = 0 ]; then
+              echo "targets: TARGETS names no target" >&2
+              exit 1
           fi
-          run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./...
-          # wasip1 in node:wasi, by an executor written outside the checkout: the test binary with its
-          # arguments, the environment, where go test sets PWD to the package's folder, and the whole
-          # file system; the code wasi.start returns is the process's. Node has the stack
-          # go_js_wasm_exec gives it for js/wasm (R39).
-          wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
-          cat > "$wasi" <<'JS'
+          host=$(go env GOHOSTARCH)
+          for target in "${targets[@]}"; do
+              case $target in
+                  amd64-v3 | 386)
+                      if [ "$host" != amd64 ]; then
+                          echo "targets: $target runs on an amd64 host, not on $host" >&2
+                          exit 1
+                      fi
+                      ;;
+              esac
+              case $target in
+                  amd64-v3) run GOAMD64=v3 go test -count=1 ./... ;;
+                  cpu-off)
+                      if [ "$host" = amd64 ]; then
+                          run GOAMD64=v1 GODEBUG=cpu.all=off go test -count=1 ./...
+                      else
+                          run GODEBUG=cpu.all=off go test -count=1 ./...
+                      fi
+                      ;;
+                  386) run GOARCH=386 go test -count=1 ./... ;;
+                  js-wasm) run GOOS=js GOARCH=wasm go test -count=1 -exec="$(go env GOROOT)/lib/wasm/go_js_wasm_exec" ./... ;;
+                  wasip1)
+                      # wasip1 in node:wasi, by an executor written outside the checkout: the test
+                      # binary with its arguments, the environment, where go test sets PWD to the
+                      # package's folder, and the whole file system; the code wasi.start returns is
+                      # the process's. Node has the stack go_js_wasm_exec gives it for js/wasm (R39).
+                      wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
+                      cat > "$wasi" <<'JS'
           import { readFile } from "node:fs/promises";
           import { WASI } from "node:wasi";
           const args = process.argv.slice(2);
@@ -867,8 +978,15 @@ jobs:
           const { instance } = await WebAssembly.instantiate(await readFile(args[0]), wasi.getImportObject());
           process.exitCode = wasi.start(instance);
           JS
-          run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
-          run GOOS=wasip1 GOARCH=wasm go vet ./...
+                      run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
+                      run GOOS=wasip1 GOARCH=wasm go vet ./...
+                      ;;
+                  *)
+                      echo "targets: no target $target" >&2
+                      exit 1
+                      ;;
+              esac
+          done
           SCRIPT
 
       # The Go caches into the cache, as in the job check (R41).

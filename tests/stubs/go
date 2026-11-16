@@ -45,6 +45,22 @@ case "${1-} ${2-}" in
         exit 0
         ;;
     "list -f")
+        # go.waits, "<GOARCH> <GOARCH>": the go list of the first waits, up to ten seconds, for
+        # the go list of the second to have run, as it can only when the two run at once.
+        : > "$state/run/listed.${GOARCH-}"
+        if [ -f "$state/stub/go.waits" ]; then
+            read -r waiter awaited < "$state/stub/go.waits"
+            if [ "${GOARCH-}" = "$waiter" ]; then
+                for _ in $(seq 100); do
+                    if [ -e "$state/run/listed.$awaited" ]; then break; fi
+                    sleep 0.1
+                done
+                if [ ! -e "$state/run/listed.$awaited" ]; then
+                    echo "go: go list under GOARCH=$waiter waited in vain for GOARCH=$awaited" >&2
+                    exit 1
+                fi
+            fi
+        fi
         cat "$state/stub/go.packages.${GOARCH-}" 2> /dev/null || cat "$state/stub/go.packages" 2> /dev/null || true
         exit 0
         ;;

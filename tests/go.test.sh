@@ -18,7 +18,7 @@ test_go_is_called_with_same_bits_alone_no_secrets_and_gives_the_token_to_the_cov
     assert_eq "$(wf '.on.workflow_call | keys')" '["inputs"]' "what the call takes"
     assert_eq "$(wf '.on.workflow_call.inputs | map_values({type, default})')" '{"same-bits":{"type":"boolean","default":false}}' "the inputs"
     assert_eq "$(wf '.permissions')" '{"contents":"read"}' "the workflow's permissions"
-    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","rules","targets","toolchain"]' "the jobs"
+    assert_eq "$(wf '.jobs | keys')" '["arm64","check","coverage","fma-diff","rules","target","targets","toolchain"]' "the jobs"
     assert_eq "$(wf '[.jobs | to_entries[] | select(.value | has("permissions")) | .key]')" '["coverage"]' "the jobs with permissions of their own"
     assert_eq "$(wf '.jobs.coverage.permissions')" '{"contents":"read","id-token":"write"}' "the coverage job's permissions"
 }
@@ -316,7 +316,7 @@ test_go_and_typescript_take_the_toolchain_stage_from_the_cache_or_the_job_toolch
         use_workflow "$file"
         jobs=$(wf_raw '.jobs | to_entries[] | select(.value.needs == "toolchain") | .key' | tr '\n' ' ')
         case $file in
-            go.yml) assert_eq "$jobs" "check targets fma-diff rules " "the jobs of $file after the job toolchain" ;;
+            go.yml) assert_eq "$jobs" "check target fma-diff rules " "the jobs of $file after the job toolchain" ;;
             *) assert_eq "$jobs" "check " "the jobs of $file after the job toolchain" ;;
         esac
         for job in $jobs; do
@@ -348,7 +348,7 @@ test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_im
         use_workflow "$file"
         jobs=$(wf_raw '.jobs | to_entries[] | select(any(.value.steps[]; .name == "Toolchain image" or ((.run // "") | test("docker build")))) | .key' | tr '\n' ' ')
         case $file in
-            go.yml) assert_eq "$jobs" "toolchain check targets fma-diff arm64 rules " "the jobs of $file that build the stage" ;;
+            go.yml) assert_eq "$jobs" "toolchain check target fma-diff arm64 rules " "the jobs of $file that build the stage" ;;
             *) assert_eq "$jobs" "toolchain check " "the jobs of $file that build the stage" ;;
         esac
         for job in $jobs; do
@@ -383,10 +383,12 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
     run=$(wf '.jobs.check.steps[] | select(.name == "Go caches") | .run')
     sha=$(wf_raw '.jobs.check.steps[] | select(.name == "Toolchain image from the cache") | .uses | sub("^[^@]*@"; "")')
     assert_eq "$(wf_raw '.jobs | to_entries[] | select(any(.value.steps[]; .name == "Go caches")) | .key' | tr '\n' ' ')" \
-        "check targets fma-diff arm64 rules " "the jobs with the Go caches"
-    for job in check targets fma-diff arm64 rules; do
+        "check target fma-diff arm64 rules " "the jobs with the Go caches"
+    for job in check target fma-diff arm64 rules; do
         check=$job
         if [ "$job" = check ]; then check='${{ matrix.check }}'; fi
+        # An entry for each target of the matrix (R43).
+        if [ "$job" = target ]; then check='target-${{ matrix.target }}'; fi
         # Right after the toolchain stage, ahead of the work, and the save last of all; in arm64 the
         # image is saved first.
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | map(.name) as $n | ($n | index("Toolchain image")) as $b | ($b + if $n[$b + 1] == "Toolchain image into the cache" then 1 else 0 end) as $i | .[$i + 1:$i + 3]
@@ -543,15 +545,18 @@ test_go_caches_without_a_module_to_verify_them_by_are_kept() {
 # toolchain stage from the cache, then one step of its own.
 same_bits_steps='["actions/checkout@<sha>","actions/cache/restore@<sha>","actions/download-artifact@<sha>","Toolchain image"'
 
-# Run the script that the first docker call of the step read on stdin, as the container would.
+# Run the script that the first docker call of the step read on stdin, as the container would: with
+# the variables the call handed it by --env NAME, as the stand-in docker wrote them down.
 run_container_script() {
     local call
+    local -a passed=()
     call=$(harness_call docker 1)
     [ -f "$call.stdin" ] || fail "the docker run read no script on stdin"
+    if [ -f "$call.env" ]; then mapfile -t passed < <(grep -F = "$call.env"); fi
     stub go
     script_status=0
     mkdir -p "$state/tmp"
-    (cd -- "$step_workspace" && /usr/bin/env -i "PATH=$state/bin:/usr/bin:/bin" "HOME=$state/home" "TMPDIR=$state/tmp" \
+    (cd -- "$step_workspace" && /usr/bin/env -i "PATH=$state/bin:/usr/bin:/bin" "HOME=$state/home" "TMPDIR=$state/tmp" "${passed[@]}" \
         /usr/bin/bash "$call.stdin") > "$state/script.out" 2>&1 || script_status=$?
 }
 
@@ -570,14 +575,19 @@ refute_script_has() {
 }
 
 # The step with its toolchain container as a stand-in: the call it makes, and the script it hands.
+# The steps of the targets hand the container TARGETS too; a third argument is the target of the
+# matrix, matrix.target: run_same_bits_step target 'Tests on the targets' 386.
 run_same_bits_step() {
+    local -a targets=()
     use_workflow go.yml
     select_step "$1" "name=$2"
+    if [ "$#" -gt 2 ]; then ctx matrix.target "$3"; fi
+    if [ "$2" = 'Tests on the targets' ]; then targets=(--env TARGETS); fi
     stub docker
     run_step
     assert_status 0
     assert_calls docker 1
-    assert_call docker 1 run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
+    assert_call docker 1 run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp "${targets[@]}" \
         "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" \
         --workdir /work novatrail-toolchain bash -s -
 }
@@ -585,7 +595,7 @@ run_same_bits_step() {
 test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
     use_workflow go.yml
     local job
-    for job in targets fma-diff; do
+    for job in target fma-diff; do
         assert_eq "$(wf --arg j "$job" '.jobs[$j] | {name, needs, if, "runs-on", "timeout-minutes", permissions}')" \
             "{\"name\":\"$job\",\"needs\":\"toolchain\",\"if\":\"\${{ !cancelled() && inputs.same-bits }}\",\"runs-on\":\"ubuntu-24.04\",\"timeout-minutes\":30,\"permissions\":null}" "the job $job"
         assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[:4][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | tostring')" \
@@ -595,53 +605,136 @@ test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
             '["actions/cache/restore@<sha>","Go caches","actions/cache/save@<sha>"]' "the Go caches round the step of $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | length')" 8 "the steps of $job"
     done
+    # A job for each target, every one to its end (R43); fma-diff is one job.
+    assert_eq "$(wf '.jobs.target.strategy')" '{"fail-fast":false,"matrix":{"target":["amd64-v3","cpu-off","386","js-wasm","wasip1"]}}' "the matrix of target"
+    assert_eq "$(wf '.jobs["fma-diff"].strategy')" null "the matrix of fma-diff"
+    assert_eq "$(wf '.jobs.target.steps[] | select(.name == "Tests on the targets") | .env')" '{"TARGETS":"${{ matrix.target }}"}' "the targets of a job of target"
 }
 
-test_go_targets_runs_the_tests_on_every_amd64_target_in_order() {
-    run_same_bits_step targets 'Tests on the targets'
-    run_container_script
-    assert_script_status 0
-    assert_calls go 8
-    assert_call go 1 env GOHOSTARCH
-    assert_call go 2 test -count=1 ./...
-    assert_call_record go 2 env "GOOS unset" "GOARCH unset" "GOAMD64=v3" "GODEBUG unset"
-    assert_call go 3 test -count=1 ./...
-    assert_call_record go 3 env "GOOS unset" "GOARCH unset" "GOAMD64=v1" "GODEBUG=cpu.all=off"
-    assert_call go 4 test -count=1 ./...
-    assert_call_record go 4 env "GOOS unset" "GOARCH=386" "GOAMD64 unset" "GODEBUG unset"
-    assert_call go 5 env GOROOT
-    assert_call go 6 test -count=1 -exec=/usr/local/go/lib/wasm/go_js_wasm_exec ./...
-    assert_call_record go 6 env "GOOS=js" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
-    wasi_executor 7
-    assert_call go 7 test -count=1 "-exec=node --stack-size=8192 --disable-warning=ExperimentalWarning $executor" ./...
-    assert_call_record go 7 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
-    assert_call go 8 vet ./...
-    assert_call_record go 8 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
-    assert_script_line "== GOARCH=386 go test -count=1 ./..."
+# "Go / targets", the one check of the targets, reads what the matrix came to (R43).
+test_go_holds_the_targets_in_one_check_that_is_red_unless_every_target_passed() {
+    use_workflow go.yml
+    assert_eq "$(wf '.jobs.targets | {name, needs, if, "runs-on", "timeout-minutes", permissions, strategy}')" \
+        '{"name":"targets","needs":"target","if":"${{ always() && inputs.same-bits }}","runs-on":"ubuntu-24.04","timeout-minutes":5,"permissions":null,"strategy":null}' "the job targets"
+    assert_eq "$(wf '[.jobs.targets.steps[] | .uses // .name]')" '["Every target"]' "the steps of targets"
+    select_step targets 'name=Every target'
+    ctx needs.target.result success
+    run_step
+    assert_status 0
+    assert_line "targets: every target passed."
+    local result
+    for result in failure cancelled skipped ""; do
+        select_step targets 'name=Every target'
+        ctx needs.target.result "$result"
+        run_step
+        assert_status 1
+        assert_line "::error::The targets are ${result:-of no result}, not success: the jobs \"target …\" of this run say which and why."
+    done
 }
 
-test_go_targets_runs_another_host_with_cpu_all_off_and_no_amd64_build() {
-    run_same_bits_step targets 'Tests on the targets'
+# Each job of the matrix runs its own target alone, after go env GOHOSTARCH.
+test_go_target_runs_the_tests_of_its_own_target_alone() {
+    local target
+    use_workflow go.yml
+    for target in $(matrix_values target target); do
+        run_same_bits_step target 'Tests on the targets' "$target"
+        run_container_script
+        assert_script_status 0
+        assert_call go 1 env GOHOSTARCH
+        case $target in
+            amd64-v3)
+                assert_calls go 2
+                assert_call go 2 test -count=1 ./...
+                assert_call_record go 2 env "GOOS unset" "GOARCH unset" "GOAMD64=v3" "GODEBUG unset"
+                ;;
+            cpu-off)
+                assert_calls go 2
+                assert_call go 2 test -count=1 ./...
+                assert_call_record go 2 env "GOOS unset" "GOARCH unset" "GOAMD64=v1" "GODEBUG=cpu.all=off"
+                ;;
+            386)
+                assert_calls go 2
+                assert_call go 2 test -count=1 ./...
+                assert_call_record go 2 env "GOOS unset" "GOARCH=386" "GOAMD64 unset" "GODEBUG unset"
+                assert_script_line "== GOARCH=386 go test -count=1 ./..."
+                ;;
+            js-wasm)
+                assert_calls go 3
+                assert_call go 2 env GOROOT
+                assert_call go 3 test -count=1 -exec=/usr/local/go/lib/wasm/go_js_wasm_exec ./...
+                assert_call_record go 3 env "GOOS=js" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
+                ;;
+            wasip1)
+                assert_calls go 3
+                wasi_executor 2
+                assert_call go 2 test -count=1 "-exec=node --stack-size=8192 --disable-warning=ExperimentalWarning $executor" ./...
+                assert_call_record go 2 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
+                assert_call go 3 vet ./...
+                assert_call_record go 3 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
+                ;;
+            *) fail "the matrix has a target no case knows: $target" ;;
+        esac
+    done
+}
+
+# arm64 runs the same script on the targets of its host, one after the other.
+test_go_arm64_runs_its_own_build_with_cpu_all_off_js_wasm_and_wasip1() {
+    run_same_bits_step arm64 'Tests on the targets'
     echo arm64 > "$state/stub/go.hostarch"
+    assert_call_record docker 1 env "TARGETS=cpu-off js-wasm wasip1"
     run_container_script
     assert_script_status 0
     assert_calls go 6
+    assert_call go 1 env GOHOSTARCH
     assert_call go 2 test -count=1 ./...
     assert_call_record go 2 env "GOOS unset" "GOARCH unset" "GOAMD64 unset" "GODEBUG=cpu.all=off"
     assert_call go 3 env GOROOT
+    assert_call go 4 test -count=1 -exec=/usr/local/go/lib/wasm/go_js_wasm_exec ./...
     wasi_executor 5
     assert_call go 5 test -count=1 "-exec=node --stack-size=8192 --disable-warning=ExperimentalWarning $executor" ./...
     assert_call_record go 5 env "GOOS=wasip1" "GOARCH=wasm" "GOAMD64 unset" "GODEBUG unset"
+    assert_call go 6 vet ./...
     refute_script_has "GOAMD64="
     refute_script_has "GOARCH=386"
 }
 
-test_go_targets_fails_on_the_first_target_that_fails() {
-    run_same_bits_step targets 'Tests on the targets'
+test_go_targets_refuses_an_amd64_target_on_another_host() {
+    local target
+    for target in amd64-v3 386; do
+        run_same_bits_step target 'Tests on the targets' "$target"
+        echo arm64 > "$state/stub/go.hostarch"
+        run_container_script
+        assert_script_status 1
+        assert_calls go 1
+        assert_script_line "targets: $target runs on an amd64 host, not on arm64"
+    done
+}
+
+test_go_targets_stops_without_a_target_it_knows() {
+    run_same_bits_step target 'Tests on the targets' ""
+    run_container_script
+    assert_script_status 1
+    assert_calls go 0
+    assert_script_line "targets: TARGETS names no target"
+    run_same_bits_step target 'Tests on the targets' wasm
+    run_container_script
+    assert_script_status 1
+    assert_calls go 1
+    assert_script_line "targets: no target wasm"
+}
+
+test_go_targets_fails_with_its_target_and_stops_at_the_first_that_fails() {
+    run_same_bits_step target 'Tests on the targets' 386
     echo GOARCH=386 > "$state/stub/go.fails"
     run_container_script
     assert_script_status 1
-    assert_calls go 4
+    assert_script_line "go: a stand-in failure under GOARCH=386"
+    run_same_bits_step arm64 'Tests on the targets'
+    echo arm64 > "$state/stub/go.hostarch"
+    echo GODEBUG=cpu.all=off > "$state/stub/go.fails"
+    run_container_script
+    assert_script_status 1
+    assert_calls go 2
     refute_script_has "GOOS=js"
 }
 
@@ -668,10 +761,10 @@ wasi_command() {
 }
 
 test_go_targets_runs_wasip1_in_node_wasi_by_an_executor_outside_the_checkout() {
-    run_same_bits_step targets 'Tests on the targets'
+    run_same_bits_step target 'Tests on the targets' wasip1
     run_container_script
     assert_script_status 0
-    wasi_executor 7
+    wasi_executor 2
     assert_eq "$(if [ -f "$executor" ]; then echo written; else echo none; fi)" written "the executor"
     assert_eq "$(case $executor in "$step_workspace"/*) echo in the checkout ;; "$state/tmp"/*) echo in a temporary folder ;; *) echo elsewhere ;; esac)" \
         "in a temporary folder" "where the executor is"
@@ -693,11 +786,11 @@ test_go_targets_runs_wasip1_in_node_wasi_by_an_executor_outside_the_checkout() {
 }
 
 test_go_targets_fails_with_a_test_on_wasip1() {
-    run_same_bits_step targets 'Tests on the targets'
+    run_same_bits_step target 'Tests on the targets' wasip1
     echo GOOS=wasip1 > "$state/stub/go.fails"
     run_container_script
     assert_script_status 1
-    assert_calls go 7
+    assert_calls go 2
     assert_script_line "go: a stand-in failure under GOOS=wasip1"
     refute_script_has "go vet"
 }
@@ -709,26 +802,92 @@ two_packages() {
 
 fma_targets=(arm64 ppc64le s390x riscv64 loong64 amd64/v3)
 
+# The calls of go under one target of fma-diff, by their indices, one a line: the targets run at
+# once, so their calls interleave, but each target's own come one after the other.
+fma_calls() {
+    local goarch=${1%%/*} goamd64=v1 call index=0
+    if [ "$1" = amd64/v3 ]; then goamd64=v3; fi
+    while IFS= read -r call; do
+        index=$((index + 1))
+        if grep -Fxq "GOARCH=$goarch" "$call.env" && grep -Fxq "GOAMD64=$goamd64" "$call.env"; then
+            echo "$index"
+        fi
+    done < <(harness_calls go)
+}
+
+# The n-th call of go under a target: fma_call arm64 1.
+fma_call() {
+    fma_calls "$1" | sed -n "$2p"
+}
+
+# The output of a script where every target is ok: one line a target, in their order.
+fma_all_ok=$(printf 'fma-diff: %s: ok\n' "${fma_targets[@]}")
+
 test_go_fma_diff_passes_when_no_package_fuses_and_the_control_does() {
     run_same_bits_step fma-diff 'The assembler with fusion and without it'
     two_packages
     run_container_script
     assert_script_status 0
-    local target
-    for target in "${fma_targets[@]}"; do
-        assert_script_line "fma-diff: $target: ok"
-    done
+    assert_eq "$(cat "$state/script.out")" "$fma_all_ok" "the script's output"
     # For each target: go list, each package and the control, with fusion and without it.
     assert_calls go 42
-    assert_call go 1 list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...
-    assert_call_record go 1 env "GOOS=linux" "GOARCH=arm64" "GOAMD64=v1" "GODEBUG unset"
-    assert_call go 2 build -o /dev/null "-gcflags=-S " example.com/m
-    assert_call_record go 2 env "GOOS=linux" "GOARCH=arm64" "GOAMD64=v1" "GODEBUG unset"
-    assert_call go 3 build -o /dev/null "-gcflags=-S -d=fmahash=n" example.com/m
-    assert_call go 36 list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...
-    assert_call_record go 36 env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
-    assert_call go 42 -C "$(harness_argv "$(harness_call go 41).argv" | awk '{print $2}')" build -o /dev/null "-gcflags=-S -d=fmahash=n" .
-    assert_call_record go 42 env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
+    local target control
+    for target in "${fma_targets[@]}"; do
+        assert_eq "$(fma_calls "$target" | wc -l)" 7 "the calls of go under $target"
+        assert_call go "$(fma_call "$target" 1)" list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./...
+        assert_call go "$(fma_call "$target" 2)" build -o /dev/null "-gcflags=-S " example.com/m
+        assert_call go "$(fma_call "$target" 3)" build -o /dev/null "-gcflags=-S -d=fmahash=n" example.com/m
+        assert_call go "$(fma_call "$target" 4)" build -o /dev/null "-gcflags=-S " example.com/m/sub
+        assert_call go "$(fma_call "$target" 5)" build -o /dev/null "-gcflags=-S -d=fmahash=n" example.com/m/sub
+        control=$(harness_argv "$(harness_call go "$(fma_call "$target" 6)").argv" | awk '{print $2}')
+        assert_call go "$(fma_call "$target" 6)" -C "$control" build -o /dev/null "-gcflags=-S " .
+        assert_call go "$(fma_call "$target" 7)" -C "$control" build -o /dev/null "-gcflags=-S -d=fmahash=n" .
+    done
+    assert_call_record go "$(fma_call arm64 1)" env "GOOS=linux" "GOARCH=arm64" "GOAMD64=v1" "GODEBUG unset"
+    assert_call_record go "$(fma_call amd64/v3 1)" env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
+}
+
+# The targets run at once (R43): the go list of the first waits for the go list of the last, which a
+# loop of one target after the other would never reach. The output keeps the order of the targets.
+test_go_fma_diff_runs_its_targets_at_once_and_prints_them_in_their_order() {
+    run_same_bits_step fma-diff 'The assembler with fusion and without it'
+    two_packages
+    echo "arm64 amd64" > "$state/stub/go.waits"
+    run_container_script
+    assert_script_status 0
+    assert_eq "$(cat "$state/script.out")" "$fma_all_ok" "the script's output"
+}
+
+# A target whose command fails stops alone; the others are still checked, and the script fails.
+test_go_fma_diff_fails_with_a_target_that_stops_and_checks_the_others() {
+    run_same_bits_step fma-diff 'The assembler with fusion and without it'
+    two_packages
+    echo "ppc64le none" > "$state/stub/go.waits"
+    run_container_script
+    assert_script_status 1
+    assert_eq "$(cat "$state/script.out")" "$(printf '%s\n' "fma-diff: arm64: ok" \
+        "go: go list under GOARCH=ppc64le waited in vain for GOARCH=none" \
+        "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
+}
+
+# A target that has not ended in 25 minutes is stopped, and says so after what it wrote; the others
+# are printed as they are, in their order (R43).
+test_go_fma_diff_stops_a_target_at_25_minutes_and_prints_the_others() {
+    run_same_bits_step fma-diff 'The assembler with fusion and without it'
+    two_packages
+    stub timeout
+    echo ppc64le > "$state/stub/timeout.expires"
+    run_container_script
+    assert_script_status 1
+    assert_eq "$(cat "$state/script.out")" "$(printf '%s
+' "fma-diff: arm64: ok" "fma-diff: ppc64le: did not end in 25 minutes" \
+        "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
+    # Every target under timeout, each started by the script in a process of its own.
+    local call expected target
+    expected=$(for target in "${fma_targets[@]}"; do printf '%s
+' "$(printf ' %q' 1500 bash -euo pipefail -c 'check "$1"' bash "$target")"; done | sort)
+    assert_eq "$(while IFS= read -r call; do harness_argv "$call.argv"; echo; done < <(harness_calls timeout) | sort)" "$expected" "the calls of timeout"
+    assert_calls go 35
 }
 
 test_go_fma_diff_writes_its_own_control_and_builds_it_as_a_module_of_its_own() {
@@ -736,24 +895,25 @@ test_go_fma_diff_writes_its_own_control_and_builds_it_as_a_module_of_its_own() {
     run_container_script
     assert_script_status 0
     local control
-    control=$(harness_argv "$(harness_call go 2).argv" | awk '{print $2}')
-    assert_call go 2 -C "$control" build -o /dev/null "-gcflags=-S " .
+    control=$(harness_argv "$(harness_call go "$(fma_call arm64 2)").argv" | awk '{print $2}')
+    assert_call go "$(fma_call arm64 2)" -C "$control" build -o /dev/null "-gcflags=-S " .
     assert_eq "$(cat "$control/go.mod")" $'module fmacontrol\n\ngo 1.21' "the control's go.mod"
     assert_eq "$(grep -c '^func ' "$control/control.go")" 3 "the control's functions"
     assert_eq "$(grep -cF 'return a*b + c' "$control/control.go")" 1 "the multiply-add of the control"
     assert_eq "$(sed -n 's/^package //p' "$control/control.go")" fma "the control's package"
 }
 
+# The output of a target that fails is whole, its diff right after its line.
 test_go_fma_diff_fails_on_a_target_where_a_package_fuses() {
     run_same_bits_step fma-diff 'The assembler with fusion and without it'
     two_packages
     echo "example.com/m/sub ppc64le/v1" > "$state/stub/go.fuses"
     run_container_script
     assert_script_status 1
-    assert_script_line "fma-diff: ppc64le: the compiler fuses in example.com/m/sub; put float64() round the * or / (R107 in spec):"
-    assert_script_line "fma-diff: arm64: ok"
-    assert_script_line "fma-diff: amd64/v3: ok"
-    refute_script_has "fma-diff: ppc64le: ok"
+    assert_eq "$(cat "$state/script.out")" "$(printf '%s\n' "fma-diff: arm64: ok" \
+        "fma-diff: ppc64le: the compiler fuses in example.com/m/sub; put float64() round the * or / (R107 in spec):" \
+        "1c1" "< TEXT example.com/m/sub fused" "---" "> TEXT example.com/m/sub plain" \
+        "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
 }
 
 test_go_fma_diff_fails_where_a_rule_would_have_fired() {
@@ -819,8 +979,10 @@ test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
     assert_eq "$(wf '[.jobs.arm64.steps[] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")]')" \
         '["actions/checkout@<sha>","actions/cache/restore@<sha>","Toolchain image","actions/cache/save@<sha>","actions/cache/restore@<sha>","Go caches","ci-test","Tests on the targets","actions/cache/save@<sha>"]' "its steps"
     assert_eq "$(wf '.jobs.arm64.steps[0].with')" '{"persist-credentials":false}' "its checkout"
-    # The targets as the job targets has them, word for word: one script for both hosts.
-    assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .run')" "$(wf '.jobs.targets.steps[] | select(.name == "Tests on the targets") | .run')" "its tests on the targets"
+    # The targets as the jobs of target have them, word for word: one script for both hosts, with
+    # the targets of its host (R43).
+    assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .run')" "$(wf '.jobs.target.steps[] | select(.name == "Tests on the targets") | .run')" "its tests on the targets"
+    assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .env')" '{"TARGETS":"cpu-off js-wasm wasip1"}' "its targets"
 }
 
 test_go_arm64_runs_ci_test_in_the_toolchain_stage_without_the_license_list() {

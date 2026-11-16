@@ -55,7 +55,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 |---|---|---|---|---|---|
 | [x] | T60 | Кеш Go в `go.yml` | Claude | — | — |
 | [x] | T61 | Один файл образа `toolchain` во всех workflow | Claude | да | T60 |
-| [ ] | T62 | «Go / targets» матрицей, «Go / fma-diff» параллельно | Claude | — | T61 |
+| [x] | T62 | «Go / targets» матрицей, «Go / fma-diff» параллельно | Claude | — | T61 |
 | [ ] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
 | [ ] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
 | [ ] | T65 | CodeQL (go) — Go из архива Dockerfile, без образа | Claude | да | — |
@@ -70,14 +70,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик не меняет.
 
 **Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec.
-
-#### T62. «Go / targets» матрицей, «Go / fma-diff» параллельно
-
-- **Цель:** с `same-bits` цели `targets` — amd64 v3, amd64 v1 с `cpu.all=off`, 386, js/wasm и wasip1 — идут матрицей job, по job на цель, а цели `fma-diff` — параллельно в одном job. Проверка вызывающего «Go / targets» остаётся одна, и наборы правил вызывающих не меняются.
-- **Почему:** строка 7.13 COORDINATION.md spec; measurements 3.1 spec — у `sim` цели идут одна за другой, js/wasm — 134 с; строка 7.19 `sim` ждёт эту задачу: без неё релиз `v0.1.24` удлиняет targets тестами wasip1 (R39).
-- **Сделать:** матрица и job после неё под именем `targets`, который красный, если красна хоть одна цель; скрипт целей — один для матрицы и `arm64` (R39); `fma-diff` — цели фоновыми процессами, вывод каждой — целиком и по порядку целей; случаи (R28) с поломками; пробный pull request по образцу measurements 2.6; поправка к R39 или своё решение; architecture 3.1.
-- **Как проверить:** как T60.
-- **Разделы:** строки 7.13 и 7.19 COORDINATION.md spec; R107 spec; R39; architecture 3.1.
 
 #### T63. Сверка и подписи `release.yml` параллельно
 
