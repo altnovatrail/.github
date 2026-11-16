@@ -271,8 +271,8 @@ test_go_and_typescript_take_the_toolchain_stage_from_the_cache_in_every_job_that
 go_cache_env=(--env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint)
 
 # The restore and the save of the job check, with the SHA of the action as <sha>; the check in the
-# keys is the job's own.
-go_cache_restore='{"name":"Go caches from the cache","id":"go-cache","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-${{ hashFiles('"'"'**/go.sum'"'"') }}","restore-keys":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-"}}'
+# key is the job's own, and there is no restore key.
+go_cache_restore='{"name":"Go caches from the cache","id":"go-cache","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-${{ hashFiles('"'"'**/go.sum'"'"') }}"}}'
 go_cache_save='{"name":"Go caches into the cache","if":"steps.go-cache.outputs.cache-hit != '"'"'true'"'"' && github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"'","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"${{ steps.go-cache.outputs.cache-primary-key }}"}}'
 
 test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
@@ -296,13 +296,15 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
         # Every docker run of the job's own work, after the step Go caches, mounts them.
         runs=$(wf_raw --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' | grep -c 'docker run' || true)
         mounts=$(wf_raw --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' \
-            | grep -Fxc '    --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \' || true)
+            | grep -Fxc "    --volume \"\$PWD:/work\" --volume \"\$RUNNER_TEMP/go-cache:/go-cache\" --workdir /work \\" || true)
         assert_eq "$mounts" "$runs" "the docker runs of $job that mount the Go caches"
         assert_eq "$(wf_raw --arg j "$job" '.jobs[$j].steps | (map(.name) | index("Go caches")) as $i | [.[$i + 1:][] | .run // empty] | join("\n")' \
-            | grep -Fxc '    --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \' || true)" \
+            | grep -Fxc "    --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \\" || true)" \
             "$runs" "the docker runs of $job that point Go at the caches"
     done
 }
+
+go_cache_warning="::warning::The Go caches of go-Linux-X64-test-a-b did not pass go mod verify: they are deleted, and the job downloads and builds without them. An entry that fails on every run stays until it is deleted (gh cache delete) or go.sum or the Dockerfile changes."
 
 # The step "Go caches" of the job check, in a workspace that git tracks, with the key the cache
 # restored, or none.
@@ -343,7 +345,11 @@ test_go_caches_start_empty_on_a_miss_and_verify_nothing() {
 test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
     go_modules_workspace
     go_caches_step go-Linux-X64-test-a-b
-    mkdir -p "$step_temp/go-cache/mod/example.com" "$step_temp/go-cache/build"
+    mkdir -p "$step_temp/go-cache/mod/example.com" "$step_temp/go-cache/build/00" "$step_temp/go-cache/lint/00"
+    printf 'a build\n' > "$step_temp/go-cache/build/00/a-d"
+    printf 'a lint\n' > "$step_temp/go-cache/lint/00/b-d"
+    printf 'module example.com\n' > "$step_temp/go-cache/mod/example.com/go.mod"
+    touch -d '10 days ago' "$step_temp/go-cache/build/00/a-d" "$step_temp/go-cache/lint/00/b-d" "$step_temp/go-cache/mod/example.com/go.mod"
     run_step
     assert_status 0
     assert_calls docker 1
@@ -351,17 +357,25 @@ test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
         "${go_cache_env[@]}" --volume "$step_workspace:/work" --volume "$step_temp/go-cache:/go-cache" --workdir /work \
         toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash . tools/x
     assert_line "Go caches: go-Linux-X64-test-a-b, its modules verified."
-    assert_eq "$(go_cache_listing)" "./build ./lint ./mod ./mod/example.com " "the caches, kept"
+    assert_eq "$(go_cache_listing)" "./build ./build/00 ./build/00/a-d ./lint ./lint/00 ./lint/00/b-d ./mod ./mod/example.com ./mod/example.com/go.mod " "the caches, kept"
+    # go deletes a build not used for five days at the end of a command: the step touches the builds.
+    assert_eq "$(find "$step_temp/go-cache/build" "$step_temp/go-cache/lint" -type f -mmin +60 | wc -l)" 0 "the builds older than an hour"
+    assert_eq "$(find "$step_temp/go-cache/mod" -type f -mmin +60 | wc -l)" 1 "the modules older than an hour"
 }
 
 # The script the container runs verifies each module in turn and stops at the first that fails.
 run_verify_script() {
     local -a argv
+    local at
     mapfile -d '' -t argv < "$(harness_call docker 1).argv"
+    for at in "${!argv[@]}"; do
+        if [ "${argv[$at]}" = -c ]; then break; fi
+    done
+    at=$((at + 1))
     stub go
     script_status=0
     (cd -- "$step_workspace" && /usr/bin/env -i "PATH=$state/bin:/usr/bin:/bin" "$@" \
-        /usr/bin/bash -c "${argv[-4]}" "${argv[@]: -3}") > "$state/script.out" 2>&1 || script_status=$?
+        /usr/bin/bash -c "${argv[$at]}" "${argv[@]:$at + 1}") > "$state/script.out" 2>&1 || script_status=$?
 }
 
 test_go_caches_verify_each_module_and_stop_at_the_first_that_fails() {
@@ -392,8 +406,18 @@ test_go_caches_that_do_not_verify_are_deleted_and_the_job_goes_on_without_them()
     run_step
     assert_status 0
     assert_calls docker 1
-    assert_line "::warning::go mod verify did not pass on the Go caches of go-Linux-X64-test-a-b: they are deleted, and the job downloads and builds without them, on every run until the entry is deleted (gh cache delete) or a push to main saves a newer one."
+    assert_line "$go_cache_warning"
     refute_has "its modules verified"
+    assert_eq "$(go_cache_listing)" "./build ./lint ./mod " "the caches once deleted"
+}
+
+test_go_caches_that_git_cannot_list_the_modules_for_are_deleted_and_the_job_goes_on() {
+    go_caches_step go-Linux-X64-test-a-b
+    mkdir -p "$step_temp/go-cache/build/00"
+    run_step
+    assert_status 0
+    assert_calls docker 0
+    assert_line "$go_cache_warning"
     assert_eq "$(go_cache_listing)" "./build ./lint ./mod " "the caches once deleted"
 }
 
