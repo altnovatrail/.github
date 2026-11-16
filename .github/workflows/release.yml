@@ -752,11 +752,13 @@ jobs:
       # The files are signed AT_ONCE at a time, by xargs -P: one after another, cosign took about
       # 1.4 s a file, and api's release has 141 (measurements 3.1 in spec). Sigstore names no
       # number of calls at once that its public instance takes (sources 7.3): eight sign those 141
-      # in about 25 s, and ask little more of it at once than one call did. Each file is signed and
+      # in about 35 s, and ask little more of it at once than one call did. Each file is signed and
       # checked with a TUF cache of its own, TUF_ROOT: the TUF client cosign builds on reads back
       # each file of metadata it writes and fails when another process has written another, and
-      # writes the trusted root over in place (sources 7.3). What cosign says of a file goes to a
-      # log of its own, printed whole in the order of the files once all have run; a file without
+      # writes the trusted root over in place (sources 7.3). cosign initialize fills one cache
+      # first, and each file starts from a copy of it, so that the calls refresh the metadata
+      # rather than fetch Sigstore's whole TUF repository again. What cosign says of a file goes to
+      # a log of its own, printed whole in the order of the files once all have run; a file without
       # the mark that both its calls held is named by ::error::, and the step fails.
       - name: Sign every file
         if: steps.version.outputs.version != ''
@@ -768,23 +770,34 @@ jobs:
           logs="$RUNNER_TEMP/signatures"
           mkdir "$logs"
           export cosign logs
+          if ! TUF_ROOT="$logs/tuf" "$cosign" initialize > "$logs/initialize.log" 2>&1; then
+              cat "$logs/initialize.log"
+              echo "::error::cosign initialize could not fetch Sigstore's trusted root, so no file is signed; run the job again."
+              exit 1
+          fi
+          # One file: its signature and its check, from a copy of the cache, into its log; the mark
+          # when both held, a failure otherwise.
           sign() {
-              if TUF_ROOT="$logs/$1.tuf" "$cosign" sign-blob --yes --bundle "$1.sigstore.json" "$1" \
-                  > "$logs/$1.log" 2>&1 &&
+              cp -a "$logs/tuf" "$logs/$1.tuf" &&
+                  TUF_ROOT="$logs/$1.tuf" "$cosign" sign-blob --yes --bundle "$1.sigstore.json" "$1" \
+                      > "$logs/$1.log" 2>&1 &&
                   TUF_ROOT="$logs/$1.tuf" "$cosign" verify-blob --bundle "$1.sigstore.json" \
                       --certificate-identity "$IDENTITY" \
                       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
                       --certificate-github-workflow-repository "$GITHUB_REPOSITORY" \
                       --certificate-github-workflow-sha "$TARGET" \
-                      "$1" >> "$logs/$1.log" 2>&1; then
+                      "$1" >> "$logs/$1.log" 2>&1 &&
                   : > "$logs/$1.ok"
-              fi
           }
           export -f sign
           cd "$RUNNER_TEMP/dist"
           files=(*)
+          # xargs ends with 123 when a call of sign failed, which the marks below name; any other
+          # status of its own is named apart.
+          status=0
+          # shellcheck disable=SC2016 # $1 is the file, which xargs hands the bash it starts.
+          printf '%s\0' "${files[@]}" | xargs -0 -n 1 -P "$AT_ONCE" bash -c 'sign "$1"' sign || status=$?
           failed=0
-          printf '%s\0' "${files[@]}" | xargs -0 -n 1 -P "$AT_ONCE" bash -c 'sign "$1"' sign || failed=1
           for file in "${files[@]}"; do
               echo "::group::${file}"
               cat "$logs/${file}.log" 2> /dev/null || echo "cosign was not run for ${file}."
@@ -794,6 +807,10 @@ jobs:
                   failed=1
               fi
           done
+          if [ "$status" != 0 ] && [ "$status" != 123 ]; then
+              echo "::error::xargs, which runs cosign for the files, ended with ${status}."
+              failed=1
+          fi
           if [ "$failed" = 1 ]; then exit 1; fi
           if ! jq -r '.verificationMaterial.certificate.rawBytes' "${files[0]}.sigstore.json" \
               | base64 -d | openssl x509 -inform DER -noout -text; then
@@ -842,14 +859,16 @@ jobs:
       # take a moment to appear. A run again of a commit released already verifies its release.
       # gh release verify checks the release's attestation and, with --format json, prints the
       # statement it verified, whose subjects are the release's files, each by its name and
-      # sha256 (measurements 5.12): each file here is held to the subject of its name, all by that
-      # one call. gh release verify-asset checks one file a call, against the same attestation,
+      # sha256 (measurements 5.12): each file here is held to the sha256 of a subject, as
+      # verify-asset holds it, all by that one call. Not to the name: GitHub renames a file with
+      # special characters when it is uploaded (sources 3.7), and the names release-files may give
+      # hold +. gh release verify-asset checks one file a call, against the same attestation,
       # fetched again with the tag's commit for each (sources 3.5): at api, 282 calls one after
       # another took 633 s (measurements 3.1 in spec), and run at once they would spend that many
       # requests sooner of the GITHUB_TOKEN's 1,000 an hour and its 900 points a minute (sources
-      # 3.6). A file the statement does not name with its bytes is named by ::error::, every one,
-      # and the step fails; a statement that names no file by its sha256 fails it with a message of
-      # its own: gh may have printed another shape.
+      # 3.6). A file whose bytes the statement does not name is named by ::error::, every one, and
+      # the step fails; a statement that names no file by its sha256 fails it with a message of its
+      # own: gh may have printed another shape.
       - name: Verify the release
         if: steps.publish.outputs.published == 'true' || (steps.version.outputs.released != '' && inputs.publish)
         env:
@@ -873,7 +892,7 @@ jobs:
               subjects="$RUNNER_TEMP/release-subjects"
               if ! jq -r '.verificationResult.statement.subject[]
                   | select((.name | type) == "string" and (.digest.sha256 | type) == "string")
-                  | "\(.digest.sha256)  \(.name)"' "$attestation" > "$subjects" || [ ! -s "$subjects" ]; then
+                  | .digest.sha256' "$attestation" > "$subjects" || [ ! -s "$subjects" ]; then
                   echo "::error::The attestation of ${VERSION} that gh release verify printed names no file by its sha256, so no file of the release could be checked against it."
                   exit 1
               fi
@@ -882,10 +901,10 @@ jobs:
                   name=${file##*/}
                   digest=$(sha256sum < "$file")
                   digest=${digest%% *}
-                  if grep -Fxq -- "${digest}  ${name}" "$subjects"; then
-                      echo "${name}: sha256:${digest}, as the attestation of ${VERSION} names it."
+                  if grep -Fxq -- "$digest" "$subjects"; then
+                      echo "${name}: sha256:${digest}, which the attestation of ${VERSION} names."
                   else
-                      echo "::error::The attestation of ${VERSION} does not name ${name} with sha256:${digest}: the release holds other bytes under that name, or none."
+                      echo "::error::The attestation of ${VERSION} names no file with sha256:${digest}, the bytes of ${name} here: the release holds other bytes, or none."
                       failed=1
                   fi
               done
