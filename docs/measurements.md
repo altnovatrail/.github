@@ -33,6 +33,14 @@ Measured 2026-10-21 (the amendment to R09, T19):
 Measured 2026-10-20 (R08):
 - **gitleaks without `--log-opts`** reads all branches, not only the history of the commit it checks: a local trial on 2026-10-20 — a key in another branch was found without `--log-opts` and was not found with `--log-opts=HEAD`.
 
+### 1.5. CodeQL's Go without the image: the trial #131
+
+Measured 2026-11-16 (R45, T65):
+- **before** — the step "Go of the caller's toolchain stage", which built the stage, on `main`: at `.github` 23–29 s in the runs of `self-codeql.yml` 43830343490, 43839082631 and 43847730208, of jobs "CodeQL / analyze (go)" of 68–80 s; at `spec` 21 s (run 43821197190), `modules` 27 s (43828584351) and `api` 56 s (43827520417);
+- **the suite** (R28) — 205 tests, 10 of them in `tests/codeql.test.sh`, and one more of the harness for `GITHUB_ENV` and `GITHUB_PATH`: a Dockerfile as `spec`'s, with `toolchain-core`, comments, continued lines and a stage `devcontainer` with an `ARG` and an `ENV` of its own; an arm64 runner; `ARG`s before the first `FROM` and a stage named `as Toolchain`; no Dockerfile, no stage `toolchain`, another escape character; no `ARG`, the `ARG`s in a stage outside the chain, twice, a version without its sum, a quoted version, a sum in capitals; `GOFLAGS`, `CGO_ENABLED`, `ENV GOEXPERIMENT none`, `GOPATH` among several and `GOAMD64` after a comment inside a continued `ENV`; the runner `ARM`; another sum, go.dev's 404, a Go that names another version; by the text — no step runs `docker`, and `init` keeps `autobuild`. Breakages, each red: no check of the sum; `go version` without `GOTOOLCHAIN=local`; all the stages read; no stage chain; the `ARG`s before the first `FROM` dropped; no check of `ENV`; the sum of amd64 for arm64 and back; the archive kept; no stop after a failure; the runner `ARM` taken as amd64; an `ARG` taken twice; any value as a sum. actionlint 1.7.12 and ShellCheck 0.11.0 found nothing;
+- **the Dockerfiles of the callers** — the step, out of the file, with go.dev itself, on the `.devcontainer/Dockerfile` of the `main` of the nine callers (sources 13.7), in the devcontainer: each gave `go version go1.27.4 linux/amd64`, `GOTOOLCHAIN=local` and the folder `go/bin`, in 4.6–9.4 s;
+- **the trial** — pull request [#131](https://github.com/altnovatrail/.github/pull/131), not merged: `self-codeql.yml` with `codeql.yml` of the branch of T65, and `tools/coderules/trial.go` running a command taken from a request. "CodeQL / analyze (go)" passed in 46 s, its step 2 s with `go version go1.27.4 linux/amd64`, `GOTOOLCHAIN: local` in the environment of `init` and `analyze`, CodeQL 2.27.4; the check "CodeQL" of GitHub Advanced Security failed on go/command-injection, critical, `tools/coderules/trial.go:11`. Without the file, on the pull request of T65, the analysis gave no result.
+
 ## 2. The Go wrapper
 
 ### 2.1. The license list: go-licenses and the step of `self-ci.yml`

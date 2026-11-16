@@ -56,6 +56,9 @@ Read 2026-11-16 (the 2026-11-16 amendment to R19, T64):
 - **the contexts of a matrix** — github/docs at 6d84733, `content/actions/reference/workflows-and-actions/contexts.md`, Context availability: "`jobs.<job_id>.strategy` | `github, needs, vars, inputs`";
 - **`fromJSON`** — the same commit, `expressions.md`: "Returns a JSON object or JSON data type for `value`. You can use this function to provide a JSON object as an evaluated expression or to convert any data type that can be represented in JSON or JavaScript, such as strings, booleans, null values, arrays, and objects", and its example sets a matrix by it: "`matrix: ${{ fromJSON(needs.job1.outputs.matrix) }}`".
 
+Read 2026-11-16 (R45, T65):
+- **`RUNNER_ARCH`** — [GitHub Docs, Variables reference](https://docs.github.com/en/actions/reference/workflows-and-actions/variables), Default environment variables: "The architecture of the runner executing the job. Possible values are `X86`, `X64`, `ARM`, or `ARM64`." `GITHUB_PATH` — "The path on the runner to the file that sets system `PATH` variables from workflow commands. The path to this file is unique to the current step and changes for each step in a job."
+
 ### 2.3. The step's shell and `set -e`
 
 Read 2026-10-20 (R10):
@@ -518,6 +521,12 @@ Read 2026-10-21 (R19):
 Read 2026-10-21 (R19):
 - **the Ubuntu archive at a date** — [Ubuntu Snapshot Service](https://snapshot.ubuntu.com/): "The Ubuntu snapshot service makes it possible to see and use the Ubuntu archive as it was at any specified date and time", "Snapshots of the Ubuntu archive are available for any date and time after 1 March 2023", "We intend to ensure snapshots are available for dates up to at least 2 years in the past" and "The apt included in Ubuntu 24.04 and later automatically detects when snapshots are supported for a repository". An example from there — `apt install hello --update --snapshot 20240301T030400Z`. The Playwright image creates a user of its own, `pwuser` (`adduser pwuser` in `Dockerfile.noble` v1.64.1), while the `devcontainer` stage of spec's repository template runs as `vscode` (`USER vscode`).
 
+### 9.7. Docker: the Dockerfile and the base image of the template
+
+Read 2026-11-16 (R45, T65):
+- **the Dockerfile** — the Dockerfile reference, [moby/buildkit](https://github.com/moby/buildkit/blob/38b0e2ab2e9bc5fd3f622759ac92ad4b649f3bf4/frontend/dockerfile/docs/reference.md) at commit 38b0e2a, `frontend/dockerfile/docs/reference.md`, the source of Docker Docs' page: "The instruction is not case-sensitive"; "Comment lines are removed before the Dockerfile instructions are executed", with the example `RUN echo hello \` over `# comment`; "If not specified, the default escape character is `\`" — "The escape character is used both to escape characters in a line, and to escape a newline. This allows a Dockerfile instruction to span multiple lines"; `FROM [--platform=<platform>] <image> [AS <name>]` — "The name can be used in subsequent `FROM <name>`"; "An `ARG` declared before a `FROM` is outside of a build stage, so it can't be used in any instruction after a `FROM`. To use the default value of an `ARG` declared before the first `FROM` use an `ARG` instruction without a value inside of a build stage"; "A stage inherits any environment variables that were set using `ENV` by its parent stage or any ancestor"; and "The `ENV` instruction also allows an alternative syntax `ENV <key> <value>`, omitting the `=`".
+- **the base image** — the configuration of `mcr.microsoft.com/devcontainers/base:3.0.13-noble` at the digest `sha256:48be4ade…7eae` that the template's Dockerfile pins, for linux/amd64 the manifest `sha256:957c4e15…b910` and its configuration `sha256:be453845…7b15`, by the registry's API without a token: `"Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","LANG=C.UTF-8"]`.
+
 ## 10. Go, go-licenses and Codecov
 
 ### 10.1. Go
@@ -839,6 +848,12 @@ Read 2026-10-20 (the amendment to R30 spec; T17 and T16 `spec`):
 
 Read 2026-10-21 (the amendment to R32 spec; T21 `spec`):
 - **the submodule of `engine`** — the GitHub API: commit 5eafb1a, v0.2.9.
+
+### 13.7. The callers of CodeQL's Go and their Dockerfiles
+
+Read 2026-11-16 (R45, T65), `.github/workflows/codeql.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
+- **who names `go`** — `languages: go` at `api`, `engine`, `learner-model`, `module-kit`, `sim` and `tutor`, `javascript-typescript go` at `modules` and `spec`, and `.github` itself by `self-codeql.yml`; `canvas`, `app`, `infra` and `skill-map` name `javascript-typescript` alone. All call `codeql.yml` of `v0.1.24`, `spec` of `v0.1.22`;
+- **how they pin Go** — each of the nine has `ARG GO_VERSION=1.27.4`, `ARG GO_SHA256_AMD64=7226736c…4840` and `ARG GO_SHA256_ARM64=33925829…ac92` once, in the stage `toolchain`, and `spec` in `toolchain-core`, which `FROM toolchain-core AS toolchain` builds on; the stage downloads `https://go.dev/dl/go${GO_VERSION}.linux-${arch}.tar.gz` and checks it against the sum. Their only `ENV` in those stages, the lines joined, is `ENV PATH="/usr/local/node/bin:/usr/local/go/bin:/home/vscode/.local/bin:${PATH}" GOTOOLCHAIN=local`.
 
 ## 14. MathTrail and patterns outside NovaTrail
 
