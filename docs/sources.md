@@ -110,6 +110,9 @@ Read 2026-10-22 (the amendments to R10 and R18, T28):
 Read 2026-10-22 (R22, the amendments to R16 and R19, T26):
 - **the `submodules` input** — actions/checkout v7.0.1, the commit 3d3c42e, `src/input-helper.ts`, lines 146–152: `const submodulesString = (core.getInput('submodules') || '').toUpperCase()`, and then a comparison with `'RECURSIVE'` and `'TRUE'`.
 
+Read 2026-11-16 (R42, T61):
+- **a sparse checkout** — `action.yml` at 3d3c42e: `sparse-checkout` — "Do a sparse checkout on given patterns. Each pattern should be separated with new lines."; `sparse-checkout-cone-mode` — "Specifies whether to use cone-mode when doing a sparse checkout.", `default: true`; `filter` — "Partially clone against a given filter. Overrides sparse-checkout if set.". `src/git-source-provider.ts` at 3d3c42e: `} else if (settings.sparseCheckout) { fetchOptions.filter = 'blob:none'`, and "For sparse checkouts, let `checkout` fetch the needed objects lazily"; without cone mode it calls `git.sparseCheckoutNonConeMode`.
+
 ### 2.8. `actions/cache`
 
 Read 2026-11-09 (R36, T52):

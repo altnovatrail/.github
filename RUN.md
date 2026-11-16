@@ -54,7 +54,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
 | [x] | T60 | Кеш Go в `go.yml` | Claude | — | — |
-| [ ] | T61 | Один файл образа `toolchain` во всех workflow | Claude | да | T60 |
+| [x] | T61 | Один файл образа `toolchain` во всех workflow | Claude | да | T60 |
 | [ ] | T62 | «Go / targets» матрицей, «Go / fma-diff» параллельно | Claude | — | T61 |
 | [ ] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
 | [ ] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
@@ -70,15 +70,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик не меняет.
 
 **Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec.
-
-#### T61. Один файл образа `toolchain` во всех workflow
-
-- **Цель:** у файла образа стадии `toolchain` — один путь и один тег во всех общих и `self-` workflow, те, что даёт скрипт `spec/tools/toolchain/toolchain.sh`: `${{ runner.temp }}/novatrail-toolchain.tar` и образ `novatrail-toolchain`. Pull request файл не сохраняет, а при промахе образ строит один job.
-- **Почему:** строка 7.13 COORDINATION.md spec; measurements 3.1 spec — у `app` и `canvas` кеш у предела в 10 ГБ: один ключ сохранён под тремя путями, и сохраняют pull request; у `canvas` при промахе образ строят все job CI разом. Одну запись поправка 2026-11-10 к R36 оставила «своей задачей».
-- **Сделать:** `go.yml`, `typescript.yml`, `documents.yml` и `self-ci.yml` — один путь и тег; сохраняет только push в `main`; при промахе — один job строит образ, остальные берут его у него. Разогревающий job R36 отверг — пересмотреть по measurements 3.1 spec поправкой к R36. Случаи шагов (R28); пробный pull request; architecture 3.1, 3.4.
-- **Решить при планировании:** как образ доходит до остальных job при промахе в pull request, где сохранять нельзя, — артефакт, ожидание или своя сборка; что делают `documents.yml` и `go.yml`, разные вызовы одного CI, при общем промахе.
-- **Как проверить:** как T60.
-- **Разделы:** строка 7.13 COORDINATION.md spec; measurements 3.1 spec; R36 и её поправки; R31 spec; architecture 3.1, 3.4.
 
 #### T62. «Go / targets» матрицей, «Go / fma-diff» параллельно
 
