@@ -59,3 +59,12 @@ ci-licenses:
     # the module is built from — the standard library, as go.mod requires nothing — is checked.
     go -C {{ MODULE }} run {{ GO_LICENSES }} check ./... --allowed_licenses="$ALLOWED_LICENSES" \
         --ignore github.com/altnovatrail/.github/tools/coderules
+
+# A trial for T63 of RUN.md, never merged: 141 files, as many as api's release signs.
+release-files version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p dist
+    for n in $(seq 1 141); do
+        printf 'file %s of %s\n' "$n" {{ quote(version) }} > "dist/file-$n.txt"
+    done

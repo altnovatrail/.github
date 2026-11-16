@@ -1,0 +1,37 @@
+# A trial for T63 of RUN.md, never merged: the shared release.yml, called by local path, on a
+# pull request, with publish false, beside the same call of v0.1.27, whose files are signed one
+# after another. The recipe release-files writes 141 files, as many as api's release signs.
+name: Release trial
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  RELEASE_LINE: "0.1"
+
+jobs:
+  at-once:
+    name: Release at once
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: ./.github/workflows/release.yml
+    with:
+      paths: |
+        .
+      publish: false
+  one-after-another:
+    name: Release of v0.1.27
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    uses: altnovatrail/.github/.github/workflows/release.yml@0f3d88dc4e2586cc5942fd3b5ff09236a0d7938d # v0.1.27
+    with:
+      paths: |
+        .
+      publish: false
