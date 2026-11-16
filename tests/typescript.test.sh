@@ -30,7 +30,8 @@ test_typescript_hands_its_lcov_report_on_by_an_artifact_of_its_own() {
 test_typescript_uploads_its_coverage_as_go_does_but_for_its_artifact_and_report() {
     local go="$state/go.json" typescript
     use_workflow go.yml
-    wf '{report: .jobs.check.steps[-2:], coverage: .jobs.coverage}' > "$go"
+    # go.yml saves its Go caches after the report (R41), which typescript.yml has none of.
+    wf '{report: [.jobs.check.steps[] | select(.name == "ci-${{ matrix.check }}" or .name == "Coverage report")], coverage: .jobs.coverage}' > "$go"
     use_workflow typescript.yml
     # The ci- step differs by --init and --ipc, which cases of their own hold; here only its name
     # stands, so that the report comes right after it in both.

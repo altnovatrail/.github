@@ -54,7 +54,7 @@ test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_th
 test_documents_caches_the_stage_as_go_does_in_a_file_of_its_own() {
     local go documents job file
     use_workflow go.yml
-    go=$(wf '[.jobs.check.steps[] | select(.uses // "" | startswith("actions/cache/"))]
+    go=$(wf '[.jobs.check.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/toolchain.tar"))]
         | map(.with.path |= sub("/toolchain\\.tar$"; "/novatrail-toolchain.tar"))')
     for file in documents.yml self-ci.yml; do
         use_workflow "$file"

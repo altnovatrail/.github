@@ -117,17 +117,73 @@ jobs:
           path: ${{ runner.temp }}/toolchain.tar
           key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
+      # The caches of Go come from the caller's cache of GitHub Actions too, as one folder outside
+      # the checkout: the modules, GOMODCACHE, the builds, GOCACHE, and golangci-lint's,
+      # GOLANGCI_LINT_CACHE (R41). Each docker run of the job mounts it at /go-cache and points the
+      # three variables into it. The key is the runner's OS and architecture, the check, the
+      # Dockerfile, which pins the Go, and the go.sum files, which pin the modules; when it misses,
+      # the newest entry of the same check and Dockerfile is restored, whose builds of all that has
+      # not changed still count. Only a push to main saves an entry (below), so a pull request reads
+      # main's.
+      - name: Go caches from the cache
+        id: go-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
+
+      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
+      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
+      # folders whose names start with . or _, which ./... leaves out too —: each module of the
+      # cache is hashed again against the hash it was downloaded with, which go checks against
+      # go.sum whenever it takes the module. A module that fails, or a check that cannot run, costs
+      # the run its caches and not its verdict: they are deleted with a warning, and the recipes
+      # download and build as with none (R41).
+      - name: Go caches
+        env:
+          RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+        run: |
+          cache=$RUNNER_TEMP/go-cache
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+          if [ -z "$RESTORED" ]; then
+              echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          git ls-files -z -- ':(glob)**/go.mod' ':(exclude,glob)**/testdata/**' ':(exclude,glob)**/vendor/**' \
+              ':(exclude,glob)**/.*/**' ':(exclude,glob)**/_*/**' > "$RUNNER_TEMP/go-modules"
+          modules=()
+          while IFS= read -r -d '' file; do
+              modules+=("$(dirname -- "$file")")
+          done < "$RUNNER_TEMP/go-modules"
+          if [ "${#modules[@]}" = 0 ]; then
+              echo "Go caches: ${RESTORED}, with no module of the repository to verify them by."
+              exit 0
+          fi
+          if docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$cache:/go-cache" --workdir /work \
+              toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash "${modules[@]}"; then
+              echo "Go caches: ${RESTORED}, its modules verified."
+              exit 0
+          fi
+          echo "::warning::go mod verify did not pass on the Go caches of ${RESTORED}: they are deleted, and the job downloads and builds without them, on every run until the entry is deleted (gh cache delete) or a push to main saves a newer one."
+          chmod -R u+w -- "$cache"
+          rm -rf -- "$cache"
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+
       # As in documents.yml, the container runs as the runner's user: what it writes in the
       # checkout is the runner's, and git finds the repository owned by the user it runs as. Its
-      # home is /tmp, where Go keeps its module and build caches for this job alone. Of the
-      # step's environment only ALLOWED_LICENSES goes in.
+      # home is /tmp, and its Go caches are the folder above. Of the step's environment only
+      # ALLOWED_LICENSES goes in.
       - name: ci-${{ matrix.check }}
         env:
           RECIPE: ci-${{ matrix.check }}
           ALLOWED_LICENSES: 0BSD,Apache-2.0,BlueOak-1.0.0,BSD-2-Clause,BSD-3-Clause,CC0-1.0,ISC,MIT,MIT-0,Unlicense
         run: |
           docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env ALLOWED_LICENSES \
-              --volume "$PWD:/work" --workdir /work \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               toolchain just "$RECIPE"
 
       # The test job hands the report its recipe wrote to the coverage job, the one job that may ask
@@ -143,6 +199,17 @@ jobs:
           path: coverage/go.out
           retention-days: 7
           if-no-files-found: error
+
+      # A push to main saves the caches, once its recipes have passed, under a key no entry holds
+      # yet: an entry is never replaced, and an entry a pull request saved would be read by its own
+      # re-runs alone, so a pull request and every other event only read (R41). A save that fails
+      # costs the next run its speed, not this one its verdict. release.yml takes no cache.
+      - name: Go caches into the cache
+        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
   # Codecov takes the report by OIDC, with no secret (R48 in spec). This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
@@ -260,10 +327,59 @@ jobs:
           path: ${{ runner.temp }}/toolchain.tar
           key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
+      # The Go caches from the cache, as in the job check (R41).
+      - name: Go caches from the cache
+        id: go-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: go-${{ runner.os }}-${{ runner.arch }}-targets-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-targets-${{ hashFiles('.devcontainer/Dockerfile') }}-
+
+      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
+      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
+      # folders whose names start with . or _, which ./... leaves out too —: each module of the
+      # cache is hashed again against the hash it was downloaded with, which go checks against
+      # go.sum whenever it takes the module. A module that fails, or a check that cannot run, costs
+      # the run its caches and not its verdict: they are deleted with a warning, and the recipes
+      # download and build as with none (R41).
+      - name: Go caches
+        env:
+          RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+        run: |
+          cache=$RUNNER_TEMP/go-cache
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+          if [ -z "$RESTORED" ]; then
+              echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          git ls-files -z -- ':(glob)**/go.mod' ':(exclude,glob)**/testdata/**' ':(exclude,glob)**/vendor/**' \
+              ':(exclude,glob)**/.*/**' ':(exclude,glob)**/_*/**' > "$RUNNER_TEMP/go-modules"
+          modules=()
+          while IFS= read -r -d '' file; do
+              modules+=("$(dirname -- "$file")")
+          done < "$RUNNER_TEMP/go-modules"
+          if [ "${#modules[@]}" = 0 ]; then
+              echo "Go caches: ${RESTORED}, with no module of the repository to verify them by."
+              exit 0
+          fi
+          if docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$cache:/go-cache" --workdir /work \
+              toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash "${modules[@]}"; then
+              echo "Go caches: ${RESTORED}, its modules verified."
+              exit 0
+          fi
+          echo "::warning::go mod verify did not pass on the Go caches of ${RESTORED}: they are deleted, and the job downloads and builds without them, on every run until the entry is deleted (gh cache delete) or a push to main saves a newer one."
+          chmod -R u+w -- "$cache"
+          rm -rf -- "$cache"
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+
       - name: Tests on the targets
         run: |
           docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               toolchain bash -s - <<'SCRIPT'
           set -euo pipefail
           run() { echo "== $*" >&2; env "$@"; }
@@ -291,6 +407,14 @@ jobs:
           run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
+
+      # The Go caches into the cache, as in the job check (R41).
+      - name: Go caches into the cache
+        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
   # Each package of the caller's module with code is compiled for every target whose compiler fuses
   # a multiplication with an addition or a subtraction, twice: as it is, and with -d=fmahash=n,
@@ -346,10 +470,59 @@ jobs:
           path: ${{ runner.temp }}/toolchain.tar
           key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
+      # The Go caches from the cache, as in the job check (R41).
+      - name: Go caches from the cache
+        id: go-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-
+
+      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
+      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
+      # folders whose names start with . or _, which ./... leaves out too —: each module of the
+      # cache is hashed again against the hash it was downloaded with, which go checks against
+      # go.sum whenever it takes the module. A module that fails, or a check that cannot run, costs
+      # the run its caches and not its verdict: they are deleted with a warning, and the recipes
+      # download and build as with none (R41).
+      - name: Go caches
+        env:
+          RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+        run: |
+          cache=$RUNNER_TEMP/go-cache
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+          if [ -z "$RESTORED" ]; then
+              echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          git ls-files -z -- ':(glob)**/go.mod' ':(exclude,glob)**/testdata/**' ':(exclude,glob)**/vendor/**' \
+              ':(exclude,glob)**/.*/**' ':(exclude,glob)**/_*/**' > "$RUNNER_TEMP/go-modules"
+          modules=()
+          while IFS= read -r -d '' file; do
+              modules+=("$(dirname -- "$file")")
+          done < "$RUNNER_TEMP/go-modules"
+          if [ "${#modules[@]}" = 0 ]; then
+              echo "Go caches: ${RESTORED}, with no module of the repository to verify them by."
+              exit 0
+          fi
+          if docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$cache:/go-cache" --workdir /work \
+              toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash "${modules[@]}"; then
+              echo "Go caches: ${RESTORED}, its modules verified."
+              exit 0
+          fi
+          echo "::warning::go mod verify did not pass on the Go caches of ${RESTORED}: they are deleted, and the job downloads and builds without them, on every run until the entry is deleted (gh cache delete) or a push to main saves a newer one."
+          chmod -R u+w -- "$cache"
+          rm -rf -- "$cache"
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+
       - name: The assembler with fusion and without it
         run: |
           docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               toolchain bash -s - <<'SCRIPT'
           set -euo pipefail
           control="$(mktemp -d)"
@@ -413,6 +586,14 @@ jobs:
           exit "$status"
           SCRIPT
 
+      # The Go caches into the cache, as in the job check (R41).
+      - name: Go caches into the cache
+        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
+
   # ci-test and the tests on the targets again, on an arm64 host, a free runner of a public repository
   # (sources 2.6): the caller's tests with the race detector and coverage, whose report goes
   # nowhere — the test job sends the one report — then the script of targets, which on a host other
@@ -467,16 +648,66 @@ jobs:
           path: ${{ runner.temp }}/toolchain.tar
           key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
+      # The Go caches from the cache, as in the job check (R41).
+      - name: Go caches from the cache
+        id: go-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: go-${{ runner.os }}-${{ runner.arch }}-arm64-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-arm64-${{ hashFiles('.devcontainer/Dockerfile') }}-
+
+      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
+      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
+      # folders whose names start with . or _, which ./... leaves out too —: each module of the
+      # cache is hashed again against the hash it was downloaded with, which go checks against
+      # go.sum whenever it takes the module. A module that fails, or a check that cannot run, costs
+      # the run its caches and not its verdict: they are deleted with a warning, and the recipes
+      # download and build as with none (R41).
+      - name: Go caches
+        env:
+          RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+        run: |
+          cache=$RUNNER_TEMP/go-cache
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+          if [ -z "$RESTORED" ]; then
+              echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          git ls-files -z -- ':(glob)**/go.mod' ':(exclude,glob)**/testdata/**' ':(exclude,glob)**/vendor/**' \
+              ':(exclude,glob)**/.*/**' ':(exclude,glob)**/_*/**' > "$RUNNER_TEMP/go-modules"
+          modules=()
+          while IFS= read -r -d '' file; do
+              modules+=("$(dirname -- "$file")")
+          done < "$RUNNER_TEMP/go-modules"
+          if [ "${#modules[@]}" = 0 ]; then
+              echo "Go caches: ${RESTORED}, with no module of the repository to verify them by."
+              exit 0
+          fi
+          if docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$cache:/go-cache" --workdir /work \
+              toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash "${modules[@]}"; then
+              echo "Go caches: ${RESTORED}, its modules verified."
+              exit 0
+          fi
+          echo "::warning::go mod verify did not pass on the Go caches of ${RESTORED}: they are deleted, and the job downloads and builds without them, on every run until the entry is deleted (gh cache delete) or a push to main saves a newer one."
+          chmod -R u+w -- "$cache"
+          rm -rf -- "$cache"
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+
       - name: ci-test
         run: |
           docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               toolchain just ci-test
 
       - name: Tests on the targets
         run: |
           docker run --rm -i --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               toolchain bash -s - <<'SCRIPT'
           set -euo pipefail
           run() { echo "== $*" >&2; env "$@"; }
@@ -504,6 +735,14 @@ jobs:
           run GOOS=wasip1 GOARCH=wasm go test -count=1 -exec="node --stack-size=8192 --disable-warning=ExperimentalWarning $wasi" ./...
           run GOOS=wasip1 GOARCH=wasm go vet ./...
           SCRIPT
+
+      # The Go caches into the cache, as in the job check (R41).
+      - name: Go caches into the cache
+        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
   # The rules of code that keep the bits the same on every build — float64() round every * and /,
   # math and the imports by the lists, no cgo, assembler, linkname or build constraint, no map
@@ -568,6 +807,54 @@ jobs:
           path: ${{ runner.temp }}/toolchain.tar
           key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
+      # The Go caches from the cache, as in the job check (R41).
+      - name: Go caches from the cache
+        id: go-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-
+
+      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
+      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
+      # folders whose names start with . or _, which ./... leaves out too —: each module of the
+      # cache is hashed again against the hash it was downloaded with, which go checks against
+      # go.sum whenever it takes the module. A module that fails, or a check that cannot run, costs
+      # the run its caches and not its verdict: they are deleted with a warning, and the recipes
+      # download and build as with none (R41).
+      - name: Go caches
+        env:
+          RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+        run: |
+          cache=$RUNNER_TEMP/go-cache
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+          if [ -z "$RESTORED" ]; then
+              echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          git ls-files -z -- ':(glob)**/go.mod' ':(exclude,glob)**/testdata/**' ':(exclude,glob)**/vendor/**' \
+              ':(exclude,glob)**/.*/**' ':(exclude,glob)**/_*/**' > "$RUNNER_TEMP/go-modules"
+          modules=()
+          while IFS= read -r -d '' file; do
+              modules+=("$(dirname -- "$file")")
+          done < "$RUNNER_TEMP/go-modules"
+          if [ "${#modules[@]}" = 0 ]; then
+              echo "Go caches: ${RESTORED}, with no module of the repository to verify them by."
+              exit 0
+          fi
+          if docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$cache:/go-cache" --workdir /work \
+              toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash "${modules[@]}"; then
+              echo "Go caches: ${RESTORED}, its modules verified."
+              exit 0
+          fi
+          echo "::warning::go mod verify did not pass on the Go caches of ${RESTORED}: they are deleted, and the job downloads and builds without them, on every run until the entry is deleted (gh cache delete) or a push to main saves a newer one."
+          chmod -R u+w -- "$cache"
+          rm -rf -- "$cache"
+          mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+
       # The tool's own module is mounted read-only, and the binary goes to the container's /tmp.
       - name: The rules of code
         run: |
@@ -577,6 +864,15 @@ jobs:
               exit 1
           fi
           docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
-              --volume "$PWD:/work" --workdir /work \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
               --volume "$RUNNER_TEMP/shared-github/tools/coderules:/tool:ro" \
               toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
+
+      # The Go caches into the cache, as in the job check (R41).
+      - name: Go caches into the cache
+        if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/go-cache
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
