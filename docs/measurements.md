@@ -439,11 +439,13 @@ Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-
 | `-workspaces--github` — E18, T54 to T57 | 2026-11-12T14:27 … 2026-11-13T04:44 | 4 | 410 / 353 | 188.8 / 78.5 | 1 | $49.77 |
 | `-workspaces--github` — E19, T58 | 2026-11-13T04:44 … 2026-11-13T05:35 | 2 | 171 / 30 | 170.2 / 70.2 | 0 | $11.31 |
 | `-workspaces--github` — E20, T59 | 2026-11-13T05:35 … 2026-11-16T02:52 | 2 | 90 / 16 | 157.3 / 71.1 | 0 | $6.46 |
+| `-workspaces--github` — E21, T60 to T68 | 2026-11-16T02:52 … 2026-11-16T22:28 | 10 | 1,206 / 170 | 190.6 / 62.9 | 1 | $91.67 |
 
 - The context of a call of the main session fell from 397.5 to 188.8 thousand tokens, of a subagent from 124.0 to 78.5. The window "before" holds a month of the tasks of every kind, and the row of E18 four tasks of documents, so the comparison across the sessions after the epic is T124 `spec`'s;
 - the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row;
 - the row of E19 is by `tokens-report --since 2026-11-13T04:44 --row`, measured 2026-11-13 at the archive of E19, while the session of T58 ran: its two sessions are the end of T57's and T58's, and what T58 spent after 05:35 — the record of the release and the archive — goes into the next row. The threshold of R145 spec is not reached: 171 main calls, fewer than 300, and no budget was raised in the epic; so no epic of analysis goes into table 2 of RUN.md.
 - the row of E20 is by `tokens-report --since 2026-11-13T05:35 --row`, measured 2026-11-16 at the archive of E20, while the session of T59 ran, after its review and before the fixes and the pull request: its two sessions are the end of T58's — the record of the release and the archive of E19 — and T59's. The threshold of R145 spec is not reached: 90 main calls, and no budget was raised — the key `entries` narrowed one (R40). From T59 the rule for this row is in RUN.md, Epics, and an epic of analysis goes to `run/EPICS.md`.
+- the row of E21 is by `tokens-report --since 2026-11-16T02:52 --row`, measured 2026-11-16 at the archive of E21, while the session of T68 ran, after its review and before the fixes and the pull request: its ten sessions are the end of T59's and the eight tasks' T60–T68, run by the orchestrator. The threshold of R145 spec is not reached: 190.6 thousand a main call over 1,206 calls is below the reference of `.github`, 191.4 thousand of its T124 (measurements 1.9 spec), and one budget was raised in the epic, `R18` to 51 KB in T66; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 
 ## 12. The Go caches
 
