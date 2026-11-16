@@ -120,6 +120,10 @@ Read 2026-11-09 (R36, T52):
 Read 2026-11-16 (R41, T60):
 - **restoring by a prefix** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `restore-keys` is "An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case."; the outputs are `cache-hit` — "A boolean value to indicate an exact match was found for the primary key", `cache-primary-key` — "A resolved cache key for which cache match was attempted", and `cache-matched-key` — "Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys".
 
+Read 2026-11-16 (R42, T61):
+- **a lookup without the download** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `lookup-only` — "Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache", `default: 'false'`. `src/restoreImpl.ts` at the same commit: on a miss — "`cache-hit` is intentionally not set to `false` here to preserve existing behavior"; on a hit it sets `cache-hit` by `isExactKeyMatch` and, with `lookupOnly`, writes "Cache found and can be restored from key: ${cacheKey}" instead of "Cache restored from key: ${cacheKey}";
+- **the limit and the eviction** — github/docs at the commit d59b263 (2026-11-13), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Usage limits and eviction policy": "GitHub will remove any cache entries that have not been accessed in over 7 days. There is no limit on the number of caches you can store, but the total size of all caches in a repository is limited. By default, the limit is 10 GB per repository"; "Cache access for low-trust workflow triggers": "only these workflow triggers can create or overwrite caches in the default branch’s scope:" — `push`, `workflow_dispatch`, `repository_dispatch`, `delete`, `registry_package`, `page_build`, `schedule` —, and "The `pull_request` event is not affected. Caches created by a `pull_request` run are already scoped to the merge ref (`refs/pull/.../merge`) and cannot be written to the default branch's scope".
+
 ### 2.9. `actions/upload-artifact`
 
 Read 2026-10-20 (R09):
@@ -127,6 +131,25 @@ Read 2026-10-20 (R09):
 
 Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
 - **artifact names** — the README of `actions/upload-artifact` at cf430e0, v7.0.2: "Artifact names must be unique since each created artifact is idempotent so multiple jobs cannot modify the same artifact". `spec` already has an artifact `coverage` in its `ci.yml`.
+
+Read 2026-11-16 (R42, T61):
+- **the inputs** — `action.yml` at cf430e0, v7.0.2: `retention-days` — "Duration after which artifact will expire in days. 0 means using default retention. Minimum 1 day."; `compression-level` — "0: No compression", "For large files that are not easily compressed, a value of 0 is recommended for significantly faster uploads"; `overwrite` — "If true, an artifact with a matching name will be deleted before a new one is uploaded. If false, the action will fail if an artifact for the given name already exists."; `if-no-files-found` — "ignore: Do not output any warnings or errors, the action does not fail"; `archive` — "When `archive` is `false`, only a single file can be uploaded. The name of the file will be used as the artifact name (ignoring the `name` parameter)"; the output `artifact-id` — "A unique identifier for the artifact that was just uploaded. Empty if the artifact upload failed.";
+- **the limits** — the README at cf430e0, "Limitations": "You may also be limited by Artifacts if you have exceeded your shared storage quota. Storage is calculated every 6-12 hours".
+
+### 2.10. `actions/download-artifact`
+
+Read 2026-11-16 (R42, T61):
+- **the version** — v8.0.2, the commit `9000827ccba6bdab643e8b6fd33ac0654aef8333`, as `go.yml` and `typescript.yml` pin it (sources 10.3);
+- **by its ID** — `action.yml` at 9000827: `artifact-ids` — "IDs of the artifacts to download, comma-separated. Either inputs `artifact-ids` or `name` can be used, but not both."; `path` — "Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE"; `digest-mismatch` — "Default is error which will fail the action"; without `github-token` — "the action will attempt to download artifacts from the current repository and the current workflow run". `src/download-artifact.ts` at 9000827: by IDs it throws "None of the provided artifact IDs were found", and it downloads into `path` itself when `isSingleArtifactDownload || inputs.mergeMultiple || artifacts.length === 1`, with `expectedHash: artifact.digest`.
+
+### 2.11. Jobs that need another, re-runs and the storage of artifacts
+
+Read 2026-11-16 (R42, T61), github/docs at the commit d59b263 (2026-11-13):
+- **`needs`** — `data/reusables/actions/jobs/section-using-jobs-in-a-workflow-needs.md`: "If a job fails or is skipped, all jobs that need it are skipped unless the jobs use a conditional expression that causes the job to continue"; `content/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions.md`: "A job that is skipped will report its status as "Success". It will not prevent a pull request from merging, even if it is a required check" (as in sources 2.4);
+- **`!cancelled()`** — `content/actions/reference/workflows-and-actions/expressions.md`, "Status check functions": "A default status check of `success()` is applied unless you include one of these functions", and "If you want to run a job or step regardless of its success or failure, use the recommended alternative: `if: ${{ !cancelled() }}`";
+- **`continue-on-error` and `outcome`** — `contexts.md`: `steps.<step_id>.outcome` — "The result of a completed step before `continue-on-error` is applied", and "When a `continue-on-error` step fails, the `outcome` is `failure`, but the final `conclusion` is `success`";
+- **re-runs** — `content/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs.md`: "When you re-run failed jobs or a specific job, GitHub also re-runs the jobs that depend on them. Jobs that aren't included keep their outputs from the previous attempt, which the newly run jobs can use";
+- **the storage of artifacts** — `content/billing/concepts/product-billing/github-actions.md`: "For **private repositories**, usage is measured against two parts of your plan:" — "**Compute**" and "**Storage:** Artifact and cache storage have separate allowances"; "**Cache storage:** Actions cache storage is a separate allowance of 10 GB per repository. Cache storage is not shared with artifacts"; "If your account does not have a valid payment method on file, usage is blocked once you consume the included compute usage". `data/reusables/billing/actions-included-quotas.md`: the plan for organizations Free — "Artifact storage" 500 MB. The organization `altnovatrail` is on the plan `free` (`gh api orgs/altnovatrail`, `.plan.name`), and every repository of it is public (R18 spec). Whether the quota of artifact storage holds for a public repository the page does not say in words; what the trial saw — measurements 7.3.
 
 ## 3. GitHub: rulesets, releases and the organization
 
