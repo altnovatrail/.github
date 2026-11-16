@@ -854,11 +854,11 @@ dist_files() {
     done
 }
 
-# The calls of docker a build makes: the toolchain stage of the tree, then release-files in it, with
-# the volumes and the arguments of just given after the tree's.
+# The calls of docker a build makes: the stage of the tree, toolchain or by STAGE, then release-files
+# in it, with the volumes and the arguments of just given after the tree's.
 assert_built() {
     assert_calls docker 2
-    assert_call docker 1 build --target toolchain --tag release-toolchain -
+    assert_call docker 1 build --target "${STAGE:-toolchain}" --tag release-toolchain -
     assert_call_stdin docker 1 "$step_workspace/.devcontainer/Dockerfile"
     local -a volumes=()
     while [ "$1" != -- ]; do
@@ -987,6 +987,46 @@ test_build_without_previous_file_hands_release_files_the_version_alone() {
     assert_status 0
     assert_built -- v0.1.9
     assert_eq "$(ls -A "$step_temp/dist")" "$(printf '%s\n' "$index" modules.tar)" "the files of the release"
+}
+
+# The tree's Dockerfile with the stage toolchain-core, by the FROM line spec's toolchain.sh finds it
+# by, in any case: the release builds that stage alone (R47).
+test_build_builds_the_core_of_the_tree_where_its_dockerfile_has_one() {
+    local dockerfile
+    for dockerfile in 'FROM scratch AS toolchain-core\nFROM toolchain-core AS toolchain\nRUN true\n' \
+        'from scratch as Toolchain-Core  \nfrom toolchain-core as toolchain\n'; do
+        rm -rf -- "$step_workspace/.git" "$step_workspace/.devcontainer" "$step_temp/tree" "$step_temp/dist"
+        mkdir -p "$step_workspace/.devcontainer"
+        printf '%b' "$dockerfile" > "$step_workspace/.devcontainer/Dockerfile"
+        git -C "$step_workspace" init -q
+        git -C "$step_workspace" add .devcontainer/Dockerfile
+        git -C "$step_workspace" -c user.name=test -c user.email=test@example.invalid -c commit.gpgsign=false \
+            commit -q -m tree
+        build "" ""
+        run_step
+        assert_status 0
+        STAGE=toolchain-core assert_built -- v0.1.9
+    done
+}
+
+# A stage whose name only begins with toolchain-core is not the core.
+test_build_builds_toolchain_where_the_dockerfile_has_no_core() {
+    mkdir -p "$step_workspace/.devcontainer"
+    printf 'FROM scratch AS toolchain-core-old\nFROM scratch AS toolchain\n' > "$step_workspace/.devcontainer/Dockerfile"
+    git -C "$step_workspace" init -q
+    git -C "$step_workspace" add .devcontainer/Dockerfile
+    git -C "$step_workspace" -c user.name=test -c user.email=test@example.invalid -c commit.gpgsign=false commit -q -m tree
+    build "" ""
+    run_step
+    assert_status 0
+    assert_built -- v0.1.9
+}
+
+# spec's script builds the core for the steps that run spec's recipes (the 2026-11-16 amendment to
+# R31 in spec; R47).
+test_release_works_the_version_out_in_the_core() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.id == "version") | .env.TOOLCHAIN_STAGE')" toolchain-core "the stage of spec's script"
 }
 
 test_build_hands_release_files_the_previous_file_read_only() {

@@ -232,9 +232,16 @@ jobs:
       # Containers may change the copy, so the script's sum is taken in the checkout and checked
       # in the copy before each call after a container: what runs on the runner is the script the
       # tag holds.
+      #
+      # The script builds the stage toolchain-core, Node, just, Go and buf, which every recipe of a
+      # release needs and no more, by TOOLCHAIN_STAGE (the 2026-11-16 amendment to R31 in spec;
+      # R47): a Dockerfile without it gets toolchain, with a notice, and a script of a tag of spec
+      # before v0.18.4 builds toolchain as before. Either is the image the steps after this one run
+      # spec's recipes in.
       - id: version
         name: Work out the version
         env:
+          TOOLCHAIN_STAGE: toolchain-core
           GH_TOKEN: ${{ github.token }}
           CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
           PATHS: ${{ inputs.paths }}
@@ -444,6 +451,10 @@ jobs:
       # environment, no token among it, goes into the container. The step builds and runs the stage
       # itself rather than by spec's script: the caller's own code sees its tree alone and no token,
       # whatever a later tag of the script comes to mount or hand in (R18).
+      #
+      # The stage is toolchain-core where the tree's Dockerfile has it, by the FROM line spec's
+      # toolchain.sh finds it by, and toolchain otherwise: what the recipe needs is in the core, and
+      # a release builds no browser (R47).
       - name: Build the files
         if: steps.version.outputs.version != ''
         env:
@@ -454,7 +465,11 @@ jobs:
           tree="$RUNNER_TEMP/tree"
           mkdir "$tree"
           git archive "$TARGET" | tar -x -C "$tree"
-          docker build --target toolchain --tag release-toolchain - < "$tree/.devcontainer/Dockerfile"
+          stage=toolchain
+          if grep -Eiq '^[[:space:]]*FROM[[:space:]].*[[:space:]]AS[[:space:]]+toolchain-core[[:space:]]*$' "$tree/.devcontainer/Dockerfile"; then
+              stage=toolchain-core
+          fi
+          docker build --target "$stage" --tag release-toolchain - < "$tree/.devcontainer/Dockerfile"
           mount=()
           arguments=("$VERSION")
           if [ -n "$PREVIOUS_FILE" ]; then

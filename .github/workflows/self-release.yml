@@ -127,9 +127,14 @@ jobs:
       # TARGET is older than it, is only checked here. A tag with no release behind it was pushed
       # by hand: on TARGET, as the release before, or as the newest "release" off main's history,
       # it would stop releases quietly, so the run stops on it instead.
+      #
+      # The script builds the stage toolchain-core, Node, just, Go and buf, all a release needs, by
+      # TOOLCHAIN_STAGE (the 2026-11-16 amendment to R31 in spec; R47); .github's toolchain adds
+      # nothing to it, so the image is the same.
       - id: version
         name: Work out the version
         env:
+          TOOLCHAIN_STAGE: toolchain-core
           GH_TOKEN: ${{ github.token }}
         run: |
           if ! [[ "$TARGET" =~ ^[0-9a-f]{40}$ ]]; then
