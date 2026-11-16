@@ -8,7 +8,8 @@ Table 3 of [RUN.md](../RUN.md): the author's open questions from tasks' «Отк
 
 ## Table 3. Questions to the author
 
-Numbers are not reused: next — В41.
+Numbers are not reused: next — В42.
 
 | ID | Question | From | Options | Recommendation |
 |---|---|---|---|---|
+| В41 | «В реестр spec»: the card architecture 3.11 spec names, of `.github`'s CI, the shared workflows alone, released and pinned by a SHA (R03–R05 .github). With R49 `.github` also ships a shared composite action, `.github/actions/toolchain` — the image of the stage `toolchain` and the caches of Go for a caller's own job —, released and pinned the same way, which `go.yml`'s job `arm64` takes too and row 2.5 of COORDINATION.md spec asked for. Does the card name it? | T69 | 1) a line in the card under "the shared workflows": the composite action `toolchain` for a caller's own job in the stage `toolchain`, pinned by the SHA of a release and moved by Dependabot with the workflows (R49 .github); 2) no change: the card's "shared workflows" covers it, and the detail stays in architecture 3.1 .github | 1: what a component ships is the card's, and a caller writing its own job reads the card first |

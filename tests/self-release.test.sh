@@ -3,9 +3,8 @@
 # commits get a release of .github. A commit gets one only when a shared workflow — a file of
 # .github/workflows/ without the self- prefix —, a shared action of .github/actions/ (R49) or the
 # tool a shared workflow reads from .github, tools/coderules/, has changed since the release before
-# it (R33). The step runs on a repository
-# of the case's own, with git as it is, and with a stand-in for spec's toolchain.sh in it, which
-# prints what spec's recipe release-version would.
+# it (R33). The step runs on a repository of the case's own, with git as it is, and with a
+# stand-in for spec's toolchain.sh in it, which prints what spec's recipe release-version would.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 

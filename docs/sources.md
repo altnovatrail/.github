@@ -167,6 +167,12 @@ Read 2026-11-16 (R43, T62), github/docs at the commit d59b263, as above:
 - **`fail-fast`** — `data/reusables/actions/jobs/section-using-a-build-matrix-for-your-jobs-failfast.md`: "If `jobs.<job_id>.strategy.fail-fast` is set to `true` or its expression evaluates to `true`, {% data variables.product.github %} will cancel all in-progress and queued jobs in the matrix if any job in the matrix fails. This property defaults to `true`.";
 - **a job that times out** — `content/actions/reference/workflows-and-actions/workflow-syntax.md`, `jobs.<job_id>.timeout-minutes`: "The maximum number of minutes to let a job run before GitHub automatically cancels it"; `workflow-cancellation.md` of the same folder: "For steps that need to be canceled, the runner machine sends `SIGINT/Ctrl-C` to the step's entry process (`node` for JavaScript actions, `docker` for container actions, and `bash/cmd/pwd` when using `run` in a step). If the process doesn't exit within 7500 ms, the runner will send `SIGTERM/Ctrl-Break` to the process, then wait for 2500 ms for the process to exit. If the process is still running, the runner kills the process tree." The first quote renders `{% data variables.product.prodname_dotcom %}` as GitHub.
 
+### 2.12. Composite actions and the self repository reference `$/`
+
+Read 2026-11-16 (R49, T69), github/docs at the commit 91aa429 (2026-11-16):
+- **the self repository reference** — `content/actions/reference/workflows-and-actions/workflow-syntax.md`, "Example: Using an action in the same repository as the workflow at the running commit (recommended)": "The `$/` prefix is the self repository reference. It references an action stored in the same repository as the workflow or action that is currently running, and resolves to that repository at the running commit (the same SHA as the running workflow or action). You do not need to check out the repository first"; "A `$/` reference must not include an `@{ref}` suffix"; "`$/` always resolves against the repository of the file it appears in, not the repository that called it. For example, if a reusable workflow in one repository is called by a workflow in another repository, a `$/` reference in the called workflow resolves to the called workflow's repository, not the calling workflow's repository"; and `./path/to/action` resolves to "A path in the runner's checked-out workspace, relative to the default working directory". The commit 6a8580f, "Document the $/ self-referencing uses syntax for actions and reusable workflows (#62055)", 2026-07-29, brought it to `metadata-syntax.md` (the GitHub API, the history of the file);
+- **composite actions** — `content/actions/reference/workflows-and-actions/metadata-syntax.md`: `runs.post`, "Allows you to run a script at the end of a job, once the `main:` action has completed", is a key of "`runs` for JavaScript actions", and the section "`runs` for composite actions" names `runs.using` — "You must set this value to `'composite'`" — and `runs.steps`, "These can be either `run` steps or `uses` steps", with no `post`; `runs.steps[*].shell` — "Required if `run` is set"; `runs.steps[*].if` — "You can use any supported context and expression to create a conditional"; and "With composite actions you can use the [`inputs` context] to access action inputs".
+
 ## 3. GitHub: rulesets, releases and the organization
 
 ### 3.1. Rulesets, required checks and merge
@@ -250,6 +256,9 @@ Read 2026-10-20 (R12; the amendment to R10):
 Read 2026-11-08 (the 2026-11-08 amendment to R04, T45):
 - [GitHub Docs, Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference), section `groups`: "All updates for dependencies that match a rule are combined in a single pull request", "If a dependency matches more than one rule, it's included in the first group that it matches" and "Any outdated dependencies that do not match a rule are updated in individual pull requests". A group's name "must start and end with a letter, and can contain letters, pipes `|`, underscores `_`, or hyphens `-`". Of `patterns`: "Both options support using `*` as a wild card to define matches with dependency names". Whether `*` matches `/` and whether `cooldown` acts on a group, the reference does not say. Section `open-pull-requests-limit`: "If five pull requests with version updates are open, no further pull requests are raised until some of those open requests are merged or closed".
 
+Read 2026-11-16 (R49, T69):
+- github/docs at the commit 91aa429 (2026-11-16), `content/code-security/reference/supply-chain-security/dependabot-options-reference.md`, "`directories` or `directory`": "For GitHub Actions, use the value `/`. Dependabot will search the `/.github/workflows` directory, as well as the `action.yml/action.yaml` file from the root directory", and "Use `directories` to define a list of multiple directories of manifests"; "`group-by` (`groups`)": "When set to `dependency-name`, Dependabot will create a single pull request for each dependency update across all specified directories, rather than separate pull requests per directory", and "All directories must use the same package ecosystem"; `data/features/dependabot-updates-group-by.yml` holds it for `fpt: '*'`.
+
 ### 4.2. dependabot-core
 
 Read 2026-10-20 (R12; the amendment to R10):
@@ -274,6 +283,9 @@ Read 2026-11-08 (the 2026-11-08 amendment to R04, T45):
 
 Read 2026-11-01 (R25, T31):
 - **Dependabot in `spec`** — the pull requests #40–#42, "Bump altnovatrail/.github/.github/workflows/<file>.yml from 0.1.0 to 0.1.3", opened and merged 2026-10-23, and #49–#51, "from 0.1.3 to 0.1.10", opened 2026-10-26. The commit of #40 has the author `dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>`, the committer `GitHub <noreply@github.com>`, the sign-off `Signed-off-by: dependabot[bot] <support@github.com>`, and "DCO / sign-off" is success. The releases of `.github`: v0.1.3 — 2026-10-21T04:50:54Z, the commit of its tag — 2026-10-20T23:49:54-05:00; v0.1.4 — 2026-10-21T15:30:24Z; v0.1.10 — 2026-10-22T18:09:38Z (`gh release list`, `git log -1 --format=%cI <tag>`).
+
+Read 2026-11-16 (R49, T69):
+- **dependabot-core** at the commit d73abc7 (`main`, 2026-11-16), `github_actions/lib/dependabot/github_actions/file_parser.rb`: `dependency_for_declarations` skips a reference that "`string.start_with?(".", "docker://")`" and one that does not match `GITHUB_REPO_REFERENCE`, `owner/repo[/path]@ref`, so `$/.github/actions/toolchain`, which has no `@`, is no dependency; and `github_dependency` names a reference with a path and a SHA "`elsif path && ref&.match?(/^[0-9a-f]{6,40}$/)`" by "`"#{repo_name}#{path}"`": `altnovatrail/.github/.github/actions/toolchain`, which the pattern `altnovatrail/.github/*` matches (the reading of 2026-11-08 above).
 
 ## 5. CodeQL
 
@@ -344,6 +356,11 @@ Read 2026-10-20 (R12; the amendment to R10):
 
 Read 2026-10-20 (R09):
 - **Scorecard's API** — `https://api.scorecard.dev/projects/github.com/<owner>/<repository>`: an accepted result comes with the date, the repository's commit and the score — the fields `date`, `repo.commit`, `score` in the answer for `ossf/scorecard`; a repository without a published result gets 404, as `spec` does.
+
+### 6.4. `ossf/scorecard` v5.6.0: the self repository reference
+
+Read 2026-11-16 (R49, T69):
+- `checks/raw/pinned_dependencies.go` at the tag v5.6.0 (2026-10-12): "`func isSameRepositoryReference(uses string) bool { return strings.HasPrefix(uses, "./") || strings.HasPrefix(uses, "$/") }`", which `isActionDependencyPinned` asks first: a reference by `$/` counts as pinned, as one by `./`. It came with the commit bbcee33, ":bug: Recognize self-repository action references (#5191)", 2026-09-28, which v5.6.0 holds (the GitHub API, `compare/v5.6.0...bbcee33`: `behind`). `scorecard-action` v2.5.0, the commit fa7117d that `scorecard.yml` pins, requires `github.com/ossf/scorecard/v5 v5.6.0` in its `go.mod`.
 
 ## 7. Sigstore
 
