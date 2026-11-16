@@ -1770,3 +1770,5 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 - an amendment to R18 with the whole text: R18 is at its limit of 50 KB in `docs-budgets.json`, and its amendment names this entry instead.
 
 — *Consequence:* `release.yml`; `tests/release.test.sh`, `tests/stubs/cosign`, `tests/stubs/gh`; R18; architecture 3.1; sources 3.5, 3.6, 3.7, 7.3; measurements 5.12; RUN.md, T63. A caller changes nothing but the SHA of `release.yml`, which Dependabot raises; a release has the same files, bundles and identity.
+
+— *Amendment 2026-11-16:* the release came out — `v0.1.28`, commit 6c7aec5, the merge commit of pull request 128, immutable and Latest; `gh release verify` confirms it. Of the shared workflows it differs from `v0.1.27` in `release.yml` alone (`git diff v0.1.27 v0.1.28`). The template of architecture 3.3 calls `release.yml` by this SHA, where it called `v0.1.16`: since then `release.yml` changed only in the comments of `v0.1.23`. Task T64.
