@@ -53,7 +53,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
-| [ ] | T60 | Кеш Go в `go.yml` | Claude | — | — |
+| [x] | T60 | Кеш Go в `go.yml` | Claude | — | — |
 | [ ] | T61 | Один файл образа `toolchain` во всех workflow | Claude | да | T60 |
 | [ ] | T62 | «Go / targets» матрицей, «Go / fma-diff» параллельно | Claude | — | T61 |
 | [ ] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
@@ -70,18 +70,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик не меняет.
 
 **Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec.
-
-#### T60. Кеш Go в `go.yml`
-
-- **Цель:** job `go.yml` не компилируют зависимости и стандартную библиотеку заново в каждом прогоне: `GOMODCACHE`, `GOCACHE` и `GOLANGCI_LINT_CACHE` приходят из кеша GitHub Actions вызывающего. Это первый релиз эпика: его ждут строки 7.15–7.21 COORDINATION.md spec.
-- **Почему:** строка 7.13 COORDINATION.md spec; measurements 3.1 spec — время уходит в компиляцию с пустым `GOCACHE`: домашняя папка контейнера — `/tmp`, и она пропадает с каждым job; `go vet` у `api` — около 80 с, golangci-lint у `tutor` — 36 с холодным и 0,4 с тёплым, а скачивание модулей — секунды.
-- **Сделать:**
-  1. В каждом job `go.yml`, что строит стадию `toolchain`, — `check`, `targets`, `fma-diff`, `arm64` и `rules` — шаги кеша Go: папка `${{ runner.temp }}/go-cache` восстанавливается по ключу из ОС и архитектуры раннера, проверки, хеша `.devcontainer/Dockerfile` и хеша `go.sum`, а запасной ключ — тот же без `go.sum`. Папка идёт томом в каждый `docker run` job, а `GOMODCACHE`, `GOCACHE` и `GOLANGCI_LINT_CACHE` указывают на её подпапки.
-  2. После восстановления — `go mod verify` в каждом модуле вызывающего. Отказ удаляет восстановленное с предупреждением, и job идёт без кеша: сбой стоит скорости, а не вердикта, как у образа (R36).
-  3. Сохраняет только push в `main`, после зелёного рецепта и только при промахе точного ключа; pull request и прочие события только читают. `release.yml` кеша не берёт.
-  4. Случаи шагов в `tests/go.test.sh` (R28) — с поломками; решение журнала и поправки к R16 и R36; architecture 3.1; measurements — замер на клонах вызывающих и пробный pull request.
-- **Как проверить:** `YQ=… bash tests/run.sh` — зелёный; actionlint и shellcheck — job Workflows `self-ci.yml`; пробный pull request, не для мержа: `go.yml` по локальному пути с `same-bits` — промах, затем попадание, `go mod verify` и время job; `just -f spec/justfile docs-check-repo`; `/code-review high`, один круг.
-- **Разделы:** строка 7.13 COORDINATION.md spec; measurements 3.1 spec; R16, R36, R39; architecture 3.1.
 
 #### T61. Один файл образа `toolchain` во всех workflow
 
