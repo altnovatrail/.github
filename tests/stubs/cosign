@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# A stand-in for cosign, for release.yml's step "Sign every file", which runs it from RUNNER_TEMP:
+# stub_in_temp cosign. It writes down its arguments and, as tuf, the TUF_ROOT it got. cosign
+# sign-blob --yes --bundle <bundle> <file> writes a bundle whose certificate is stub/cosign.cert
+# — base64 of DER, as Sigstore's bundle holds it — or nothing; cosign verify-blob --bundle
+# <bundle> ... <file> reads that bundle back. A file stub/cosign.sign-fails or
+# stub/cosign.verify-fails names, a name a line, fails that call, with what cosign would say.
+# stub/cosign.waits, "<file> <file>": the signature of the first waits, up to ten seconds, for the
+# signature of the second to have begun, as it can only when the two run at once.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record cosign "$@"
+printf '%s\n' "${TUF_ROOT-unset}" > "$call.tuf"
+unexpected() {
+    printf 'cosign: %s\n' "$1" >> "$state/unexpected"
+    echo "cosign: the stand-in $1" >&2
+    exit 2
+}
+listed() {
+    [ -f "$state/stub/$1" ] && grep -Fxq -- "$2" "$state/stub/$1"
+}
+[ "$#" -ge 4 ] || unexpected "knows no call cosign $*"
+what=$1
+file=${!#}
+shift
+bundle=""
+while [ "$#" -gt 1 ]; do
+    case $1 in
+        --yes) shift ;;
+        --bundle | --certificate-identity | --certificate-oidc-issuer | --certificate-github-workflow-repository | --certificate-github-workflow-sha)
+            [ "$#" -gt 2 ] || unexpected "got $1 without its value"
+            if [ "$1" = --bundle ]; then bundle=$2; fi
+            shift 2
+            ;;
+        *) unexpected "knows no option $1 of cosign $what" ;;
+    esac
+done
+[ -n "$bundle" ] || unexpected "got no --bundle"
+[ -f "$file" ] || unexpected "got $file, which is no file"
+case $what in
+    sign-blob)
+        : > "$state/run/signing.$file"
+        if [ -f "$state/stub/cosign.waits" ]; then
+            read -r waiter awaited < "$state/stub/cosign.waits"
+            if [ "$file" = "$waiter" ]; then
+                for _ in $(seq 100); do
+                    if [ -e "$state/run/signing.$awaited" ]; then break; fi
+                    sleep 0.1
+                done
+                if [ ! -e "$state/run/signing.$awaited" ]; then
+                    echo "cosign: the signature of $waiter waited in vain for that of $awaited" >&2
+                    exit 1
+                fi
+            fi
+        fi
+        if listed cosign.sign-fails "$file"; then
+            echo "Error: signing $file: getting signer: getting key from Fulcio: retrieving cert: POST https://fulcio.sigstore.dev/api/v2/signingCert giving up after 4 attempt(s)" >&2
+            exit 1
+        fi
+        jq -n --arg cert "$(cat "$state/stub/cosign.cert" 2> /dev/null)" --arg file "$file" \
+            '{verificationMaterial: {certificate: {rawBytes: $cert}}, stand_in_for: $file}' > "$bundle"
+        echo "Wrote bundle to file $bundle"
+        ;;
+    verify-blob)
+        [ "$(jq -r .stand_in_for "$bundle")" = "$file" ] || unexpected "verify-blob of $file got the bundle $bundle, which is not its own"
+        if listed cosign.verify-fails "$file"; then
+            echo "Error: none of the expected identities matched what was in the certificate" >&2
+            exit 1
+        fi
+        echo "Verified OK"
+        ;;
+    *) unexpected "knows no call cosign $what" ;;
+esac

@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of release.yml's steps. Those of T39 and of T41 come last, each under its own heading. First come those
+# The tests of release.yml's steps. Those of T39, of T41 and of T63 come last, each under its own heading. First come those
 # of the step "Check the npm package" (the amendments to R18 for T27 and T33): the archive a release
 # would publish to npm, checked before the GitHub release exists — which is immutable — against the
 # registry's packument, then by npm's own dry run. The registry is the stand-in curl, the dry run
@@ -1315,4 +1315,298 @@ test_release_and_self_release_take_no_cache() {
         use_workflow "$file"
         assert_eq "$(wf '[.. | objects | .uses? // empty | select(startswith("actions/cache"))] | length')" 0 "the steps of $file that use actions/cache"
     done
+}
+
+# The tests of the steps T63 changes: "Sign every file", which signs and checks the files AT_ONCE
+# at a time, each with a TUF cache of its own, its log printed whole in the order of the files; and
+# "Verify the release", which holds each file to the subject of its name in the attestation that
+# one gh release verify prints. cosign and gh are the stand-ins; the certificate is made here by
+# openssl, self-signed.
+
+sign_identity=https://github.com/$shared_pin
+
+# The step for altnovatrail/canvas, whose dist/ holds the files given.
+sign_step() {
+    use_workflow release.yml
+    select_step release 'name=Sign every file'
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    ctx job.workflow_ref "$shared_pin"
+    stub_in_temp cosign
+    rm -rf "$step_temp/dist" "$step_temp/signatures"
+    mkdir -p "$step_temp/dist"
+    local name
+    for name in "$@"; do
+        printf 'the bytes of %s\n' "$name" > "$step_temp/dist/$name"
+    done
+}
+
+# A certificate for the bundles the stand-in writes, as Sigstore's bundle holds it.
+sign_certificate() {
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -keyout "$state/key.pem" \
+        -subj /CN=a-stand-in-for-fulcio -days 1 -outform DER -out "$state/certificate.der" 2> /dev/null
+    base64 -w0 "$state/certificate.der" > "$state/stub/cosign.cert"
+}
+
+# The index of cosign's call that does that for that file: sign_call sign-blob b.txt.
+sign_call() {
+    local call index=0
+    local -a arguments
+    while IFS= read -r call; do
+        index=$((index + 1))
+        mapfile -d '' -t arguments < "$call.argv"
+        if [ "${arguments[0]}" = "$1" ] && [ "${arguments[-1]}" = "$2" ]; then
+            echo "$index"
+        fi
+    done < <(harness_calls cosign)
+}
+
+# Both calls of a file, as the step makes them, each with the file's own TUF cache.
+assert_signed() {
+    local sign check
+    sign=$(sign_call sign-blob "$1")
+    check=$(sign_call verify-blob "$1")
+    [ -n "$sign" ] && [ -n "$check" ] || fail "cosign did not both sign $1 and check it"
+    [ "$sign" -lt "$check" ] || fail "cosign checked $1 before it signed it"
+    assert_call cosign "$sign" sign-blob --yes --bundle "$1.sigstore.json" "$1"
+    assert_call cosign "$check" verify-blob --bundle "$1.sigstore.json" \
+        --certificate-identity "$sign_identity" \
+        --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+        --certificate-github-workflow-repository altnovatrail/canvas \
+        --certificate-github-workflow-sha "$target" \
+        "$1"
+    assert_call_record cosign "$sign" tuf "$step_temp/signatures/$1.tuf"
+    assert_call_record cosign "$check" tuf "$step_temp/signatures/$1.tuf"
+}
+
+# The groups of the output, one a file, in the order given.
+assert_groups_in_order() {
+    local expected actual
+    expected=$(printf '::group::%s\n' "$@")
+    actual=$(grep '^::group::' "$state/run/output")
+    assert_eq "$actual" "$expected" "the groups of the output"
+}
+
+test_sign_signs_and_checks_every_file_at_once_each_with_a_tuf_cache_of_its_own() {
+    sign_step a.txt b.txt c.txt
+    sign_certificate
+    # b waits for c's signature to begin, which it can only if the two run at once.
+    echo "b.txt c.txt" > "$state/stub/cosign.waits"
+    run_step
+    assert_status 0
+    assert_calls cosign 6
+    assert_signed a.txt
+    assert_signed b.txt
+    assert_signed c.txt
+    assert_groups_in_order a.txt b.txt c.txt
+    assert_eq "$(grep -c '^Verified OK$' "$state/run/output")" 3 "the files checked"
+    assert_line "        Subject: CN = a-stand-in-for-fulcio"
+    refute_has "::error::"
+    refute_has "::warning::"
+}
+
+test_sign_one_after_another_does_not_pass_the_stand_in_that_waits() {
+    # The same wait, in a copy of the workflow with AT_ONCE 1: the signature of b waits in vain, so
+    # the case above holds the files to run at once.
+    "$YQ" '(.jobs.release.steps[] | select(.name == "Sign every file") | .env.AT_ONCE) = "1"' \
+        "$HARNESS_ROOT/.github/workflows/release.yml" > "$state/one-at-a-time.yml"
+    use_workflow "$state/one-at-a-time.yml"
+    select_step release 'name=Sign every file'
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    ctx job.workflow_ref "$shared_pin"
+    stub_in_temp cosign
+    mkdir -p "$step_temp/dist"
+    printf 'the bytes of %s\n' a.txt > "$step_temp/dist/a.txt"
+    printf 'the bytes of %s\n' b.txt > "$step_temp/dist/b.txt"
+    printf 'the bytes of %s\n' c.txt > "$step_temp/dist/c.txt"
+    echo "b.txt c.txt" > "$state/stub/cosign.waits"
+    run_step
+    assert_status 1
+    assert_line "::error::b.txt: cosign did not sign it, or its signature did not verify; the group above holds what cosign said."
+    assert_line "cosign: the signature of b.txt waited in vain for that of c.txt"
+    assert_signed a.txt
+    assert_signed c.txt
+}
+
+test_sign_runs_eight_files_at_once() {
+    use_workflow release.yml
+    assert_eq "$(wf_raw '.jobs.release.steps[] | select(.name == "Sign every file") | .env.AT_ONCE')" 8 "AT_ONCE of Sign every file"
+}
+
+test_sign_a_file_cosign_cannot_sign_fails_the_step_by_its_name_once_every_file_has_run() {
+    sign_step a.txt b.txt c.txt
+    echo b.txt > "$state/stub/cosign.sign-fails"
+    run_step
+    assert_status 1
+    assert_line "::error::b.txt: cosign did not sign it, or its signature did not verify; the group above holds what cosign said."
+    assert_has "Error: signing b.txt: getting signer"
+    refute_has "::error::a.txt"
+    refute_has "::error::c.txt"
+    assert_signed a.txt
+    assert_signed c.txt
+    assert_eq "$(sign_call verify-blob b.txt)" "" "the check of b.txt, which was not signed"
+    assert_groups_in_order a.txt b.txt c.txt
+}
+
+test_sign_a_signature_that_does_not_verify_fails_the_step_by_its_name() {
+    local name
+    for name in a.txt c.txt; do
+        sign_step a.txt b.txt c.txt
+        echo "$name" > "$state/stub/cosign.verify-fails"
+        run_step
+        assert_status 1
+        assert_line "::error::${name}: cosign did not sign it, or its signature did not verify; the group above holds what cosign said."
+        assert_eq "$(grep -c '^::error::' "$state/run/output")" 1 "the errors"
+        assert_has "Error: none of the expected identities matched"
+        assert_signed a.txt
+        assert_signed b.txt
+        assert_signed c.txt
+    done
+}
+
+test_sign_a_single_file_is_signed_and_checked_once() {
+    sign_step SHA256SUMS
+    run_step
+    assert_status 0
+    assert_calls cosign 2
+    assert_signed SHA256SUMS
+    assert_line "::warning::The certificate of SHA256SUMS could not be printed; its bundle verified."
+}
+
+test_sign_a_file_xargs_never_ran_fails_the_step_by_its_name() {
+    sign_step a.txt b.txt
+    # xargs that runs nothing and fails: no file has its mark, and each is named.
+    cat > "$state/bin/xargs" << 'STUB'
+#!/usr/bin/env bash
+cat > /dev/null
+exit 125
+STUB
+    chmod +x "$state/bin/xargs"
+    run_step
+    assert_status 1
+    assert_line "cosign was not run for a.txt."
+    assert_line "::error::a.txt: cosign did not sign it, or its signature did not verify; the group above holds what cosign said."
+    assert_line "::error::b.txt: cosign did not sign it, or its signature did not verify; the group above holds what cosign said."
+    assert_calls cosign 0
+}
+
+# The step for altnovatrail/canvas, after v0.1.9 came out with the files given in dist/.
+verify_step() {
+    use_workflow release.yml
+    select_step release 'name=Verify the release'
+    runner_env GITHUB_REPOSITORY altnovatrail/canvas
+    set_env TARGET "$target"
+    set_env VERSION v0.1.9
+    ctx github.token a-stand-in-github-token
+    stub gh
+    stub sleep
+    rm -rf "$step_temp/dist"
+    mkdir -p "$step_temp/dist"
+    local name
+    for name in "$@"; do
+        printf 'the bytes of %s\n' "$name" > "$step_temp/dist/$name"
+    done
+}
+
+# The attestation gh release verify --format json prints, as for a release of altnovatrail's
+# (measurements 5.12): the tag's commit first, by its sha1 and no name, then every file the folder
+# given holds, by its name and sha256.
+verify_attestation() {
+    local file
+    for file in "$1"/*; do
+        jq -n --arg name "${file##*/}" --arg digest "$(sha256sum < "$file" | cut -d' ' -f1)" \
+            '{name: $name, digest: {sha256: $digest}}'
+    done | jq -s --arg target "$target" \
+        '{attestation: {bundle: {}}, verificationResult: {statement: {subject: ([{uri: "pkg:github/altnovatrail/canvas@v0.1.9", digest: {sha1: $target}}] + .)}}}' \
+        > "$state/stub/gh-verify.json"
+}
+
+test_verify_holds_every_file_to_the_attestation_in_one_call() {
+    verify_step SHA256SUMS altnovatrail-canvas-0.1.9.tgz altnovatrail-canvas-0.1.9.tgz.sigstore.json
+    verify_attestation "$step_temp/dist"
+    run_step
+    assert_status 0
+    assert_calls gh 1
+    assert_call gh 1 release verify v0.1.9 --repo altnovatrail/canvas --format json
+    assert_calls sleep 0
+    assert_line "v0.1.9: its attestation verifies."
+    local name
+    for name in SHA256SUMS altnovatrail-canvas-0.1.9.tgz altnovatrail-canvas-0.1.9.tgz.sigstore.json; do
+        assert_line "${name}: sha256:$(sha256sum < "$step_temp/dist/$name" | cut -d' ' -f1), as the attestation of v0.1.9 names it."
+    done
+    refute_has "::error::"
+}
+
+test_verify_a_file_with_other_bytes_or_none_in_the_release_fails_the_step_by_its_name() {
+    verify_step a.txt b.txt c.txt
+    verify_attestation "$step_temp/dist"
+    echo "more" >> "$step_temp/dist/b.txt"
+    printf 'the bytes of %s\n' d.txt > "$step_temp/dist/d.txt"
+    run_step
+    assert_status 1
+    assert_line "::error::The attestation of v0.1.9 does not name b.txt with sha256:$(sha256sum < "$step_temp/dist/b.txt" | cut -d' ' -f1): the release holds other bytes under that name, or none."
+    assert_line "::error::The attestation of v0.1.9 does not name d.txt with sha256:$(sha256sum < "$step_temp/dist/d.txt" | cut -d' ' -f1): the release holds other bytes under that name, or none."
+    assert_eq "$(grep -c '^::error::' "$state/run/output")" 2 "the errors"
+    assert_has "a.txt: sha256:"
+    assert_has "c.txt: sha256:"
+}
+
+test_verify_the_bytes_of_another_file_under_a_files_name_fail_the_step() {
+    # b.txt holds the bytes of a.txt, which the attestation names under a.txt alone.
+    verify_step a.txt b.txt
+    verify_attestation "$step_temp/dist"
+    cp "$step_temp/dist/a.txt" "$step_temp/dist/b.txt"
+    run_step
+    assert_status 1
+    assert_line "::error::The attestation of v0.1.9 does not name b.txt with sha256:$(sha256sum < "$step_temp/dist/a.txt" | cut -d' ' -f1): the release holds other bytes under that name, or none."
+}
+
+test_verify_an_attestation_that_names_no_file_by_its_sha256_fails_the_step() {
+    local attestation
+    for attestation in \
+        '{"verificationResult": {"statement": {"subject": [{"uri": "pkg:github/altnovatrail/canvas@v0.1.9", "digest": {"sha1": "0123"}}]}}}' \
+        '{"verificationResult": {"statement": {"subject": [{"name": "a.txt", "digest": {"sha512": "0123"}}]}}}' \
+        '{"attestation": {}}' \
+        'not json'; do
+        verify_step a.txt
+        printf '%s\n' "$attestation" > "$state/stub/gh-verify.json"
+        run_step
+        assert_status 1
+        assert_line "::error::The attestation of v0.1.9 that gh release verify printed names no file by its sha256, so no file of the release could be checked against it."
+        refute_has "a.txt: sha256:"
+    done
+}
+
+test_verify_waits_for_the_attestation_five_times_ten_seconds() {
+    verify_step a.txt
+    verify_attestation "$step_temp/dist"
+    echo 2 > "$state/stub/gh-verify.fails"
+    run_step
+    assert_status 0
+    assert_calls gh 3
+    assert_calls sleep 2
+    assert_call sleep 1 10
+    assert_line "attempt 2: not verified yet"
+    assert_has "a.txt: sha256:"
+
+    verify_step a.txt
+    verify_attestation "$step_temp/dist"
+    echo 5 > "$state/stub/gh-verify.fails"
+    run_step
+    assert_status 1
+    assert_calls gh 5
+    assert_calls sleep 4
+    assert_line "::error::v0.1.9 is published, but its attestation does not verify."
+    refute_has "a.txt: sha256:"
+}
+
+test_verify_without_files_here_verifies_the_release_alone() {
+    verify_step
+    rmdir "$step_temp/dist"
+    echo '{}' > "$state/stub/gh-verify.json"
+    run_step
+    assert_status 0
+    assert_calls gh 1
+    assert_line "v0.1.9: its attestation verifies."
 }

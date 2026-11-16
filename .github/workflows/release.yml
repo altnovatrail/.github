@@ -784,6 +784,7 @@ jobs:
           cd "$RUNNER_TEMP/dist"
           files=(*)
           failed=0
+          # shellcheck disable=SC2016 # $1 is the file, which xargs hands the bash it starts.
           printf '%s\0' "${files[@]}" | xargs -0 -n 1 -P "$AT_ONCE" bash -c 'sign "$1"' sign || failed=1
           for file in "${files[@]}"; do
               echo "::group::${file}"
