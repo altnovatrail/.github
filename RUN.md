@@ -57,7 +57,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T61 | Один файл образа `toolchain` во всех workflow | Claude | да | T60 |
 | [x] | T62 | «Go / targets» матрицей, «Go / fma-diff» параллельно | Claude | — | T61 |
 | [x] | T63 | Сверка и подписи `release.yml` параллельно | Claude | — | — |
-| [ ] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
+| [x] | T64 | WebKit и Firefox — своей проверкой `typescript.yml` | Claude | да | T61 |
 | [ ] | T65 | CodeQL (go) — Go из архива Dockerfile, без образа | Claude | да | — |
 | [ ] | T66 | Стадия `toolchain-core` в релизе и проверках | Claude | да | T60–T65; строка 7.14 COORDINATION.md spec |
 
@@ -70,15 +70,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Для каждой задачи.** После мержа релиз выходит сам (R10). Запись о нём — поправкой «the release came out» к решению задачи и SHA в шаблоне architecture 3.3 — первым шагом следующей задачи эпика, а после последней — с архивом эпика. `.devcontainer/` эпик не меняет.
 
 **Не входит:** изменения вызывающих — строки 7.15–7.25 COORDINATION.md spec, задачи их репозиториев; стадия `toolchain-core` в Dockerfile — строка 7.14, T166 spec.
-
-#### T64. WebKit и Firefox — своей проверкой `typescript.yml`
-
-- **Цель:** вход `typescript.yml` включает job движков: тесты вызывающего в WebKit и Firefox — своей проверкой рядом с «TypeScript / test», где Chromium и покрытие. Договор обёртки (R19) называет все три браузера стадии вида `typescript`. Без входа workflow — прежний.
-- **Почему:** строка 7.13 COORDINATION.md spec; Д217 spec — WebKit и Firefox в стадии вида `typescript` (T141 spec), а у `.github` — браузеры договора обёртки (R19); measurements 3.1 spec — у `app` два прогона Vitest подряд, 88 с и 120 с; строки 7.22 и 7.23 ждут этот вход.
-- **Сделать:** вход, job и рецепт вызывающего для движков; поправка к R19 — договор и браузеры; случаи (R28); пробный pull request по образцу measurements 3.1; architecture 3.1, 3.3.
-- **Решить при планировании:** имена входа, проверки и рецепта — договор с `app` и `canvas`; берёт ли job движков `--ipc=host`, как test.
-- **Как проверить:** как T60.
-- **Разделы:** строка 7.13 COORDINATION.md spec; Д217 spec; R19; architecture 3.1, 3.3.
 
 #### T65. CodeQL (go) — Go из архива Dockerfile, без образа
 

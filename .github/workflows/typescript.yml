@@ -7,6 +7,12 @@
 # "TypeScript / lint", "TypeScript / test", "TypeScript / vuln" and "TypeScript / licenses", when
 # the calling job is named TypeScript.
 #
+# With engines, a fifth job runs the caller's recipe ci-engines, the tests in WebKit and Firefox,
+# as the check "TypeScript / engines" beside "TypeScript / test", whose ci-test then runs them in
+# Node and Chromium with the coverage, so that the two take their time side by side rather than one
+# after the other. The three browsers are those of the toolchain stage of spec's kind typescript
+# (R79 in spec). Without the input the workflow is what it was (R19).
+#
 # ci-test writes the coverage of the tests as an lcov report, coverage/lcov.info, and the job
 # coverage sends it to Codecov by OIDC, with no secret (R48 in spec). "TypeScript / coverage" is no
 # check of the ruleset: codecov/patch, which Codecov sets from the upload, is.
@@ -34,6 +40,11 @@ name: TypeScript (shared)
 
 on:
   workflow_call:
+    inputs:
+      engines:
+        description: Run the tests in WebKit and Firefox by the recipe ci-engines, as the check "TypeScript / engines" (R19).
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -131,7 +142,8 @@ jobs:
 
   check:
     # Named after the check, so that each reads "<calling job> / <check>": "TypeScript / lint" for
-    # ci-lint.
+    # ci-lint. The check engines is in the matrix with the input alone: without it the jobs are the
+    # four they were, by the same names.
     name: ${{ matrix.check }}
     needs: toolchain
     if: ${{ !cancelled() }}
@@ -141,7 +153,7 @@ jobs:
       # Every check reports on its own, rather than the first one to fail cancelling the rest.
       fail-fast: false
       matrix:
-        check: [lint, test, vuln, licenses]
+        check: ${{ fromJSON(inputs.engines && '["lint", "test", "engines", "vuln", "licenses"]' || '["lint", "test", "vuln", "licenses"]') }}
     steps:
       # Without the spec submodule, but for the licenses job: code takes spec's files from spec's
       # releases, not from the submodule (R21 in spec), so a check that reads spec/ fails here as
@@ -199,8 +211,10 @@ jobs:
 
       # As in go.yml, the container runs as the runner's user, with its home in /tmp, and it has
       # the network npm ci and npm audit need. Playwright recommends --init for any container and
-      # --ipc=host for Chromium (R19); the latter only the test job gets, where a browser runs, so
-      # the checks that start none keep Docker's own IPC namespace. Of the step's environment only
+      # --ipc=host for Chromium (R19); the latter only the jobs test and engines get, where the
+      # browsers run, so the checks that start none keep Docker's own IPC namespace. Playwright names
+      # it for Chromium alone, and WebKit and Firefox get it too: they ran under it in ci-test before
+      # the job of their own, and keep the container they passed in. Of the step's environment only
       # CI goes in. CI, which GitHub sets to true on every runner, is how the tools learn they run
       # in CI: by it Vitest runs its browser headless and refuses test.only.
       - name: ci-${{ matrix.check }}
@@ -208,7 +222,7 @@ jobs:
           RECIPE: ci-${{ matrix.check }}
         run: |
           ipc=()
-          if [ "$RECIPE" = ci-test ]; then ipc=(--ipc=host); fi
+          case "$RECIPE" in ci-test | ci-engines) ipc=(--ipc=host) ;; esac
           docker run --rm --init "${ipc[@]}" --user "$(id -u):$(id -g)" \
               --env HOME=/tmp --env CI \
               --volume "$PWD:/work" --workdir /work \

@@ -1,8 +1,8 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
 # The tests of typescript.yml (R19 and its amendments): the shape its callers' rulesets name —
-# "TypeScript / lint", "/ test", "/ vuln", "/ licenses" — and its steps "Toolchain image", with its
-# cache, which go.yml's cases run, and ci-${{ matrix.check }}, each run with a stand-in docker
-# that writes down what it was asked, and
+# "TypeScript / lint", "/ test", "/ vuln", "/ licenses", and with the input engines "/ engines" —
+# and its steps "Toolchain image", with its cache, which go.yml's cases run, and
+# ci-${{ matrix.check }}, each run with a stand-in docker that writes down what it was asked, and
 # the upload of the coverage, which is go.yml's but for its artifact and its report: the cases of
 # go.yml run its steps, and the one here holds the two alike.
 # The checkout, which takes the spec submodule for the licenses job alone, is an action, and the
@@ -10,9 +10,34 @@
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 
-test_typescript_is_called_with_no_inputs_no_secrets_and_gives_the_token_to_the_coverage_job_alone() {
+# The checks of the matrix, without the input engines and with it, one a line: the two lists the
+# expression of the matrix chooses between, which must be the whole expression.
+typescript_checks() {
+    local expression lists with without
+    local head="\${{ fromJSON(inputs.engines && '" between="' || '" tail="') }}"
+    expression=$(wf_raw '.jobs.check.strategy.matrix.check')
+    lists=${expression#"$head"}
+    lists=${lists%"$tail"}
+    with=${lists%%"$between"*}
+    without=${lists#*"$between"}
+    [ "$head$with$between$without$tail" = "$expression" ] && [[ $with$without != *"'"* ]] ||
+        fail "the matrix of check chooses its checks otherwise than by inputs.engines: $expression"
+    # As matrix_values holds a literal matrix: a list, not empty, of strings alone.
+    for lists in "$with" "$without"; do
+        jq -e 'type == "array" and length > 0 and all(type == "string")' <<< "$lists" > /dev/null 2>&1 ||
+            fail "the matrix of check gives no list of strings: $lists"
+    done
+    case $1 in
+        with) jq -r '.[]' <<< "$with" ;;
+        without) jq -r '.[]' <<< "$without" ;;
+        *) harness_refuse "typescript_checks takes with or without, not $1" ;;
+    esac
+}
+
+test_typescript_is_called_with_the_input_engines_alone_no_secrets_and_gives_the_token_to_the_coverage_job_alone() {
     use_workflow typescript.yml
-    assert_eq "$(wf '.on')" '{"workflow_call":null}' "on"
+    assert_eq "$(wf '.on.workflow_call | keys')" '["inputs"]' "on"
+    assert_eq "$(wf '.on.workflow_call.inputs | map_values({type, default})')" '{"engines":{"type":"boolean","default":false}}' "the inputs"
     assert_eq "$(wf '.permissions')" '{"contents":"read"}' "the workflow's permissions"
     assert_eq "$(wf '.jobs | keys')" '["check","coverage","toolchain"]' "the jobs"
     assert_eq "$(wf '[.jobs | to_entries[] | select(.value | has("permissions")) | .key]')" '["coverage"]' "the jobs with permissions of their own"
@@ -42,8 +67,16 @@ test_typescript_uploads_its_coverage_as_go_does_but_for_its_artifact_and_report(
 
 test_typescript_runs_each_check_as_a_job_named_after_it() {
     use_workflow typescript.yml
-    assert_eq "$(wf '.jobs.check.strategy')" '{"fail-fast":false,"matrix":{"check":["lint","test","vuln","licenses"]}}' "the strategy"
+    assert_eq "$(wf '.jobs.check.strategy | del(.matrix.check)')" '{"fail-fast":false,"matrix":{}}' "the strategy"
     assert_eq "$(wf '.jobs.check.name')" '"${{ matrix.check }}"' "the job's name"
+}
+
+# Without the input the callers' rulesets name the four checks they named before (R19); with it
+# "TypeScript / engines" comes beside "TypeScript / test", and nothing else changes.
+test_typescript_runs_the_check_engines_with_the_input_alone() {
+    use_workflow typescript.yml
+    assert_eq "$(typescript_checks without)" $'lint\ntest\nvuln\nlicenses' "the checks without engines"
+    assert_eq "$(typescript_checks with)" $'lint\ntest\nengines\nvuln\nlicenses' "the checks with engines"
 }
 
 test_typescript_checks_the_submodule_out_for_the_licenses_job_alone() {
@@ -65,18 +98,17 @@ test_typescript_builds_the_toolchain_stage_and_caches_it_as_go_does() {
     assert_eq "$typescript" "$go" "the toolchain stage, its cache and the job toolchain"
 }
 
-test_typescript_runs_each_recipe_with_ci_and_the_test_job_alone_with_the_hosts_ipc() {
+test_typescript_runs_each_recipe_with_ci_and_the_jobs_test_and_engines_alone_with_the_hosts_ipc() {
     use_workflow typescript.yml
-    select_step check 'name=ci-${{ matrix.check }}'
     local checks check
     local -a ipc
-    checks=$(matrix_values check check)
-    assert_eq "$checks" $'lint\ntest\nvuln\nlicenses' "the checks"
+    checks=$(typescript_checks with)
+    select_step check 'name=ci-${{ matrix.check }}'
     stub docker
     runner_env STRAY_TOKEN "a variable of the runner's the step does not name"
     for check in $checks; do
         ipc=()
-        if [ "$check" = test ]; then ipc=(--ipc=host); fi
+        case $check in test | engines) ipc=(--ipc=host) ;; esac
         ctx matrix.check "$check"
         run_step
         assert_status 0
