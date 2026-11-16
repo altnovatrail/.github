@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# A stand-in for timeout, for the targets of fma-diff: it writes down its call and runs the command
+# after the duration, but when stub/timeout.expires names the command's last argument, the target:
+# then it ends with 124, as timeout does once the time has run out, having run nothing.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record timeout "$@"
+shift
+if [ -f "$state/stub/timeout.expires" ] && grep -Fxq -- "${!#}" "$state/stub/timeout.expires"; then
+    exit 124
+fi
+exec "$@"

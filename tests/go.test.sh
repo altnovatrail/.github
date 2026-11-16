@@ -594,12 +594,10 @@ run_same_bits_step() {
 
 test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
     use_workflow go.yml
-    local job name
+    local job
     for job in target fma-diff; do
-        name=$job
-        if [ "$job" = target ]; then name='target ${{ matrix.target }}'; fi
         assert_eq "$(wf --arg j "$job" '.jobs[$j] | {name, needs, if, "runs-on", "timeout-minutes", permissions}')" \
-            "{\"name\":\"$name\",\"needs\":\"toolchain\",\"if\":\"\${{ !cancelled() && inputs.same-bits }}\",\"runs-on\":\"ubuntu-24.04\",\"timeout-minutes\":30,\"permissions\":null}" "the job $job"
+            "{\"name\":\"$job\",\"needs\":\"toolchain\",\"if\":\"\${{ !cancelled() && inputs.same-bits }}\",\"runs-on\":\"ubuntu-24.04\",\"timeout-minutes\":30,\"permissions\":null}" "the job $job"
         assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[:4][] | .uses // .name | sub("@[0-9a-f]{40}$"; "@<sha>")] | tostring')" \
             "\"${same_bits_steps//\"/\\\"}]\"" "the first steps of $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[0].with')" '{"persist-credentials":false}' "the checkout of $job"
@@ -870,6 +868,26 @@ test_go_fma_diff_fails_with_a_target_that_stops_and_checks_the_others() {
     assert_eq "$(cat "$state/script.out")" "$(printf '%s\n' "fma-diff: arm64: ok" \
         "go: go list under GOARCH=ppc64le waited in vain for GOARCH=none" \
         "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
+}
+
+# A target that has not ended in 25 minutes is stopped, and says so after what it wrote; the others
+# are printed as they are, in their order (R43).
+test_go_fma_diff_stops_a_target_at_25_minutes_and_prints_the_others() {
+    run_same_bits_step fma-diff 'The assembler with fusion and without it'
+    two_packages
+    stub timeout
+    echo ppc64le > "$state/stub/timeout.expires"
+    run_container_script
+    assert_script_status 1
+    assert_eq "$(cat "$state/script.out")" "$(printf '%s
+' "fma-diff: arm64: ok" "fma-diff: ppc64le: did not end in 25 minutes" \
+        "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
+    # Every target under timeout, each started by the script in a process of its own.
+    local call expected target
+    expected=$(for target in "${fma_targets[@]}"; do printf '%s
+' "$(printf ' %q' 1500 bash -euo pipefail -c 'check "$1"' bash "$target")"; done | sort)
+    assert_eq "$(while IFS= read -r call; do harness_argv "$call.argv"; echo; done < <(harness_calls timeout) | sort)" "$expected" "the calls of timeout"
+    assert_calls go 35
 }
 
 test_go_fma_diff_writes_its_own_control_and_builds_it_as_a_module_of_its_own() {
