@@ -16,13 +16,15 @@ documents_workspace() {
     : > "$step_workspace/spec/justfile"
 }
 
-# The step "Toolchain image", with the file the cache restored when the case gives one.
+# The step "Toolchain image" of a run that saves, true on a push to main, and the file the cache
+# restored when the case gives one.
 run_toolchain_image() {
     use_workflow documents.yml
     select_step docs-check-repo 'name=Toolchain image'
     ctx runner.temp "$step_temp"
-    if [ "$#" -gt 0 ]; then
-        printf '%s\n' "$1" > "$step_temp/novatrail-toolchain.tar"
+    set_env SAVE "$1"
+    if [ "$#" -gt 1 ]; then
+        printf '%s\n' "$2" > "$step_temp/novatrail-toolchain.tar"
     fi
     stub docker
     run_step
@@ -49,13 +51,13 @@ test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_th
     assert_eq "$(wf '.jobs["docs-check-repo"].steps[0].with')" '{"submodules":true,"persist-credentials":false}' "the checkout"
 }
 
-# The three steps of the cache are go.yml's, with the action at the same SHA, but for the path of the
-# file, which is spec's script's own; and the variable the script reads names that same file.
-test_documents_caches_the_stage_as_go_does_in_a_file_of_its_own() {
+# The restore and the save of the cache are those of go.yml's job arm64, which builds its own image
+# too: the same file, the same key, the action at the same SHA, and only a push to main saves (R42).
+# The variable the script reads names that same file.
+test_documents_caches_the_stage_as_go_does_in_the_same_file() {
     local go documents job file
     use_workflow go.yml
-    go=$(wf '[.jobs.check.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/toolchain.tar"))]
-        | map(.with.path |= sub("/toolchain\\.tar$"; "/novatrail-toolchain.tar"))')
+    go=$(wf '[.jobs.arm64.steps[] | select(.uses // "" | startswith("actions/cache/")) | select(.with.path | endswith("/novatrail-toolchain.tar"))]')
     for file in documents.yml self-ci.yml; do
         use_workflow "$file"
         case $file in
@@ -65,17 +67,19 @@ test_documents_caches_the_stage_as_go_does_in_a_file_of_its_own() {
         documents=$(wf --arg j "$job" '[.jobs[$j].steps[] | select(.uses // "" | startswith("actions/cache/"))]')
         assert_eq "$documents" "$go" "the cache of $job in $file"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps[] | select(.name == "Toolchain image") | .env')" \
-            '{"TOOLCHAIN_IMAGE_FILE":"${{ runner.temp }}/novatrail-toolchain.tar"}' "the file the script of $job in $file reads"
+            '{"TOOLCHAIN_IMAGE_FILE":"${{ runner.temp }}/novatrail-toolchain.tar","SAVE":"${{ github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"' }}"}' "the file the script of $job in $file reads"
         assert_eq "$(wf --arg j "$job" '[.jobs[$j].steps[] | select((.run // "") | test("toolchain\\.sh build"))] | length')" 1 "the builds of $job in $file"
     done
+    use_workflow documents.yml
+    documents=$(wf_raw '.jobs["docs-check-repo"].steps[] | select(.name == "Toolchain image") | .run')
     use_workflow self-ci.yml
     assert_eq "$(wf_raw '.jobs.workflows.steps[] | select(.name == "Toolchain image") | .run')" \
-        "spec/tools/toolchain/toolchain.sh build" "the build of the job Workflows"
+        "$documents" "the build of the job Workflows"
 }
 
 test_documents_builds_the_stage_and_writes_the_file_of_the_cache_on_a_miss() {
     documents_workspace
-    run_toolchain_image
+    run_toolchain_image true
     assert_status 0
     assert_calls docker 2
     assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
@@ -84,9 +88,20 @@ test_documents_builds_the_stage_and_writes_the_file_of_the_cache_on_a_miss() {
     assert_eq "$(image_file)" "an image" "the file the cache saves"
 }
 
+# A run that saves nothing hands the script no variable without a file from the cache: the script
+# builds the stage and writes no file.
+test_documents_builds_the_stage_and_writes_no_file_on_a_miss_of_a_run_that_saves_nothing() {
+    documents_workspace
+    run_toolchain_image false
+    assert_status 0
+    assert_calls docker 1
+    assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
+    assert_eq "$(image_file)" none "the file of the cache"
+}
+
 test_documents_loads_the_stage_from_the_cache_without_building_it() {
     documents_workspace
-    run_toolchain_image "a cached image"
+    run_toolchain_image false "a cached image"
     assert_status 0
     assert_calls docker 2
     assert_call docker 1 load --quiet --input "$step_temp/novatrail-toolchain.tar"
@@ -97,7 +112,7 @@ test_documents_loads_the_stage_from_the_cache_without_building_it() {
 test_documents_builds_the_stage_when_the_file_of_the_cache_does_not_load() {
     documents_workspace
     stub_exit_on docker load 1
-    run_toolchain_image "a broken image"
+    run_toolchain_image false "a broken image"
     assert_status 0
     assert_calls docker 2
     assert_call docker 2 build --target toolchain --tag novatrail-toolchain -
@@ -108,7 +123,7 @@ test_documents_builds_the_stage_when_the_file_of_the_cache_does_not_load() {
 test_documents_builds_the_stage_when_the_file_of_the_cache_holds_another_image() {
     documents_workspace
     stub_exit_on docker image 1
-    run_toolchain_image "an image of another name"
+    run_toolchain_image false "an image of another name"
     assert_status 0
     assert_calls docker 3
     assert_call docker 2 image inspect novatrail-toolchain
@@ -120,7 +135,7 @@ test_documents_builds_the_stage_when_the_file_of_the_cache_holds_another_image()
 test_documents_fails_with_the_build_of_the_stage() {
     documents_workspace
     stub_exit_on docker build 1
-    run_toolchain_image
+    run_toolchain_image true
     assert_status 1
     assert_calls docker 1
     assert_eq "$(image_file)" none "the file of the cache"
@@ -133,7 +148,7 @@ test_documents_builds_the_stage_by_a_script_that_knows_no_cache() {
     documents_workspace
     printf '#!/bin/sh\nexec docker build --target toolchain --tag novatrail-toolchain - < .devcontainer/Dockerfile\n' \
         > "$step_workspace/spec/tools/toolchain/toolchain.sh"
-    run_toolchain_image
+    run_toolchain_image true
     assert_status 0
     assert_calls docker 1
     assert_call docker 1 build --target toolchain --tag novatrail-toolchain -
@@ -143,7 +158,7 @@ test_documents_builds_the_stage_by_a_script_that_knows_no_cache() {
 test_documents_stops_on_a_submodule_without_the_script() {
     documents_workspace
     rm "$step_workspace/spec/tools/toolchain/toolchain.sh"
-    run_toolchain_image
+    run_toolchain_image false
     assert_status 1
     assert_line "$script_missing"
     assert_calls docker 0
@@ -152,7 +167,7 @@ test_documents_stops_on_a_submodule_without_the_script() {
 test_documents_stops_on_a_script_that_cannot_run() {
     documents_workspace
     chmod 644 "$step_workspace/spec/tools/toolchain/toolchain.sh"
-    run_toolchain_image
+    run_toolchain_image false
     assert_status 1
     assert_line "$script_missing"
     assert_calls docker 0

@@ -14,7 +14,7 @@ test_typescript_is_called_with_no_inputs_no_secrets_and_gives_the_token_to_the_c
     use_workflow typescript.yml
     assert_eq "$(wf '.on')" '{"workflow_call":null}' "on"
     assert_eq "$(wf '.permissions')" '{"contents":"read"}' "the workflow's permissions"
-    assert_eq "$(wf '.jobs | keys')" '["check","coverage"]' "the jobs"
+    assert_eq "$(wf '.jobs | keys')" '["check","coverage","toolchain"]' "the jobs"
     assert_eq "$(wf '[.jobs | to_entries[] | select(.value | has("permissions")) | .key]')" '["coverage"]' "the jobs with permissions of their own"
     assert_eq "$(wf '.jobs.coverage.permissions')" '{"contents":"read","id-token":"write"}' "the coverage job's permissions"
 }
@@ -52,15 +52,17 @@ test_typescript_checks_the_submodule_out_for_the_licenses_job_alone() {
         '{"submodules":"${{ matrix.check == '"'licenses'"' }}","persist-credentials":false}' "the checkout's inputs"
 }
 
-# The stage and its cache are go.yml's, step for step: the cases of go.yml run them, and the test
-# there holds every job of both files to the job check of go.yml (R36).
+# The stage, its cache and the job toolchain are go.yml's, step for step, but for the name of the
+# artifact: the cases of go.yml run them, and the tests there hold the jobs of both files to the
+# same steps (R36, R42).
 test_typescript_builds_the_toolchain_stage_and_caches_it_as_go_does() {
     local go typescript
     use_workflow go.yml
-    go=$(wf '.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]')
+    go=$(wf '{toolchain: .jobs.toolchain, check: (.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1])}')
     use_workflow typescript.yml
-    typescript=$(wf '.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 1:$i + 2]')
-    assert_eq "$typescript" "$go" "the toolchain stage and its cache"
+    typescript=$(wf '{toolchain: .jobs.toolchain, check: (.jobs.check.steps | (map(.name) | index("Toolchain image")) as $i | .[$i - 2:$i + 1])}
+        | .toolchain.steps[-1].with.name |= sub("^typescript-"; "go-")')
+    assert_eq "$typescript" "$go" "the toolchain stage, its cache and the job toolchain"
 }
 
 test_typescript_runs_each_recipe_with_ci_and_the_test_job_alone_with_the_hosts_ipc() {
@@ -80,7 +82,7 @@ test_typescript_runs_each_recipe_with_ci_and_the_test_job_alone_with_the_hosts_i
         assert_status 0
         assert_calls docker 1
         assert_call docker 1 run --rm --init "${ipc[@]}" --user "$(id -u):$(id -g)" --env HOME=/tmp --env CI \
-            --volume "$step_workspace:/work" --workdir /work toolchain just "ci-$check"
+            --volume "$step_workspace:/work" --workdir /work novatrail-toolchain just "ci-$check"
         assert_call_record docker 1 env CI=true
     done
 }

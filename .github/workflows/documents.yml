@@ -10,10 +10,11 @@
 # the shared release run them (R31 in spec; the 2026-11-08 amendment to R08): spec ships it from
 # v0.2.17, and a submodule older than that stops the check with the reason.
 #
-# The image of the stage comes from the caller's cache of GitHub Actions, by the key go.yml's jobs
-# use, and is built only on a miss (R36): the script loads and writes the file TOOLCHAIN_IMAGE_FILE
-# names from v0.13.0 of spec (the second 2026-11-09 amendment to R31 in spec), and an older one
-# never sees the variable and builds the stage as before, so the step sets it whatever the tag.
+# The image of the stage comes from the caller's cache of GitHub Actions, by the key and the file
+# go.yml's jobs use, and is built only on a miss (R36, R42): the script loads and writes the file
+# TOOLCHAIN_IMAGE_FILE names from v0.13.0 of spec (the second 2026-11-09 amendment to R31 in spec),
+# and an older one never sees the variable and builds the stage as before, so the step sets it
+# whatever the tag. Only a push to main saves the file.
 # Called from a job that gives it `contents: read`.
 
 name: Documents (shared)
@@ -36,11 +37,10 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # The toolchain stage from the cache, as in go.yml (R36), but for the file: spec's script
-      # names its image novatrail-toolchain, not go.yml's toolchain, so its file has a path of its
-      # own, the one spec's CI gives it, and its entry is another under the same key. The build is
-      # a step of its own, so that the image is saved before the check runs, and a red check still
-      # fills the cache.
+      # The toolchain stage from the cache, by the key, the file and the image go.yml's jobs use, the
+      # ones spec's script and spec's CI give, so that the caller keeps one entry for all of them
+      # (R36, R42). The build is a step of its own, so that the image is saved before the check
+      # runs, and a red check still fills the cache. Only a push to main saves.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -48,21 +48,26 @@ jobs:
           path: ${{ runner.temp }}/novatrail-toolchain.tar
           key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}
 
-      # spec's script loads the image from the file, or builds the stage and writes the file. A
-      # script of a tag before v0.13.0 builds the stage alone and writes nothing, and the save then
-      # only warns.
+      # spec's script loads the image from the file, or builds the stage and writes the file. A run
+      # that saves nothing has the script write no file: without a file from the cache it is not
+      # handed the variable, and only builds. A script of a tag before v0.13.0 builds the stage
+      # alone and writes nothing, and the save then only warns.
       - name: Toolchain image
         env:
           TOOLCHAIN_IMAGE_FILE: ${{ runner.temp }}/novatrail-toolchain.tar
+          SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
               echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 in spec): move the spec submodule to v0.2.17 or newer, then run the check again."
               exit 1
           fi
+          if [ "$SAVE" != true ] && [ ! -f "$TOOLCHAIN_IMAGE_FILE" ]; then
+              unset TOOLCHAIN_IMAGE_FILE
+          fi
           spec/tools/toolchain/toolchain.sh build
 
       - name: Toolchain image into the cache
-        if: steps.toolchain.outputs.cache-hit != 'true'
+        if: steps.toolchain.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/novatrail-toolchain.tar
