@@ -8,7 +8,8 @@ Table 3 of [RUN.md](../RUN.md): the author's open questions from tasks' «Отк
 
 ## Table 3. Questions to the author
 
-Numbers are not reused: next — В39.
+Numbers are not reused: next — В40.
 
 | ID | Question | From | Options | Recommendation |
 |---|---|---|---|---|
+| В39 | «В реестр spec»: from v0.18.4 the template's `.devcontainer/Dockerfile` gives every copy the comment of spec's own `toolchain` stage — "spec's tests need nothing the core lacks, so here the stage adds nothing. A copy's kind adds its lines at the end of this stage (repo-template/kinds.json)" —, and in a copy there is no `repo-template/`, and the tests are the copy's (R46) | T67, `.devcontainer/Dockerfile` | (a) `tools/new-repo/` writes a copy's own comment there: what its kind adds, or that the kind `docs` adds nothing; (b) a comment that holds for spec and copies alike, in spec's Dockerfile; (c) leave it: the stage is empty and the comment harmless | (a): a copy's text then speaks of the copy, and a kind that adds lines says so where it adds them |

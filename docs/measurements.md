@@ -393,6 +393,10 @@ Measured 2026-11-16 (R40, T59):
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.18.3 and yq 4.54.1 by the sum of `self-ci.yml` — 158 tests, 0 failed; `docs-check-repo` on v0.18.3 ok before the edits, with RUN.md and `DEBT.md` read from their old place, and after, with `run/`;
 - **the budgets** — with `"entries": {"R18": 50}` in place of `"entry": 50`, nothing over: every other entry keeps within the 40 KB of the block `repository`.
 
+Measured 2026-11-16 (R46, T67):
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.18.4` and `… v0.18.3` on clones of `spec` at those tags in a temporary folder: the two drafts differ in `.devcontainer/Dockerfile` and in the name of the tag alone; the new Dockerfile differs from the former one of `.github` by the stage `toolchain-core` and its comments alone, and `devcontainer.json`, `host-network.sh`, `.claude/settings.json` and AGENTS.md are the same as the draft's;
+- **the checks** — the suite `tests/run.sh` with the submodule at v0.18.4 and yq 4.54.1 by the sum of `self-ci.yml` — 204 tests, 0 failed; `docs-check-repo` on v0.18.4 ok; the step "Go of the caller's toolchain stage" of `codeql.yml`, taken out of its file, on the new Dockerfile with the real go.dev — `go version go1.27.4 linux/amd64`, read from `toolchain-core` through `toolchain`. The devcontainer has no Docker, so the stages are first built by the checks of the pull request.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55

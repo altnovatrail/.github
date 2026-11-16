@@ -748,6 +748,14 @@ Read 2026-11-16 (R40, T59):
 - **what changed** (`git log --oneline v0.16.3..v0.18.3`, `git diff --stat v0.16.3 v0.18.3`) — 77 commits, 258 files: RULES.md, `repo-template/` — RUN.md in English, the tables in `run/`, the alias in the network —, `run/` of `spec` itself, `.devcontainer/` — the base image `devcontainers/base:3.0.13-noble` and the stage `orchestrator` —, `tools/docs-check/` — the layout of `run/` and the key `entries` —, `tools/session/`, `tools/new-repo/` and the new `tools/orchestrator/` and `tools/mockup/`. `tools/toolchain/` adds a test alone, and `tools/licenses/` did not change;
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag: Д88, Д134, Д146, Д195, Д213, Д217, Д236 and Д250; table 5 of `run/INBOX.md` answers В37 and В38 by T149; row 7.13 of COORDINATION.md is `.github`'s, «задачи нет».
 
+### 12.14. `spec` v0.18.4
+
+Read 2026-11-16 (R46, T67):
+- **the tag** — v0.18.4, commit 5867a6c, the merge of pull request 163 of `spec` (T166 `spec`), came out 2026-11-16 at 07:08 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.4 -R altnovatrail/spec` — "Release v0.18.4 verified!";
+- **what changed** (`git log --oneline v0.18.3..v0.18.4`, `git diff --stat v0.18.3 v0.18.4`) — 4 commits, 29 files: `.devcontainer/Dockerfile` — the stage `toolchain-core`, Node, just, Go and buf, and `toolchain` built `FROM toolchain-core` —, `repo-template/kinds/typescript.Dockerfile` — apt from a source of the snapshot alone —, `tools/toolchain/toolchain.sh` — the variable `TOOLCHAIN_STAGE` —, `tools/coverage/`, the recipe `coverage-part`, `ci.yml` and `release.yml` of `spec` itself, `run/TASKS.md`, COORDINATION.md and four amendments in `docs/decisions.md`, to R30 spec, R31 spec, R40 spec and R48 spec. RULES.md, `run/DEBT.md`, `docs/architecture.md` and `repo-template/files/` did not change;
+- **the 2026-11-16 amendment to R31 spec** — "the release builds the stage `toolchain-core` of `.devcontainer/Dockerfile` — Node, just, Go and buf —, from the Dockerfile and with no cache, as before. The stage `toolchain` is built over it with what the repository's tests need […] `toolchain.sh build` takes the stage from the environment variable `TOOLCHAIN_STAGE`: unset, empty or `toolchain` — `toolchain`, as before; `toolchain-core` — that stage, and a Dockerfile that has no such stage gets `toolchain`, with a notice; any other value stops the script.";
+- **the rows of `.github`** — COORDINATION.md: row 7.13, «задачи нет; текст — в T166 `spec`», with «Зависит от» «—», and «Строку 7.14 `spec` закрыла T166»; ``grep -n '`.github`' run/DEBT.md`` of the tag gives the same rows as v0.18.3 (sources 12.13).
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
