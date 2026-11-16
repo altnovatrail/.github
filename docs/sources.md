@@ -224,6 +224,11 @@ Read 2026-11-16 (R44, T63):
   - the secondary rate limits: "No more than 100 concurrent requests are allowed", no more than 900 points per minute for REST API endpoints, "No more than 90 seconds of CPU time per 60 seconds of real time is allowed", "No more than 80 content-generating requests per minute and no more than 500 content-generating requests per hour are allowed";
   - the points: "Most REST API `GET`, `HEAD`, and `OPTIONS` requests" — 1, "Most REST API `POST`, `PATCH`, `PUT`, or `DELETE` requests" — 5, and "Some REST API endpoints have a different point cost that is not shared publicly".
 
+### 3.7. The names of release assets
+
+Read 2026-11-16 (R44, T63):
+- [GitHub Docs, REST API endpoints for release assets](https://docs.github.com/en/rest/releases/assets), Upload a release asset: "GitHub renames asset filenames that have special characters, non-alphanumeric characters, and leading or trailing periods. The "List release assets" endpoint lists the renamed filenames".
+
 ## 4. Dependabot
 
 ### 4.1. GitHub Docs on Dependabot

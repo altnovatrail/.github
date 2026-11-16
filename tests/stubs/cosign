@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
 # A stand-in for cosign, for release.yml's step "Sign every file", which runs it from RUNNER_TEMP:
-# stub_in_temp cosign. It writes down its arguments and, as tuf, the TUF_ROOT it got. cosign
-# sign-blob --yes --bundle <bundle> <file> writes a bundle whose certificate is stub/cosign.cert
-# — base64 of DER, as Sigstore's bundle holds it — or nothing; cosign verify-blob --bundle
-# <bundle> ... <file> reads that bundle back. A file stub/cosign.sign-fails or
+# stub_in_temp cosign. It writes down its arguments and, as tuf, the TUF_ROOT it got and whether
+# that cache holds what cosign initialize put there. cosign initialize fills TUF_ROOT with a
+# stand-in for Sigstore's trusted root, and fails when stub/cosign.initialize-fails is there.
+# cosign sign-blob --yes --bundle <bundle> <file> writes a bundle whose certificate is
+# stub/cosign.cert — base64 of DER, as Sigstore's bundle holds it — or nothing; cosign verify-blob
+# --bundle <bundle> ... <file> reads that bundle back. A file stub/cosign.sign-fails or
 # stub/cosign.verify-fails names, a name a line, fails that call, with what cosign would say.
-# stub/cosign.waits, "<file> <file>": the signature of the first waits, up to ten seconds, for the
-# signature of the second to have begun, as it can only when the two run at once.
+# stub/cosign.waits, "<file> <file>": the signature of the first waits, up to three seconds, for
+# the signature of the second to have begun, as it can only when the two run at once.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh
 . "$state/record.sh"
 record cosign "$@"
-printf '%s\n' "${TUF_ROOT-unset}" > "$call.tuf"
+{
+    printf '%s\n' "${TUF_ROOT-unset}"
+    if [ -n "${TUF_ROOT-}" ] && [ -f "$TUF_ROOT/trusted_root.json" ]; then echo warm; else echo cold; fi
+} > "$call.tuf"
 unexpected() {
     printf 'cosign: %s\n' "$1" >> "$state/unexpected"
     echo "cosign: the stand-in $1" >&2
@@ -21,6 +26,16 @@ unexpected() {
 listed() {
     [ -f "$state/stub/$1" ] && grep -Fxq -- "$2" "$state/stub/$1"
 }
+if [ "$*" = initialize ]; then
+    [ -n "${TUF_ROOT-}" ] || unexpected "got cosign initialize without TUF_ROOT"
+    if [ -e "$state/stub/cosign.initialize-fails" ]; then
+        echo "Error: updating local metadata and targets: failed to download timestamp.json" >&2
+        exit 1
+    fi
+    mkdir -p "$TUF_ROOT"
+    echo '{"stand_in": "trusted root"}' > "$TUF_ROOT/trusted_root.json"
+    exit 0
+fi
 [ "$#" -ge 4 ] || unexpected "knows no call cosign $*"
 what=$1
 file=${!#}
@@ -45,7 +60,7 @@ case $what in
         if [ -f "$state/stub/cosign.waits" ]; then
             read -r waiter awaited < "$state/stub/cosign.waits"
             if [ "$file" = "$waiter" ]; then
-                for _ in $(seq 100); do
+                for _ in $(seq 30); do
                     if [ -e "$state/run/signing.$awaited" ]; then break; fi
                     sleep 0.1
                 done
