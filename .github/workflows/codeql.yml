@@ -12,8 +12,10 @@
 # analysis of actions reads every workflow, whatever the caller passes.
 #
 # Go is analysed from a build, with the caller's own Go: the one in the toolchain stage of its
-# .devcontainer/Dockerfile, which its Go checks run with too (R16). A caller that names go needs
-# Go there, in /usr/local/go. The build runs on the runner with the step's token, like any code a
+# .devcontainer/Dockerfile, which its Go checks run with too (R16). A caller that names go installs
+# Go there as spec's Dockerfile does, from go.dev's archive by ARG GO_VERSION and GO_SHA256_AMD64
+# (with GO_SHA256_ARM64 for arm64), and this workflow takes the same archive by them, without
+# building the stage (R45). The build runs on the runner with the step's token, like any code a
 # pull request brings into its own checks. paths-ignore does not reach it: CodeQL leaves paths
 # out only of what it reads without a build.
 
@@ -147,24 +149,103 @@ jobs:
         with:
           persist-credentials: false
 
-      # The Go of the caller's toolchain stage, copied out of that image onto the runner ahead of
-      # the runner's own: the version the caller pins, from the archive its Dockerfile checked
-      # against its sum, followed if /usr/local/go is a link. The image's GO and CGO_ variables
-      # come along, and GOTOOLCHAIN=local keeps the go command on this Go rather than on one a
-      # go.mod would have it fetch. The Dockerfile copies nothing from the repository, so it is
-      # built without a context, as documents.yml and go.yml build it.
+      # The Go of the caller's toolchain stage, without building the stage (R45): the archive of
+      # go.dev that the stage installs, by the ARGs that pin it there, checked against the same
+      # sum and unpacked onto the runner ahead of the runner's own Go. The job runs on X64, so the
+      # ARGs are GO_VERSION and GO_SHA256_AMD64, each once as ARG <name>=<value> in the stage
+      # toolchain or a stage it is built from — FROM <stage> AS ... —, where Docker reads them.
+      # The Dockerfile is read as Docker's parser reads it: carriage returns and the blanks at the
+      # ends of lines, comment lines and empty lines dropped, the lines continued by \ joined, and
+      # the instructions taken in any case. Its escape character has to be \, Docker's default. A
+      # Dockerfile that pins Go otherwise names none of these ARGs there, and the step stops,
+      # saying so. The image would hand the build its GO and CGO_ variables, which a stage takes
+      # from those it is built from: those stages of spec's Dockerfile set none but
+      # GOTOOLCHAIN=local, which the step sets itself, to keep the go command on this Go rather
+      # than on one a go.mod would have it fetch. One they set besides, which the step cannot work
+      # out without the image, stops it too, by its name; what the base image sets, it does not
+      # see, and the template's sets none.
       - name: Go of the caller's toolchain stage
         if: matrix.language == 'go'
         run: |
-          docker build --target toolchain --tag toolchain - < .devcontainer/Dockerfile
-          container=$(docker create toolchain true)
-          docker cp -L "$container:/usr/local/go" "$RUNNER_TEMP/go"
-          docker rm "$container" > /dev/null
+          dockerfile=.devcontainer/Dockerfile
+          stop() {
+              echo "::error::$*"
+              exit 1
+          }
+          [ -f "$dockerfile" ] || stop "CodeQL takes the Go of the toolchain stage of ${dockerfile}, and the repository has no ${dockerfile}."
+          [ "$RUNNER_ARCH" = X64 ] || stop "CodeQL takes the archive of Go for X64, and the runner is ${RUNNER_ARCH}."
+          # Parser directives, # <name>=<value>, come only before anything else.
+          while IFS= read -r line; do
+              [[ $line =~ ^#[[:space:]]*([A-Za-z][A-Za-z0-9]*)[[:space:]]*=[[:space:]]*([^[:space:]]*) ]] || break
+              if [ "${BASH_REMATCH[1],,}" = escape ] && [ "${BASH_REMATCH[2]}" != "\\" ]; then
+                  stop "${dockerfile} sets another escape character than \\, and CodeQL reads its continued lines by \\."
+              fi
+          done < "$dockerfile"
+          stages=$(sed -e 's/[[:space:]]*$//' -e '/^[[:space:]]*#/d' -e '/^$/d' "$dockerfile" |
+              sed -e ':a' -e '/\\$/N' -e 's/\\\n/ /' -e 'ta' | awk '
+              toupper($1) == "FROM" {
+                  stage++
+                  for (i = 2; i <= NF; i++) if ($i !~ /^--/) { image[stage] = tolower($i); break }
+                  name[stage] = (NF >= 4 && toupper($(NF - 1)) == "AS") ? tolower($NF) : ""
+              }
+              stage { line[++count] = $0; of[count] = stage }
+              END {
+                  for (s = 1; s <= stage; s++) if (name[s] == "toolchain") at = s
+                  if (!at) exit 3
+                  while (at) {
+                      keep[at] = 1
+                      from = image[at]
+                      below = at
+                      at = 0
+                      for (s = 1; s < below; s++) if (name[s] == from) at = s
+                  }
+                  for (i = 1; i <= count; i++) if (keep[of[i]]) print line[i]
+              }
+          ') || stop "${dockerfile} has no stage toolchain, FROM ... AS toolchain."
+          # The value of ARG $1=<value>, in value, if it matches $2, which $3 names.
+          arg() {
+              local count
+              value=$(sed -n "s/^[[:space:]]*[Aa][Rr][Gg][[:space:]]\{1,\}$1=//p" <<< "$stages")
+              count=0
+              [ -z "$value" ] || count=$(wc -l <<< "$value")
+              [ "$count" = 1 ] ||
+                  stop "CodeQL takes Go by ARG GO_VERSION and GO_SHA256_AMD64 of the toolchain stage of ${dockerfile}, each once as ARG <name>=<value>, as spec's Dockerfile pins Go, and the stage and the stages it is built from have ARG $1=<value> ${count} times."
+              [[ $value =~ $2 ]] || stop "ARG $1 of ${dockerfile} is ${value}, which is not $3."
+          }
+          while read -r instruction rest; do
+              [ "${instruction^^}" = ENV ] || continue
+              if [[ ${rest%%[[:space:]]*} == *=* ]]; then
+                  names=$(grep -oE '(^|[[:space:]])[A-Za-z_][A-Za-z0-9_]*=' <<< "$rest" | tr -d ' \t=') || true
+              else
+                  names=${rest%%[[:space:]]*}
+              fi
+              for variable in $names; do
+                  case $variable in
+                      GOTOOLCHAIN) ;;
+                      GO* | CGO_*) stop "The toolchain stage of ${dockerfile} sets ${variable}, which CodeQL's build would take from the image, and codeql.yml takes Go without building it: it sets GOTOOLCHAIN=local alone." ;;
+                  esac
+              done
+          done <<< "$stages"
+          arg GO_VERSION '^[0-9]+(\.[0-9]+)+((rc|beta)[0-9]+)?$' "a version of Go"
+          version=$value
+          arg GO_SHA256_AMD64 '^[0-9a-f]{64}$' "a sha256 in hexadecimal"
+          sum=$value
+          url="https://go.dev/dl/go${version}.linux-amd64.tar.gz"
+          archive="$RUNNER_TEMP/go${version}.linux-amd64.tar.gz"
+          curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors -o "$archive" "$url" ||
+              stop "go.dev gave no ${url}."
+          actual=$(sha256sum < "$archive")
+          actual=${actual%% *}
+          [ "$actual" = "$sum" ] ||
+              stop "The sha256 of ${url} is ${actual}, and ARG GO_SHA256_AMD64 of ${dockerfile} is ${sum}."
+          tar -C "$RUNNER_TEMP" -xzf "$archive" || stop "${url} does not unpack."
+          rm -f -- "$archive"
+          reported=$(GOTOOLCHAIN=local "$RUNNER_TEMP/go/bin/go" version) || stop "The Go of ${url} does not run."
+          [ "$reported" = "go version go${version} linux/amd64" ] ||
+              stop "The Go of ${url} says \"${reported}\", not go${version} linux/amd64."
           echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
-          docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' toolchain \
-              | grep -E '^(GO|CGO_)[A-Z0-9_]*=' | grep -v '^GOTOOLCHAIN=' >> "$GITHUB_ENV" || true
           echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
-          "$RUNNER_TEMP/go/bin/go" version
+          echo "$reported"
 
       - uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
