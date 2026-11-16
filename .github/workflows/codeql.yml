@@ -13,11 +13,11 @@
 #
 # Go is analysed from a build, with the caller's own Go: the one in the toolchain stage of its
 # .devcontainer/Dockerfile, which its Go checks run with too (R16). A caller that names go installs
-# Go there as spec's Dockerfile does, from go.dev's archive by ARG GO_VERSION, GO_SHA256_AMD64 and
-# GO_SHA256_ARM64, and this workflow takes the same archive by them, without building the stage
-# (R45). The build runs on the runner with the step's token, like any code a pull request brings
-# into its own checks. paths-ignore does not reach it: CodeQL leaves paths out only of what it
-# reads without a build.
+# Go there as spec's Dockerfile does, from go.dev's archive by ARG GO_VERSION and GO_SHA256_AMD64
+# (with GO_SHA256_ARM64 for arm64), and this workflow takes the same archive by them, without
+# building the stage (R45). The build runs on the runner with the step's token, like any code a
+# pull request brings into its own checks. paths-ignore does not reach it: CodeQL leaves paths
+# out only of what it reads without a build.
 
 name: CodeQL (shared)
 
@@ -151,16 +151,19 @@ jobs:
 
       # The Go of the caller's toolchain stage, without building the stage (R45): the archive of
       # go.dev that the stage installs, by the ARGs that pin it there, checked against the same
-      # sum and unpacked onto the runner ahead of the runner's own Go. The ARGs are read from the
-      # stage toolchain and the stages it is built from — FROM <stage> AS ... —, and from before the
-      # first FROM, with comments dropped and continued lines joined, as Docker reads them by its
-      # default escape character, \, which the Dockerfile has to keep: each once, as
-      # ARG <name>=<value>. A Dockerfile that installs Go otherwise names none of them, and the
-      # step stops, saying so. The image would hand the build its GO and CGO_ variables, which a
-      # stage inherits from those it is built from, and those stages set none but
+      # sum and unpacked onto the runner ahead of the runner's own Go. The job runs on X64, so the
+      # ARGs are GO_VERSION and GO_SHA256_AMD64, each once as ARG <name>=<value> in the stage
+      # toolchain or a stage it is built from — FROM <stage> AS ... —, where Docker reads them.
+      # The Dockerfile is read as Docker's parser reads it: carriage returns and the blanks at the
+      # ends of lines, comment lines and empty lines dropped, the lines continued by \ joined, and
+      # the instructions taken in any case. Its escape character has to be \, Docker's default. A
+      # Dockerfile that pins Go otherwise names none of these ARGs there, and the step stops,
+      # saying so. The image would hand the build its GO and CGO_ variables, which a stage takes
+      # from those it is built from: those stages of spec's Dockerfile set none but
       # GOTOOLCHAIN=local, which the step sets itself, to keep the go command on this Go rather
-      # than on one a go.mod would have it fetch: one they set besides, which the step cannot work
-      # out without the image, stops it too, by its name.
+      # than on one a go.mod would have it fetch. One they set besides, which the step cannot work
+      # out without the image, stops it too, by its name; what the base image sets, it does not
+      # see, and the template's sets none.
       - name: Go of the caller's toolchain stage
         if: matrix.language == 'go'
         run: |
@@ -170,21 +173,25 @@ jobs:
               exit 1
           }
           [ -f "$dockerfile" ] || stop "CodeQL takes the Go of the toolchain stage of ${dockerfile}, and the repository has no ${dockerfile}."
-          if grep -qiE '^#[[:space:]]*escape[[:space:]]*=[[:space:]]*[^\[:space:]]' "$dockerfile"; then
-              stop "${dockerfile} sets another escape character than \\, and CodeQL reads its continued lines by \\."
-          fi
-          stages=$(sed -e '/^[[:space:]]*#/d' "$dockerfile" | sed -e ':a' -e '/\\$/N' -e 's/\\\n/ /' -e 'ta' | awk '
-              BEGIN { stage = 0 }
+          [ "$RUNNER_ARCH" = X64 ] || stop "CodeQL takes the archive of Go for X64, and the runner is ${RUNNER_ARCH}."
+          # Parser directives, # <name>=<value>, come only before anything else.
+          while IFS= read -r line; do
+              [[ $line =~ ^#[[:space:]]*([A-Za-z][A-Za-z0-9]*)[[:space:]]*=[[:space:]]*([^[:space:]]*) ]] || break
+              if [ "${BASH_REMATCH[1],,}" = escape ] && [ "${BASH_REMATCH[2]}" != "\\" ]; then
+                  stop "${dockerfile} sets another escape character than \\, and CodeQL reads its continued lines by \\."
+              fi
+          done < "$dockerfile"
+          stages=$(sed -e 's/[[:space:]]*$//' -e '/^[[:space:]]*#/d' -e '/^$/d' "$dockerfile" |
+              sed -e ':a' -e '/\\$/N' -e 's/\\\n/ /' -e 'ta' | awk '
               toupper($1) == "FROM" {
                   stage++
                   for (i = 2; i <= NF; i++) if ($i !~ /^--/) { image[stage] = tolower($i); break }
                   name[stage] = (NF >= 4 && toupper($(NF - 1)) == "AS") ? tolower($NF) : ""
               }
-              { line[++count] = $0; of[count] = stage }
+              stage { line[++count] = $0; of[count] = stage }
               END {
                   for (s = 1; s <= stage; s++) if (name[s] == "toolchain") at = s
                   if (!at) exit 3
-                  keep[0] = 1
                   while (at) {
                       keep[at] = 1
                       from = image[at]
@@ -202,7 +209,7 @@ jobs:
               count=0
               [ -z "$value" ] || count=$(wc -l <<< "$value")
               [ "$count" = 1 ] ||
-                  stop "CodeQL takes Go by ARG GO_VERSION, GO_SHA256_AMD64 and GO_SHA256_ARM64 of the toolchain stage of ${dockerfile}, each once as ARG <name>=<value>, as spec's Dockerfile pins Go, and the stage and the stages it is built from have ARG $1=<value> ${count} times."
+                  stop "CodeQL takes Go by ARG GO_VERSION and GO_SHA256_AMD64 of the toolchain stage of ${dockerfile}, each once as ARG <name>=<value>, as spec's Dockerfile pins Go, and the stage and the stages it is built from have ARG $1=<value> ${count} times."
               [[ $value =~ $2 ]] || stop "ARG $1 of ${dockerfile} is ${value}, which is not $3."
           }
           while read -r instruction rest; do
@@ -219,28 +226,23 @@ jobs:
                   esac
               done
           done <<< "$stages"
-          case $RUNNER_ARCH in
-              X64) arch=amd64 ;;
-              ARM64) arch=arm64 ;;
-              *) stop "CodeQL takes Go for a runner on X64 or ARM64, not on ${RUNNER_ARCH}." ;;
-          esac
           arg GO_VERSION '^[0-9]+(\.[0-9]+)+((rc|beta)[0-9]+)?$' "a version of Go"
           version=$value
-          arg "GO_SHA256_${arch^^}" '^[0-9a-f]{64}$' "a sha256 in hexadecimal"
+          arg GO_SHA256_AMD64 '^[0-9a-f]{64}$' "a sha256 in hexadecimal"
           sum=$value
-          url="https://go.dev/dl/go${version}.linux-${arch}.tar.gz"
-          archive="$RUNNER_TEMP/go${version}.linux-${arch}.tar.gz"
+          url="https://go.dev/dl/go${version}.linux-amd64.tar.gz"
+          archive="$RUNNER_TEMP/go${version}.linux-amd64.tar.gz"
           curl -fsSL --proto "=https" --proto-redir "=https" --retry 3 --retry-all-errors -o "$archive" "$url" ||
               stop "go.dev gave no ${url}."
           actual=$(sha256sum < "$archive")
           actual=${actual%% *}
           [ "$actual" = "$sum" ] ||
-              stop "The sha256 of ${url} is ${actual}, and ARG GO_SHA256_${arch^^} of ${dockerfile} is ${sum}."
-          tar -C "$RUNNER_TEMP" -xzf "$archive"
+              stop "The sha256 of ${url} is ${actual}, and ARG GO_SHA256_AMD64 of ${dockerfile} is ${sum}."
+          tar -C "$RUNNER_TEMP" -xzf "$archive" || stop "${url} does not unpack."
           rm -f -- "$archive"
-          reported=$(GOTOOLCHAIN=local "$RUNNER_TEMP/go/bin/go" version)
-          [ "$reported" = "go version go${version} linux/${arch}" ] ||
-              stop "The Go of ${url} says \"${reported}\", not go${version} linux/${arch}."
+          reported=$(GOTOOLCHAIN=local "$RUNNER_TEMP/go/bin/go" version) || stop "The Go of ${url} does not run."
+          [ "$reported" = "go version go${version} linux/amd64" ] ||
+              stop "The Go of ${url} says \"${reported}\", not go${version} linux/amd64."
           echo "$RUNNER_TEMP/go/bin" >> "$GITHUB_PATH"
           echo "GOTOOLCHAIN=local" >> "$GITHUB_ENV"
           echo "$reported"
