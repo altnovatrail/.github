@@ -45,8 +45,8 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E22, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T72: next — T73.
+- **Done epics:** E1–E15 and E17–E23, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T73: next — T74.
 
 ## Table 1. Current epic — none
 
-The last done epic is E22, its archive [docs/plan/E22.md](docs/plan/E22.md).
+The last done epic is E23, its archive [docs/plan/E23.md](docs/plan/E23.md).
