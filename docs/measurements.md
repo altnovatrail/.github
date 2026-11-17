@@ -411,6 +411,10 @@ Measured 2026-11-16 (R48, T68):
 - **the hook** — `spec/tools/session/main.mjs` at v0.18.6 on a trial transcript with the prompt «Выполни задачу T68 из RUN.md»: a prompt with T69 and no `NOVATRAIL_RUN_TASKS` — `"decision":"block"`; with `NOVATRAIL_RUN_TASKS="T68 T69"` it passes; a prompt with T70 under the same variable — `"decision":"block"`;
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.18.6 and yq 4.54.1 by the sum of `self-ci.yml` — 218 tests, 0 failed; `docs-check-repo` on v0.18.6 ok before the edits and after.
 
+Measured 2026-11-17 (R50, T71):
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.18.14` and `… v0.18.6` on clones of `spec` at those tags in a temporary folder: the two drafts differ in README.md — no Status, License, sentence of the languages or tag —, in rule 10 of RUN.md and in the name of the tag alone; `.devcontainer/` and `.claude/settings.json` of `.github` are the same as the new draft's;
+- **the checks** — the suite `tests/run.sh` with the submodule at v0.18.14 and yq 4.54.1 by the sum of `self-ci.yml` — 228 tests, 0 failed; `docs-check-repo` on v0.18.14 ok before the edits and after.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55

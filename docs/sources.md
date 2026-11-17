@@ -784,6 +784,18 @@ Read 2026-11-16 (R48, T68):
 - **table 5 of `spec`**, `run/INBOX.md` — "| `.github` | В39 | `0bdd5bea10d9` | T176 `run/TASKS.md`: one sentence for spec and every copy (author 2026-11-16, T172) |" and "| `.github` | В40 | `10c52b8885da` | T176: the heading of `toolchain` says the core holds what the release and the `ci-` recipes run; rows 7.15–7.25 are closed, every caller moved green (T171) |";
 - **the rows of `.github`** — COORDINATION.md, point 2: «Следующая — 2.6», and row 2.5, «задачи нет: по тексту T172», «составное действие (composite action) `.github` — образ `toolchain` и кеши Go из кеша и их сохранение на `main`, шаги job `arm64` общего `go.yml`, — которым пользуется и сам `go.yml`»; point 7: «Открытых строк нет: строки скорости CI, 7.13–7.25, сделаны — 7.14 в T166, остальные в T171»; the 2026-11-16 amendment of T171 to R156 spec — "the repositories took it with their moves to that tag, v0.1.31". ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.4 but for Д250, which T177 `spec` closed.
 
+### 12.16. `spec` v0.18.14
+
+Read 2026-11-17 (R50, T71):
+- **the tag** — v0.18.14, commit 20e6384, the merge of pull request 175 of `spec` (T185 `spec`), came out 2026-11-17 at 06:02 UTC, after v0.18.7–v0.18.13 of the same night; `gh release list` calls it "Latest", `gh release view` — immutable, and `gh release verify v0.18.14 -R altnovatrail/spec` — "Release v0.18.14 verified!";
+- **what changed** (`git log --oneline v0.18.6..v0.18.14`, `git diff --stat v0.18.6 v0.18.14`) — 25 commits, 36 files, among them RULES.md — a phrase of Language —, `repo-template/files/README.md` and `RUN.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md`, `docs/architecture.md` and the contracts of `ProgressService` and `cause.proto`. `.devcontainer/`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/`, `tools/toolchain/` and `tools/licenses/` did not change;
+- **RULES.md, Language** — "Commit messages and a pull request's title and description are in English and terse, for the session that reads them, and reports to the author are in Russian (the 2026-11-17 amendment to R14 spec).";
+- **the template's RUN.md, rule 10** — "commit messages and a pull request's title and description in English and terse, for the session, never a copy of the report.";
+- **the 2026-11-17 amendment of T184 to R14 spec** — "commit messages and a pull request's title and description are in English and terse, in every NovaTrail repository, and the report to the author stays in Russian. […] Every other repository takes the rule with its next move to a tag of `spec`.";
+- **R22 spec, Languages** — "Issues and pull requests are written in English or in Russian: R14 speaks of files, not of correspondence.", with no amendment of 2026-11-17;
+- **the card 3.11 spec** — one line changed, of `infra`: "and the reading mode as `API_READING_MODE` — on `novatrail` `single`, one reader";
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.6: Д88, Д134, Д146, Д195, Д213, Д217 and Д236; COORDINATION.md, point 2: «Следующая — 2.6», its rows unchanged.
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
