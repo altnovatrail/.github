@@ -6,7 +6,8 @@
 # shared workflow's job>" — Secrets / gitleaks, DCO / sign-off, Documents / docs-check-repo — and
 # Workflows, which only .github runs: the code of the shared workflows lives here. Go / lint, Go /
 # test, Go / vuln and Go / licenses check .github's own Go code, the tool tools/coderules, by the
-# shared go.yml, as every Go repository checks its own (R33 in docs/decisions.md).
+# shared go.yml, as every Go repository checks its own (R33 in docs/decisions.md). Toolchain action
+# runs the composite action .github/actions/toolchain as a caller's own job runs it (R49).
 # Renaming a job breaks those rules, and the release of .github follows this workflow by its
 # name, CI (R04).
 
@@ -115,6 +116,26 @@ jobs:
       - name: Lint the tests
         run: '"$RUNNER_TEMP/shellcheck" --external-sources tests/*.sh tests/stubs/*'
 
+      # actionlint reads no composite action: the run scripts of each action of .github/actions/,
+      # taken out by yq one at a time, are what shellcheck reads here, as bash, the shell their steps
+      # name (R49). A script that fails is named by its action and its step, and the rest are read
+      # all the same.
+      - name: Lint the actions
+        run: |
+          status=0
+          for action in .github/actions/*/action.yml; do
+              count=$("$RUNNER_TEMP/yq" '[.runs.steps[] | select(has("run"))] | length' "$action")
+              for ((i = 0; i < count; i++)); do
+                  step=$("$RUNNER_TEMP/yq" "[.runs.steps[] | select(has(\"run\"))] | .[$i].name" "$action")
+                  "$RUNNER_TEMP/yq" "[.runs.steps[] | select(has(\"run\"))] | .[$i].run" "$action" > "$RUNNER_TEMP/action-step.sh"
+                  if ! "$RUNNER_TEMP/shellcheck" --shell=bash "$RUNNER_TEMP/action-step.sh"; then
+                      echo "::error file=${action}::The script of the step ${step} fails shellcheck."
+                      status=1
+                  fi
+              done
+          done
+          exit "$status"
+
       # Every step a test of tests/ takes, run as its workflow has it, with stand-ins for docker,
       # gh, curl, wget, cosign and npm (R28): a change to a step comes with its cases. A test stops
       # after two minutes, and the suite after five, well inside the job's ten.
@@ -179,3 +200,35 @@ jobs:
               fi
           done < <({ printf '%s\n' go.yml; grep -l '^ *ALLOWED_LICENSES:' .github/workflows/*.yml | xargs -r -n1 basename; } | sort -u)
           exit "$strayed"
+
+  # The composite action .github/actions/toolchain, run as a caller's own job runs it, by the local
+  # path, so that a pull request runs the very action it changes and a push to main its save (R49):
+  # the image from main's entry, which "Workflows" and "Documents" fill, the Go caches of the check
+  # action, the build of the tool of the rules of code in the image with them mounted, and the call
+  # after it. go.yml's job arm64 takes the same action, but .github calls go.yml without same-bits.
+  toolchain-action:
+    name: Toolchain action
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Toolchain image and Go caches
+        uses: ./.github/actions/toolchain
+        with:
+          check: action
+
+      - name: The tool of the rules of code
+        run: |
+          docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+              --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
+              novatrail-toolchain go -C tools/coderules build ./...
+
+      - name: Go caches into the cache
+        uses: ./.github/actions/toolchain
+        with:
+          check: action
+          save: "true"

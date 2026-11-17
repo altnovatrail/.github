@@ -1,0 +1,207 @@
+# The image of the caller's toolchain stage and the caches of Go, for a job of the caller's own that
+# runs Go in that stage, as the job arm64 of the shared go.yml takes them, by this very action (R49):
+# a caller pins it by the SHA of a release of .github with its version beside it, as it pins the
+# shared workflows, and Dependabot moves it in their group, shared-workflows (R04). Nothing of it
+# is a copy in the caller, so a release that changes these steps reaches the caller's job with
+# the move of its reference.
+#
+# A job takes it twice, both times with its check, the word the key of the Go caches names it by:
+# first, before its work, without save — the image of the stage from the caller's cache of GitHub
+# Actions, or built from .devcontainer/Dockerfile on a miss, and saved at once, on a push to main
+# alone (R36, R42); then the Go caches from the same cache, checked by go mod verify in every module
+# of the caller (R41) —; and last of all, after its work, with save: "true", which on a push to main
+# alone, and on a miss of the key the first call asked for, saves the Go caches by that key. The
+# default success() holds that step, so a job whose work failed saves nothing. The calls are checked:
+# a save without the call before the work, or a second call before it, fails with the reason.
+#
+# The image is novatrail-toolchain, and the Go caches lie in ${{ runner.temp }}/go-cache, outside the
+# checkout. Each docker run of the job's work mounts that folder at /go-cache and points Go into it,
+# as the steps of go.yml do:
+#
+#   --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+#   --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
+#
+# The file, the image, the paths and the keys are those of go.yml, so the entries are the ones its
+# jobs fill and read; a change to them is a change to this file and to go.yml at once, which the
+# suite of tests holds the same (R28), and so a release (R10). The job checks out the caller's tree
+# before the first step; it is the job's alone to run on ubuntu-24.04 or ubuntu-24.04-arm. The run
+# steps name bash -e {0}, the shell of go.yml's steps, which name none (sources 2.3, 2.12): the
+# scripts are the same, and so is how they fail.
+name: Toolchain image and Go caches
+description: The image of the caller's toolchain stage and the caches of Go from the cache of GitHub Actions, as the shared go.yml takes them, and their save on a push to main.
+
+inputs:
+  check:
+    description: The check in the key of the Go caches, the caller's job, as binaries, in letters, digits, ., _ and -; the same both times.
+    required: true
+  save:
+    description: '"true" for the last step of the job, after its work: saves the Go caches on a push to main, on a miss.'
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    # The inputs, before anything runs: save is true or false, check a word a key of the cache can
+    # hold, and the call without save the job's first (R49).
+    - name: Inputs
+      shell: bash -e {0}
+      env:
+        CHECK: ${{ inputs.check }}
+        SAVE: ${{ inputs.save }}
+      run: |
+        case $SAVE in
+            true | false) ;;
+            *)
+                echo "::error::save is \"${SAVE}\", not true or false (R49)."
+                exit 1
+                ;;
+        esac
+        if ! [[ $CHECK =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "::error::check is \"${CHECK}\", not a word of letters, digits, ., _ and -, which names the job in the key of its Go caches (R49)."
+            exit 1
+        fi
+        if [ "$SAVE" = false ] && [ -e "$RUNNER_TEMP/novatrail-go-cache.key" ]; then
+            echo "::error::The job has taken the Go caches by this action already: call it once before the work, and once after it with save: \"true\" (R49)."
+            exit 1
+        fi
+
+    - name: Toolchain image from the cache
+      id: toolchain
+      if: inputs.save != 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/novatrail-toolchain.tar
+        key: toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}
+
+    - name: Toolchain image
+      if: inputs.save != 'true'
+      shell: bash -e {0}
+      env:
+        SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        STAGES: toolchain
+      run: |
+        # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
+        # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+        # builds and saves one, then the other, and every other job takes one.
+        for stage in $STAGES; do
+            case $stage in
+                toolchain | toolchain-core) ;;
+                *)
+                    echo "::error::STAGES names ${stage}, which is neither toolchain nor toolchain-core."
+                    exit 1
+                    ;;
+            esac
+            tar=$RUNNER_TEMP/novatrail-$stage.tar
+            restored=false
+            if [ -f "$tar" ]; then
+                restored=true
+                if docker load --quiet --input "$tar" && docker image inspect novatrail-toolchain > /dev/null; then
+                    rm -f -- "$tar"
+                    echo "Toolchain image: ${stage} loaded from its file."
+                    continue
+                fi
+                echo "::warning::The file of the ${stage} stage does not load as the image novatrail-toolchain: the image is built from the Dockerfile. A file from the cache does so on every run until its entry is deleted (gh cache delete) or the Dockerfile changes."
+                rm -f -- "$tar"
+            fi
+            docker build --target "$stage" --tag novatrail-toolchain - < .devcontainer/Dockerfile
+            # Only a job that saves writes the file. A file that came has its entry or its artifact
+            # already, which no save replaces.
+            if [ "$SAVE" = true ] && [ "$restored" = false ] && ! docker save --output "$tar" novatrail-toolchain; then
+                echo "::warning::The image of the ${stage} stage could not be saved: the jobs after this one and the next run build it again."
+                rm -f -- "$tar"
+            fi
+        done
+
+    - name: Toolchain image into the cache
+      if: inputs.save != 'true' && steps.toolchain.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/novatrail-toolchain.tar
+        key: ${{ steps.toolchain.outputs.cache-primary-key }}
+
+    - name: Go caches from the cache
+      id: go-cache
+      if: inputs.save != 'true'
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/go-cache
+        key: go-${{ runner.os }}-${{ runner.arch }}-${{ inputs.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+
+    - name: Go caches
+      if: inputs.save != 'true'
+      shell: bash -e {0}
+      env:
+        RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+      run: |
+        cache=$RUNNER_TEMP/go-cache
+        mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+        if [ -z "$RESTORED" ]; then
+            echo "Go caches: none in the cache; the job starts with empty ones."
+            exit 0
+        fi
+        verified=false
+        if git ls-files -z -- ':(glob)**/go.mod' ':(exclude,glob)**/testdata/**' ':(exclude,glob)**/vendor/**' \
+            ':(exclude,glob)**/.*/**' ':(exclude,glob)**/_*/**' > "$RUNNER_TEMP/go-modules"; then
+            modules=()
+            while IFS= read -r -d '' file; do
+                modules+=("$(dirname -- "$file")")
+            done < "$RUNNER_TEMP/go-modules"
+            if [ "${#modules[@]}" = 0 ]; then
+                echo "Go caches: ${RESTORED}, with no module of the repository to verify them by."
+                verified=true
+            elif docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+                --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
+                --volume "$PWD:/work" --volume "$cache:/go-cache" --workdir /work \
+                novatrail-toolchain bash -c 'for module in "$@"; do go -C "$module" mod verify || exit; done' bash "${modules[@]}"; then
+                echo "Go caches: ${RESTORED}, its modules verified."
+                verified=true
+            fi
+        fi
+        if [ "$verified" = true ]; then
+            find "$cache/build" "$cache/lint" -type f -exec touch -c -- {} +
+            exit 0
+        fi
+        echo "::warning::The Go caches of ${RESTORED} did not pass go mod verify: they are deleted, and the job downloads and builds without them. An entry that fails on every run stays until it is deleted (gh cache delete) or go.sum or the Dockerfile changes."
+        chmod -R u+w -- "$cache"
+        rm -rf -- "$cache"
+        mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
+
+    # The key the restore asked for, and whether it hit, for the call with save after the work: that
+    # call saves by this key, worked out before the work could change a go.sum, as go.yml's jobs save
+    # by theirs (R41). The file lies outside the checkout and outside the folder of the caches.
+    - name: Go caches key
+      if: inputs.save != 'true'
+      shell: bash -e {0}
+      env:
+        KEY: ${{ steps.go-cache.outputs.cache-primary-key }}
+        HIT: ${{ steps.go-cache.outputs.cache-hit }}
+      run: printf '%s\n%s\n' "$KEY" "${HIT:-false}" > "$RUNNER_TEMP/novatrail-go-cache.key"
+
+    # The save, in a call of its own after the work: a composite action has no post step (sources
+    # 2.12). Its key is the first call's, and a key that hit is not saved again; without the first
+    # call there is nothing to save, and the step says so.
+    - name: Go caches to save
+      id: go-cache-key
+      if: inputs.save == 'true'
+      shell: bash -e {0}
+      run: |
+        file=$RUNNER_TEMP/novatrail-go-cache.key
+        if [ ! -f "$file" ]; then
+            echo "::error::The job has not taken the Go caches by this action before its work, so it has none to save: call it without save first (R49)."
+            exit 1
+        fi
+        { read -r key && read -r hit; } < "$file"
+        if [ "$hit" = true ]; then
+            echo "Go caches: ${key} came from the cache whole and is not saved again."
+            exit 0
+        fi
+        echo "Go caches: ${key} missed, and a push to main saves it."
+        echo "key=${key}" >> "$GITHUB_OUTPUT"
+
+    - name: Go caches into the cache
+      if: inputs.save == 'true' && steps.go-cache-key.outputs.key != '' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/go-cache
+        key: ${{ steps.go-cache-key.outputs.key }}

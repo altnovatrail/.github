@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# A stand-in for shellcheck, for the step "Lint the actions" of self-ci.yml, which runs it from
+# RUNNER_TEMP: stub_in_temp shellcheck. It writes down its arguments and, as script, the file it was
+# given last, and fails, as shellcheck would on a finding, on a script that holds a line of
+# stub/shellcheck.fails.
+set -euo pipefail
+state=$(cd -- "${0%/*}/.." && pwd -P)
+# shellcheck source=tests/stubs/record.sh
+. "$state/record.sh"
+record shellcheck "$@"
+cp -- "${!#}" "$call.script"
+if [ -f "$state/stub/shellcheck.fails" ] && grep -Fxqf "$state/stub/shellcheck.fails" -- "${!#}"; then
+    echo "In ${!#}: a finding of the stand-in" >&2
+    exit 1
+fi

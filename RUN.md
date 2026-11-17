@@ -45,8 +45,40 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E21, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T68: next — T69.
+- **Done epics:** E1–E15 and E17–E21, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T69: next — T70.
 
-## Table 1. Current epic — none
+## Table 1. Current epic — E22. Составное действие `toolchain`
 
-The last done epic is E21, its archive [docs/plan/E21.md](docs/plan/E21.md).
+**Результат:** релиз `.github` с составным действием `.github/actions/toolchain` — образ стадии `toolchain` и кеши Go для своего job вызывающего, тем же действием, что берёт job `arm64` общего `go.yml`. Его ждёт строка 3.11 COORDINATION.md spec — переход `module-kit`.
+
+| Статус | ID | Задача | Кто | План | Зависит от |
+|---|---|---|---|---|---|
+| [ ] | T69 | Составное действие: образ `toolchain` и кеши Go для своего job вызывающего | Claude | да | — |
+
+**Почему эпик такой.** Строка 2.5 COORDINATION.md spec — по тексту T172 spec и ответу автора на строку `module-kit` В36: вариант 1, составное действие; отвергнуты копия со стражем в каждом вызывающем и вход `go.yml`. Прогон всего «Порядка» оркестратором (R156 spec; слово автора 2026-11-16): одна задача — один релиз.
+
+**Не входит:** переход `module-kit` на действие — строка 3.11, задача `module-kit`; `typescript.yml` и `documents.yml` действие не берут.
+
+#### T69. Составное действие: образ `toolchain` и кеши Go для своего job вызывающего
+
+- **Цель:** job вызывающего репозитория, что идёт в стадии `toolchain`, берёт образ и кеши Go тем же шагом, что общий `go.yml`, а не копией его шагов; pull request Dependabot группы `shared-workflows` проходит сам.
+- **Почему:** строка `module-kit` В36, R76 `spec`, строка 2.5 COORDINATION.md `spec`; T172 `spec`. «Binaries / build» `module-kit` копирует шесть шагов job `arm64` общего `go.yml`, и страж держит копию у закреплённого `go.yml` (R58, R61 module-kit): переход `.github`, что их меняет, красит обязательную проверку, пока сессия не поправит копию.
+- **Сделать:** составное действие в `.github` — образ `toolchain` из кеша по ключу общих workflow, кеши Go (`GOMODCACHE`, `GOCACHE`) из кеша, их сохранение только на push в `main`; общий `go.yml` сам берёт это действие, чтобы шаги не расходились; вызывающий берёт его по SHA, и Dependabot двигает его в группе `shared-workflows`; решение в журнале `.github`; релиз.
+- **Как проверить:** проверки `.github` по его RUN.md; пробный вызов из репозитория с своим job в `toolchain` — зелёный, кеши попадают.
+- **Разделы:** строка 2.5 COORDINATION.md `spec`; R31, R48, R76 `spec`; строка `module-kit` В36.
+- **Выяснилось при планировании:**
+  - составное действие не знает шага `post` (sources 2.12): сохранение кешей Go — второй вызов того же действия в конце job, с `save: "true"`;
+  - `go.yml` берёт действие своего же коммита ссылкой `$/` — она указывает на репозиторий файла, где стоит, на выполняемом коммите, и checkout не нужен (sources 2.12); политика организации `sha_pinning_required` её пропускает, actionlint 1.7.12 её не знает, Scorecard v5.6.0 считает закреплённой (measurements 12.2; sources 6.4);
+  - Dependabot читает `action.yml` только в названных каталогах (sources 4.1), а dependabot-core зовёт ссылку вызывающего `altnovatrail/.github/.github/actions/toolchain` — её берёт группа `shared-workflows` (sources 4.2).
+- **Решено при планировании** (исполнитель оркестратора; документы не отдают этого автору — R156 spec): действие `.github/actions/toolchain` со входами `check` и `save`; на действии — только job `arm64`, остальные job `go.yml` берут образ артефактом job `toolchain`, и набор держит их шаги равными шагам действия; сохранение заново спрашивало кеш по тому же ключу без скачивания — ревью заменило это передачей ключа файлом (ниже); отвергнуты checkout `.github` в рабочую папку и JavaScript-действие с `post` (R49).
+- **Сделано (2026-11-16):**
+  - [.github/actions/toolchain/action.yml](.github/actions/toolchain/action.yml) — «Toolchain image and Go caches»: без `save` — образ `toolchain` из кеша или сборка с сохранением только на push в `main`, кеши Go по ключу с `check` и `go mod verify`; с `save: "true"` — ключ первого вызова из файла `$RUNNER_TEMP/novatrail-go-cache.key` и при промахе сохранение, только на push в `main`; шаг «Inputs» отказывает при неверных `save` и `check`, при втором вызове без `save` и при вызове с `save` без первого. Скрипты образа и кешей — байт в байт шаги `go.yml`, оболочка — его `bash -e {0}`;
+  - [go.yml](.github/workflows/go.yml): job `arm64` — действие `$/.github/actions/toolchain` с `check: arm64` вместо шести шагов и им же сохранение; ключи и записи прежние. [self-release.yml](.github/workflows/self-release.yml) выпускает релиз и на изменение `.github/actions/`; [dependabot.yml](.github/dependabot.yml) читает каталог действия и группирует по зависимости; [actionlint.yaml](.github/actionlint.yaml) снимает жалобу на `$/` в `go.yml`; [self-ci.yml](.github/workflows/self-ci.yml) — job «Toolchain action» гоняет действие как свой job вызывающего, шаг «Lint the actions» даёт ShellCheck его скрипты;
+  - набор (R28): `use_action` в `tests/lib.sh`, `tests/self-ci.test.sh`; 228 тестов; поломки до ревью и после — каждая красная (measurements 12.2); actionlint 1.7.12 и ShellCheck 0.11.0 — чисто;
+  - пробный pull request [#137](https://github.com/altnovatrail/.github/pull/137), не для мержа: `go.yml` по SHA с `same-bits` — `$/` разрешился в действие того же коммита, `arm64` собрал образ и прошёл `ci-test` с кешами; два своих job по SHA действия — попадание образа main, во втором попадание кешей Go, `go mod verify`, сборка без компиляции (measurements 12.2);
+  - решение [R49](docs/decisions.md) и поправки к R04, R10, R28, R41, R42; architecture 1, 3.1, 3.4, 3.5, 3.7; sources 2.12, 4.1, 4.2, 6.4; CLAUDE.md и правило `.claude/rules/workflows.md`; строка В41 «в реестр spec» — карточка architecture 3.11 spec;
+  - `/code-review high`, один круг: исправлены — ключ сохранения считался заново после работы (теперь файл первого вызова), `save` не проверялся, действие не шло в CI `.github` (job «Toolchain action», «Lint the actions»), оболочка `bash` вместо `bash -e {0}` `go.yml`, устаревший комментарий `self-release.yml`, повтор jq в тесте; не исправлены — запрет имён проверок `go.yml` в `check` (их же берёт `arm64`; правило вызывающего — architecture 3.7) и раздел на два действия (две ссылки вместо одной; «Inputs» ловит вызов не на месте).
+- **Открыто:**
+  - после мержа релиз выходит сам (R10), ожидается `v0.1.32`: его тег и SHA — поправкой к R49 и в тексте architecture 3.1; затем T69 — `[x]`, тело — в архив E22, эпик E22 — в архив. Этот релиз ждёт строка 3.11 COORDINATION.md spec (`module-kit`);
+  - сохранение кешей вторым вызовом идёт только на push в `main`: его впервые прогонит job «Toolchain action» на push мержа, затем `module-kit` после строки 3.11;
+  - В41 — «в реестр spec».

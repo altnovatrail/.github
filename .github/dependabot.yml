@@ -16,12 +16,21 @@
 version: 2
 
 updates:
+  # The workflows, and the composite action of .github/actions/toolchain, which Dependabot reads only
+  # where a directory names it: / is .github/workflows and an action.yml at the root (sources 4.1).
+  # One pull request moves an action in both, so that go.yml and the action keep one SHA of
+  # actions/cache, as the suite of tests holds them (R49).
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/toolchain
     schedule:
       interval: weekly
     cooldown:
       default-days: 3
+    groups:
+      actions:
+        group-by: dependency-name
 
   # The Go module of the tool of the rules of code, which requires nothing yet (R33): a require it
   # comes to have is proposed like any other.
