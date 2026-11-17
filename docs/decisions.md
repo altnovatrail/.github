@@ -1195,6 +1195,8 @@ What is said in the amendment above — "Whether they fit 'free terms for open s
 
 — *Amendment 2026-11-01:* `.github` is on v0.4.1 (R25). What is said above about v0.2.23 is history.
 
+— *Amendment 2026-11-17 (T70):* the profile has no row Status any more, so it no longer follows the README of `spec`, and its links to `spec` point to `main`, not to a tag (the 2026-11-17 amendment to R48).
+
 ## The `spec` tag v0.4.1
 
 **R25. `.github` is on `spec` v0.4.1: the submodule `spec/` is at this tag, the links to `spec` pinned to a tag name it, and what came from the repository template is as in the template of v0.4.1. The README carries status badges by R48 spec, and the organization's profile does not.**
@@ -1270,6 +1272,8 @@ What is said in the amendment above — "Whether they fit 'free terms for open s
 — *Consequence:* table 3 of RUN.md is empty. — RUN.md, T36; CLAUDE.md; README.md; `profile/README.md`; R18, R25; architecture: status, 1, 3.1–3.3, 4.
 
 — *Amendment 2026-11-02:* `.github` is on v0.6.2 (R30). What is said above about v0.5.3 as the tag of `.github` is history, and the row Status of the profile now says the same as the README of `spec` v0.6.2.
+
+— *Amendment 2026-11-17 (T70):* the profile has no row Status any more (the 2026-11-17 amendment to R48).
 
 ## Tests of the workflows
 
@@ -1395,6 +1399,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 — *Consequence:* RUN.md — T38, table 2, В31, Д5 and Д7; CLAUDE.md; README.md; `profile/README.md`; CONTRIBUTING.md; R18, R27; architecture: status, 1, 2.3, 3.1, 3.3, 4.
 
 — *Amendment 2026-11-02:* `.github` is on v0.6.3 (R31). What is said above about v0.6.2 as the tag of `.github` is history, and so is "What remains": `spec` recorded В29 and В30 in v0.6.3 together with В32 and В33 (Д64 in RUN.md `spec`), and the rows left table 3 of RUN.md. В31 left already in T39.
+
+— *Amendment 2026-11-17 (T70):* the profile has no row Status any more (the 2026-11-17 amendment to R48).
 
 **R31. `.github` is on `spec` v0.6.3: the submodule `spec/` is at this tag, and the links to `spec` pinned to a tag name it. Т-35 is closed by the 2026-11-02 amendment to R63 spec — the author's answer, option 1′. The file of the previous release that an input of the shared `release.yml` names is fetched and checked by the recipe `release-verify` by a step of the shared release on the runner, and the recipe `release-files` gets the file already checked. The input is written by a task of its own, T41.**
 - **What the tag brings** (`git diff v0.6.2 v0.6.3` in `spec/`; Д64 in RUN.md `spec`; read 2026-11-02). There are no tags between them. For `.github` these are the answers to the rows «в реестр spec» В29, В30, В32 and В33 (Д64):
@@ -1935,6 +1941,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 - the submodule at v0.18.6 with the former `.devcontainer/`: closing the window would stop the container under a running executor, whose attempt is lost and paid again (the amendment of T175 to R156 spec), and the copy would drift from the template with no decision that holds it.
 
 — *Consequence:* `spec/`; `.devcontainer/Dockerfile`, `.devcontainer/devcontainer.json`; README.md; `profile/README.md`; CLAUDE.md; RUN.md, T68; `docs/plan/E21.md`, `docs/plan/history.md`; `run/QUESTIONS.md`, В39, В40; R40, R46, R47; architecture: status, 3.3; sources 12.15; measurements 9.1, 11.2.
+
+— *Amendment 2026-11-17 (T70):* **README.md and `profile/README.md` name no tag of `spec`: their links to `spec` lead to the repository or to `main`, and README.md says the submodule is checked out with no tag. Neither has a section Status or License, and the Documents of neither says what is in which language. The tag stays in CLAUDE.md, at the start of RUN.md and in `spec/`, and a move to a tag no longer edits the two READMEs.** The author's word of 2026-11-17 for the README of every repository: a status and a tag in a README fall behind with every task and every move, and the license is named by `LICENSE`, the badge and, for the code of conduct, its own notice. What the profile's row Status said beyond the status — that NovaTrail succeeds MathTrail — is a sentence of its opening; the history of the format and the contracts it listed is in the README and the log of `spec`. The rule for the template is a task of `spec` (an amendment to R21 spec). R24, R27 and R30, which held the profile's row Status, have amendments.
 
 ## The composite action `toolchain`
 

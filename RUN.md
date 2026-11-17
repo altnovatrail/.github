@@ -45,7 +45,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E21, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T69: next — T70.
+- **Done epics:** E1–E15 and E17–E21, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T70: next — T71.
 
 ## Table 1. Current epic — E22. Составное действие `toolchain`
 
@@ -54,8 +54,9 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | Статус | ID | Задача | Кто | План | Зависит от |
 |---|---|---|---|---|---|
 | [ ] | T69 | Составное действие: образ `toolchain` и кеши Go для своего job вызывающего | Claude | да | — |
+| [x] | T70 | README без «Status», «License», фразы о языках и версии spec | Claude | — | — |
 
-**Почему эпик такой.** Строка 2.5 COORDINATION.md spec — по тексту T172 spec и ответу автора на строку `module-kit` В36: вариант 1, составное действие; отвергнуты копия со стражем в каждом вызывающем и вход `go.yml`. Прогон всего «Порядка» оркестратором (R156 spec; слово автора 2026-11-16): одна задача — один релиз.
+**Почему эпик такой.** Строка 2.5 COORDINATION.md spec — по тексту T172 spec и ответу автора на строку `module-kit` В36: вариант 1, составное действие; отвергнуты копия со стражем в каждом вызывающем и вход `go.yml`. Прогон всего «Порядка» оркестратором (R156 spec; слово автора 2026-11-16): одна задача — один релиз. T70 — README по слову автора 2026-11-17 для всех репозиториев, в том же прогоне; релиза не даёт.
 
 **Не входит:** переход `module-kit` на действие — строка 3.11, задача `module-kit`; `typescript.yml` и `documents.yml` действие не берут.
 
