@@ -7,10 +7,8 @@ Table 4 of [RUN.md](../RUN.md): what was put off on purpose, its risk, when to r
 
 ## Table 4. Technical debt
 
-Numbers are not reused: next — Д12.
+Numbers are not reused: next — Д13.
 
 | ID | Debt | From | Risk while open | When to return |
 |---|---|---|---|---|
-| Д9 | The miss of R42 is measured at `.github` alone, whose image holds Go: at `canvas`, whose image holds the browsers, the job `toolchain` and its artifact against a build in each job are not measured | T61 | a miss slower than the builds it replaced goes unnoticed where the image is large | once `canvas` takes the release of T61, row 7.23 of COORDINATION.md spec |
-| Д10 | The gain of R43 is measured on the trial module of `.github` alone, where the load of the image is most of each job and the matrix is no faster than one job `targets`: on a caller whose tests take the time, as `sim`'s js/wasm 134 s, the five jobs against one are not measured | T62 | the matrix costs four loads of the image a run where it gains nothing | once `sim` takes the release of T62, row 7.19 of COORDINATION.md spec |
-| Д11 | The gain of the input `engines` is measured on the trial package of `.github` alone, whose tests take seconds: at `app`, where WebKit and Firefox took 120 s of the 278 s of "TypeScript / test" (measurements 3.1 spec), the two jobs against one are not measured | T64 | a fifth job costs a load of the image and an `npm ci` where it may gain little | once `app` takes the release of T64, row 7.22 of COORDINATION.md spec |
+| Д12 | With `same-bits` the matrix of R43 does not shorten a caller's run yet: at `sim` the run ends with "Go / arm64", whose targets `cpu-off js-wasm wasip1` run one after another, 366–384 s; at `learner-model` and `engine`, whose tests on the targets take seconds, the five jobs cost four loads of the image and wait for runners (measurements 2.8) | T73 | the runs of `sim` stay as long as before R43, and the matrix takes four runners a run from the organization where it gains nothing | a task of the speed of CI, a row of COORDINATION.md spec or the author's word |

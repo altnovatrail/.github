@@ -1084,6 +1084,8 @@ What is said in the amendment above — "Whether they fit 'free terms for open s
 
 — *Amendment 2026-11-16:* **"TypeScript / lint", "TypeScript / vuln" and "TypeScript / licenses" run in the stage `toolchain-core`, without the browsers, where the caller's Dockerfile has it and its `toolchain` holds more than it; "TypeScript / test" and "TypeScript / engines" in `toolchain`, with them (R47).** Task T66.
 
+— *Amendment 2026-11-17 (T73):* **the gain of the input `engines` is measured at `app`, on `v0.1.31`:** where the runners are free, its run ends sooner than with the three browsers in "TypeScript / test", for one load of the image and one `npm ci` more, and the two jobs together take what the one took (measurements 3.6). The input stands, and Д11 is closed. — measurements 3.6; RUN.md, T73.
+
 ## The `spec` tag v0.2.14
 
 **R20. `.github` is on `spec` v0.2.14: the submodule `spec/` is at this tag, and the links to `spec` pinned to a tag name it.**
@@ -1785,6 +1787,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 
 — *Amendment 2026-11-16 (R49):* **`arm64` builds its own image by the composite action `.github/actions/toolchain`, by the same three steps, file, key and `SAVE`; a caller's own job takes the same action by the SHA of a release.** Task T69.
 
+— *Amendment 2026-11-17 (T73):* **the miss is measured at `canvas`, whose image holds the browsers:** with a fast snapshot of the Ubuntu archive it ends later than the builds of each job at once did, by the uploads, the downloads and the loads, as "What a miss costs" expected; with a slow one the jobs no longer fetch the same at once (measurements 7.5). The decision stands, and Д9 is closed. — measurements 7.5; RUN.md, T73.
+
 ## The targets at once
 
 **R43. With `same-bits`, the targets of the shared `go.yml` run as a matrix of the job `target`, one job a target — `amd64-v3`, `cpu-off`, `386`, `js-wasm` and `wasip1`, the jobs "Go / target (<target>)" —, and the job `targets` after them is the one check "Go / targets" of the caller's ruleset: green when `needs.target.result` is `success`, red otherwise. "Go / fma-diff" stays one job, and its six targets run at once, in the background, each with its output in a file of its own, printed whole in the order of the targets, each stopped at 25 minutes. The script of the targets is one for the matrix and `arm64` and runs the targets `TARGETS` names; `arm64` names `cpu-off js-wasm wasip1`. The input and the checks of the ruleset keep their names, and the change gives a release of `.github`.** Task T62, epic E21; by row 7.13 of COORDINATION.md spec and measurements 3.1 spec.
@@ -1810,6 +1814,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 — *Consequence:* `go.yml`; `tests/go.test.sh`, `tests/stubs/go`, `tests/stubs/timeout`, `tests/stubs/record.sh`; R16, R39, R41, R42; architecture 3.1; sources 2.11, 10.1; measurements 2.7; RUN.md, T62. A caller changes nothing but the SHA of `go.yml`, which Dependabot raises; "Go / targets" keeps its name in its ruleset, and "Go / target …" are no checks of it. A run of a caller with `same-bits` has four jobs more: on a miss each downloads the artifact of the image, and on a hit each restores the entry of `main`, five loads of the image where `targets` had one (measurements 7.3).
 
 — *Amendment 2026-11-16:* the release came out — `v0.1.27`, commit 0f3d88d, the merge commit of pull request 126, immutable and Latest; `gh release verify` confirms it. Of the shared workflows it differs from `v0.1.26` in `go.yml` alone (`git diff v0.1.26 v0.1.27`). The template of architecture 3.3 calls `go.yml` by this SHA. `.github` calls `go.yml` without `same-bits`, so the CI run on `main` after the merge ran no target and saved no entry (`gh api repos/altnovatrail/.github/actions/caches`). Task T63.
+
+— *Amendment 2026-11-17 (T73):* **the matrix is measured at its callers, on `v0.1.31`:** at `sim` it shortens the targets on amd64, but the run still ends with "Go / arm64", whose three targets run one after another; at `learner-model` and `engine`, whose tests take seconds, it costs four loads of the image and four jobs in the queue of runners (measurements 2.8). So "the gain is where the tests take the time" holds for "Go / targets" and not yet for the run. The decision stands; the job `arm64` and a matrix where the tests take seconds are Д12. Д10 is closed. — measurements 2.8; `run/DEBT.md`, Д12; RUN.md, T73.
 
 ## The files of the release at once
 
