@@ -1365,6 +1365,8 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 
 — *Consequence:* architecture 2.11 is decided. Step 2 of T36 of `spec` checks the templates on `main` and closes Д4. A repository sets up no templates of its own: a form of its own or a `config.yml` of its own would cancel all the shared ones (the 2026-11-01 amendment to R22 spec). — `.github/ISSUE_TEMPLATE/`; `.github/pull_request_template.md`; README.md; `profile/README.md`; CLAUDE.md; RUN.md, T37; architecture: status, 1, 2.11, 4.
 
+— *Amendment 2026-11-18 (T74):* **the opening of both forms and the first line of the pull request template say "Write in English." instead of "Write in English or Russian.", and CONTRIBUTING.md asks for issues and pull requests in English alone: an issue and a pull request are in English whoever writes them, a person too.** *Why:* the second 2026-11-17 amendment to R14 spec and the 2026-11-17 amendment to R22 spec, which replaces its "Languages" and the language of its 2026-11-01 amendment — the author's answer to В42, «всё на английском», not its recommendation; row 2.6 of COORDINATION.md spec. Both come into the submodule with a move to a tag of `spec` from v0.18.26 on; meanwhile their text is at that tag, commit fdb0072, read 2026-11-18. *Rejected:* by those amendments — people writing in English or Russian, and pull requests in English with issues in either; here — no line about the language at all: row 2.6 of COORDINATION.md spec names "Write in English." as the line of the forms and the template, and a contributor who reads no CONTRIBUTING.md sees it where they write. — CONTRIBUTING.md; `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/change_proposal.yml`; `.github/pull_request_template.md`; R50; RUN.md, T74; `run/QUESTIONS.md`, В42.
+
 ## The `spec` tag v0.6.2
 
 **R30. `.github` is on `spec` v0.6.2: the submodule `spec/` is at this tag, the links to `spec` pinned to a tag name it, and the row Status of the profile says about the format the same as the README of `spec` at this tag. Т-27 is closed by R77 spec, and `.github` takes the rule of signatures with the recipe `release-verify` by this move. The rerun path of the shared release moves to the recipe by a task of its own, T39.**
@@ -2006,3 +2008,5 @@ The rest was rejected by the amendment to R22 spec itself: copies in every repos
 - rule 10 of RUN.md as it was, with RULES.md alone: the copy would drift from the template with no decision that holds it.
 
 — *Consequence:* `spec/`; CLAUDE.md; RUN.md, rule 10, T71; `docs/plan/E22.md`; `run/QUESTIONS.md`, В42, В43; R40, R48; architecture: status; sources 12.16; measurements 9.1.
+
+— *Amendment 2026-11-18 (T74):* the first item of "Rejected" no longer holds: `spec` changed R22 spec by the author's answer to В42, and CONTRIBUTING.md, the pull request template and the issue forms are in English alone (the 2026-11-18 amendment to R29). В42 has left table 3.

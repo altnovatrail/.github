@@ -1,4 +1,4 @@
-<!-- Write in English or Russian. -->
+<!-- Write in English. -->
 
 <!-- The issue this pull request closes. Only a fix of a typo or a broken link comes without one. -->
 Closes #

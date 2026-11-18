@@ -10,7 +10,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Write in English or Russian.
+        Write in English.
 
         Open this issue before a pull request, unless the change fixes a typo or a broken link, and read the repository's decision log first: see [before you start](https://github.com/altnovatrail/.github/blob/main/CONTRIBUTING.md#before-you-start).
 
