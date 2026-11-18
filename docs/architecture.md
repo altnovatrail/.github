@@ -1,6 +1,6 @@
 # .github — architecture
 
-> Status: the shared checks, the workflows for code, the shared release and the composite action `toolchain` exist and come out in releases of `.github` (R10), and no point of section 2 is open. Where the rest is set: the tag of `spec` — the submodule `spec/`; the line the releases are numbered in — `RELEASE_LINE` in `self-release.yml`; the releases — the tags `v*` and [the releases](https://github.com/altnovatrail/.github/releases); what a task did — its pull request and the archives `docs/plan/`; what is put off — [run/DEBT.md](../run/DEBT.md).
+> Status: the shared checks, the workflows for code, the shared release, the composite action `toolchain` and the tool `tools/coderules/` exist and come out in releases of `.github` (R04, R10), and no point of section 2 is open. Where the rest is set: the tag of `spec` — the submodule `spec/`; the line the releases are numbered in — `RELEASE_LINE` in `self-release.yml`; the releases — the tags `v*` and [the releases](https://github.com/altnovatrail/.github/releases); what a task did — its pull request and the archives `docs/plan/`; what is put off — [run/DEBT.md](../run/DEBT.md).
 >
 > What the component does, what it does not do, and what is still to be decided about it. This is the detail of its card, architecture 3.11 spec. The card stays the summary: if the detail changes what the card says, the card is changed in `spec` by the same route as the questions to its registers (RULES.md, Across repositories).
 >
@@ -27,7 +27,7 @@
 - no learners' data and no secrets, as in no repository (RULES.md, Hard rules);
 - at build time it depends on nothing but `spec`, like all (repositories 2.1 spec);
 - every repository takes the shared checks of CI, `spec` too, even before code (repositories 1, 2.1, 3 spec; R30 spec). Into a repository made from the repository template of spec, the language checks, the justfile and the signed releases come with its code (repositories 1 spec);
-- its services are GitHub and Sigstore: CI, releases, keyless signing — the npm registry, where the shared release publishes the UI packages, and Codecov, where the Go and TypeScript wrappers send the caller's test coverage, by OIDC (architecture 3.12 spec; R37 spec, R48 spec; R16, R19). The README badges are those of repositories 2.3 spec (R48 spec; R25);
+- its services are GitHub and Sigstore: CI, releases, keyless signing — the npm registry, where the shared release publishes the UI packages, and Codecov, where the Go and TypeScript wrappers send the caller's test coverage, by OIDC (architecture 3.12 spec; R37 spec, R48 spec; R16, R19). The README badges are those of repositories 2.3 spec, their images from shields.io, the Scorecard API, SonarCloud and Codecov, and SonarCloud's analysis is a required check (R48 spec; R25; R11);
 - stage 0, together with `spec` (repositories 2.1 spec).
 
 ## 2. To decide when detailed
@@ -42,8 +42,8 @@ The points "To decide when detailed" of the card, a subsection per point, and th
 ### 2.2. Scorecard from a shared workflow
 
 - **Gist:** Scorecard with the publishing of its results puts restrictions on the workflow that runs it, and the Scorecard server may reject the result (sources 6.1). The calling file cannot keep them: its job has `uses:` of the shared workflow instead of steps, and `id-token: write`, while "Only the job with `ossf/scorecard-action` can use `id-token: write` permissions" (sources 6.1).
-- **Decided:** Scorecard is the shared `scorecard.yml` (R03, R09). The server accepts the result both of `self-scorecard.yml` by the local path and of the shared file called from another repository by the full path: it checks the restrictions by the shared file.
-- **Pitfall:** a green job does not show that the result was accepted. When the server refuses, scorecard-action v2.5.0 only warns and returns success, and that tag has no input `fail_on_publish_error` (sources 6.1): the acceptance is seen in the Scorecard API and in the log of the run. With a release of the action that has the input, it is worth turning it on.
+- **Decided:** Scorecard is the shared `scorecard.yml` (R03, R09). The server accepts the result both of `self-scorecard.yml` by the local path and of the shared file called from another repository by the full path (R09, R13). That it checks the restrictions by the shared file follows from this and from its check of the branch by the caller (scorecard-webapp, PR #778; sources 6.1); its documentation does not say so.
+- **Pitfall:** a green job does not show that the result was accepted. When the server refuses, scorecard-action at the version `scorecard.yml` pins only warns and returns success, and has no input `fail_on_publish_error` (sources 6.1): the acceptance is seen in the Scorecard API and in the log of the run. A raise of the action in that file is when to look for the input and turn it on.
 
 ### 2.3. The signature of the shared release: whose identity
 
@@ -66,17 +66,17 @@ The points "To decide when detailed" of the card, a subsection per point, and th
 
 - **Gist:** Dependabot waits three days after a version comes out before it proposes the version — so `dependabot.yml` of `spec` says for each ecosystem (R30 spec). It raises the references to the shared workflows in the same ecosystem `github-actions`.
 - **Decided:** R10: three days, as for everything. The design is sections 3.3 and 3.5.
-- **How it acts:** the pause holds the references to `.github` too: for dependabot-core a reference to a reusable workflow is a dependency of the ecosystem `github-actions`, and the same code checks the pause for it as for an action (sources 4.2). The count runs from the date of the tag, to the day, and the tag of a GitHub release is lightweight, its date the date of the commit (sources 4.2). So after a release that came out minutes after the merge, the pause lasts from two to three days; a release that came out later than its commit gets a shorter pause — that is 2.10.
+- **How it acts:** the pause holds the references to `.github` too: for dependabot-core a reference to a reusable workflow is a dependency of the ecosystem `github-actions`, and the same code checks the pause for it as for an action (sources 4.2). The count runs from the date of the tag, to the day, and the tag of a GitHub release is lightweight, its date the date of the commit (sources 4.2). So after a release that came out minutes after the merge, the pause lasts from two to three days, as the Dependabot pull requests of `spec` showed (sources 4.3); a release that came out later than its commit gets a shorter pause — that is 2.10.
 
 ### 2.7. How a shared workflow reads the files of `.github` of its own version
 
 - **Gist:** a shared workflow may need data — the license list (3.1), the version and the sum of gitleaks. `actions/checkout` in it takes the calling repository, not `.github` (sources 2.1); a reusable workflow takes its own repository at its own version by `actions/checkout` with `repository: ${{ job.workflow_repository }}` and `ref: ${{ job.workflow_sha }}` (sources 2.2).
-- **Decided:** R08, R16 and R19: the data is in the file of the shared workflow itself, so a change of the data is a change of the shared workflow, which gives a release (2.4), and the caller gets the data of the version it is pinned at. `go.yml` keeps the one copy of `spec`'s license list, which `self-ci.yml` holds to the output of `spec`'s recipe `licenses-allowed`; `typescript.yml` keeps none: a TypeScript caller's `ci-licenses` checks the lock file by a recipe of `spec` and takes the list from there (R39 spec). Data too large for the file would be a file of `.github`, taken by a second checkout by `job.workflow_sha`. The design is sections 3.1 and 3.4.
+- **Decided:** R08, R16, R19 and R33: the data is in the file of the shared workflow itself, so a change of the data is a change of the shared workflow, which gives a release (2.4), and the caller gets the data of the version it is pinned at. `go.yml` keeps the one copy of `spec`'s license list, which `self-ci.yml` holds to the output of `spec`'s recipe `licenses-allowed`; `typescript.yml` keeps none: a TypeScript caller's `ci-licenses` checks the lock file by a recipe of `spec` and takes the list from there (R39 spec). Code or data too large for the file is taken by a second checkout by `job.workflow_sha`: so `go.yml` with `same-bits` runs the tool `tools/coderules/` of its own release (R33). The design is sections 3.1 and 3.4.
 
 ### 2.8. Shared workflows from a repository named `.github`
 
 - **Gist:** R03 puts the shared workflows into `altnovatrail/.github`. That GitHub calls workflows from a repository with such a name, and that Dependabot raises the references to it, the documentation does not say; the example of `nodenv/.github` and issue #12489 of dependabot-core show it (sources 14.2).
-- **Decided:** R03: they stay in `.github`. The callers call them by the full path, `altnovatrail/.github/.github/workflows/<file>@<sha>`, and their checks run (R13). Dependabot raises each reference by its own pull request, and "DCO / sign-off" accepts the sign-off of `dependabot[bot]` by the exception of 3.1 (R25); the pause holds them — 2.6.
+- **Decided:** R03: they stay in `.github`. The callers call them by the full path, `altnovatrail/.github/.github/workflows/<file>@<sha>`, and their checks run (R13). Dependabot raises the references to `.github` — at a caller, in one pull request, by the group of 3.3 (R04) — and "DCO / sign-off" accepts the sign-off of `dependabot[bot]` by the exception of 3.1 (R25; sources 4.3); the pause holds them — 2.6.
 
 ### 2.9. Who sets the ruleset of `main` of `.github` itself
 
