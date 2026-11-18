@@ -56,7 +56,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T77 | Тексты без истории (R160 spec) и тег `spec` v0.18.34 | Claude | да | — |
 | [x] | T78 | Документы без истории: вводная и разделы 1–2 `docs/architecture.md`, README, CLAUDE.md | Claude | — | T77 |
 | [x] | T79 | Документы без истории: разделы 3–4 `docs/architecture.md` | Claude | — | T78 |
-| [ ] | T80 | Комментарии общих workflow, действия `toolchain` и `tools/coderules/`, проверка номеров решений | Claude | — | T77 |
+| [x] | T80 | Комментарии общих workflow, действия `toolchain` и `tools/coderules/`, проверка номеров решений | Claude | — | T77 |
 | [ ] | T81 | Комментарии `tests/`, `self-` workflow, `justfile` и файлов настроек | Claude | — | T80 |
 
 ## Epic E27. Тексты без истории (R160 spec)
@@ -64,20 +64,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Почему эпик такой.** Строка 7.26 COORDINATION.md spec (R160 spec, R76 spec, R156 spec): текст задачи дал оркестратор (правило 6 COORDINATION.md spec), и правило 11 разделило его на пять задач по одному ревью. Задача живёт только в эпике (R40), поэтому части T77 — задачи этого эпика, а не `run/TASKS.md`: оркестратор берёт их из таблицы 1 после мержа T77. Файлы, после которых выходит релиз (R10), — общие workflow, `.github/actions/` и `tools/coderules/` — меняет одна T80, и с ней включается проверка номеров решений в комментариях: правка номеров и правка комментариев выходят одним релизом, а не двумя (architecture 3.5).
 
 **Не входит:** записи журнала, которые задачи не меняют, — их переписывает задача, что их коснётся (R160 spec; Д14); `.devcontainer/` — копия шаблона (Д13).
-
-#### T80. Комментарии общих workflow, действия `toolchain` и `tools/coderules/`, проверка номеров решений
-
-- **Цель:** комментарии файлов, после которых выходит релиз, — общих workflow `.github/workflows/` без приставки `self-`, `.github/actions/` и `tools/coderules/` — по R160 spec, «Comments»; в `docs-budgets.json` — `"comments": true`, как в `spec/repo-template/files/docs-budgets.json`, и `docs-check-repo` проверяет номера решений в комментариях кода (R32 spec).
-- **Почему:** строка 7.26 COORDINATION.md spec; R160 spec; R32 spec; часть T77 по правилу 11. Номера решений `spec` в этих файлах записаны как `R107 in spec`, и проверка читает их как записи своего журнала: включённая в T77, она дала бы релиз ради одной правки номеров (R10; architecture 3.5).
-- **Сделать:**
-  - комментарий говорит только то, чего не скажет код: почему, ограничение, ловушка, договор входов и выходов общего workflow и действия; без пересказа кода, истории, номеров задач и разделов документов; номер решения — якорем в конце, `(R25)`, номер `spec` — `(R107 spec)`;
-  - каждое `R… in spec` — по `git grep -nE 'R[0-9]+ in spec'`, не по проверке: номер, который есть и в своём журнале, — `R31 in spec`, `R48 in spec`, — она читает как свою запись и пропускает; в строках сообщений `::error::` — та же форма, хоть проверка строк не читает;
-  - `tools/coderules/testdata/` — образцы, по которым тесты ждут находки по строкам: правка комментария не меняет числа строк, иначе — и ожидания тестов;
-  - `"comments": true` в `docs-budgets.json`;
-  - тесты `tests/` берут шаг из файла дословно (R28): набор зелёный;
-  - после мержа релиз выходит сам (R10).
-- **Как проверить:** `just -f spec/justfile docs-check-repo`; `bash tests/run.sh` с yq по `self-ci.yml` (`.claude/rules/workflows.md`); `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses` (`.claude/rules/go.md`); `/code-review high`.
-- **Разделы:** R160 spec, «Comments»; R32 spec; R10, R28, R33; architecture 3.5.
 
 #### T81. Комментарии `tests/`, `self-` workflow, `justfile` и файлов настроек
 
