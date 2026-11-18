@@ -1,4 +1,4 @@
-# .github's own release (R04, R10, R12), as spec's (R31 in spec): what a green main produces when a
+# .github's own release (R04, R10, R12), as spec's (R31 spec): what a green main produces when a
 # shared workflow, a shared action or the tool a workflow reads, has changed. Nobody tags by hand:
 # the version is the next patch of the line the releases are numbered in, and the tag is created
 # with the release. The callers pin a shared workflow or action by the SHA of a release, with its
@@ -115,13 +115,13 @@ jobs:
           persist-credentials: false
 
       # The number comes from spec's own recipe, release-version, run as spec's release runs it: in
-      # the toolchain stage, with the Node, git and just of the devcontainer (R31 in spec). It is
+      # the toolchain stage, with the Node, git and just of the devcontainer (R31 spec). It is
       # handed TARGET and this file, counts this repository's tags, and takes RELEASE_LINE as this
       # file sets it at TARGET — the line the commit was made in, whatever the environment says; a
       # commit older than this file takes the line of the tip's file, as the copy of the checkout
       # below holds it. spec's own script, tools/toolchain/toolchain.sh in the submodule, builds
       # that stage and runs the recipes in it with a copy of the checkout and RUNNER_TEMP mounted,
-      # and nothing of the step's environment goes in (R31 in spec): how they run is spec's, and
+      # and nothing of the step's environment goes in (R31 spec): how they run is spec's, and
       # reaches here with its tag. TARGET has to be a full SHA in the history of the checkout,
       # which spec's recipe does not ask (R12). The git diff against the release before runs with
       # the runner's git, as the shared checks do (R08). The step's outputs: version — empty when
@@ -132,7 +132,7 @@ jobs:
       # it would stop releases quietly, so the run stops on it instead.
       #
       # The script builds the stage toolchain-core, Node, just, Go and buf, all a release needs, by
-      # TOOLCHAIN_STAGE (the 2026-11-16 amendment to R31 in spec; R47); .github's toolchain adds
+      # TOOLCHAIN_STAGE (the 2026-11-16 amendment to R31 spec; R47); .github's toolchain adds
       # nothing to it, so the image is the same.
       - id: version
         name: Work out the version
@@ -249,7 +249,7 @@ jobs:
               --latest \
               --generate-notes "${start[@]}" 2> "$RUNNER_TEMP/release-create.err"; then
               cat "$RUNNER_TEMP/release-create.err" >&2
-              # Only the documented refusal is let pass, by spec's own rule (R31 in spec):
+              # Only the documented refusal is let pass, by spec's own rule (R31 spec):
               # release-refusal says whether this commit is no longer the tip, is in the tip's
               # history and adds or modifies a workflow file relative to it, and whether the
               # error is that 404 or 403. main is fetched again after the refusal: a commit

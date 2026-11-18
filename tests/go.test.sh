@@ -7,7 +7,7 @@
 # the OIDC token, and its step "Codecov CLI", run with a stand-in curl. The steps that use an
 # action the harness does not run: their inputs are read as text, and the actions are named
 # without their SHAs, which Dependabot moves.
-# The tests of same-bits (T46 and T47, R107 in spec) come last, under their own headings: the jobs
+# The tests of same-bits (T46 and T47, R107 spec) come last, under their own headings: the jobs
 # "Go / targets", "Go / fma-diff" and "Go / arm64", and the scripts they hand the toolchain
 # container, run here with bash and the stand-in go.
 # shellcheck source=tests/lib.sh
@@ -883,7 +883,7 @@ test_go_caches_without_a_module_to_verify_them_by_are_kept() {
     assert_line "Go caches: go-Linux-X64-test-a-b, with no module of the repository to verify them by."
 }
 
-# The tests of same-bits (T46; R107 in spec): learner-model's and engine's recipes test-targets
+# The tests of same-bits (T46; R107 spec): learner-model's and engine's recipes test-targets
 # and fma-diff, as jobs of go.yml. A step hands its script to one toolchain container on stdin; the
 # cases run that script as the container would, with bash in the workspace, and with the stand-in
 # go first on PATH, which answers as the case says and writes down every call with its build
@@ -1318,7 +1318,7 @@ test_go_fma_diff_builds_each_target_s_own_packages() {
 }
 
 # The tests of the job T47 adds to same-bits: "Go / arm64", ci-test and the targets of its host on
-# an arm64 runner (R107 in spec).
+# an arm64 runner (R107 spec).
 
 test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
     use_workflow go.yml
