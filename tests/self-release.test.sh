@@ -1,10 +1,7 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of self-release.yml's step "Work out the version" (R10 and its amendments): which
-# commits get a release of .github. A commit gets one only when a shared workflow — a file of
-# .github/workflows/ without the self- prefix —, a shared action of .github/actions/ (R49) or the
-# tool a shared workflow reads from .github, tools/coderules/, has changed since the release before
-# it (R33). The step runs on a repository of the case's own, with git as it is, and with a
-# stand-in for spec's toolchain.sh in it, which prints what spec's recipe release-version would.
+# The tests of self-release.yml's step "Work out the version": which commits get a release of
+# .github (R10, R33, R49). The step runs on a repository of the case's own, with git as it is,
+# and with a stand-in for spec's toolchain.sh in it, which prints what release-version would.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 

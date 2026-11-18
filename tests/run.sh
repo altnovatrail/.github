@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2016 # The script of each test, in single quotes, is the bash of the test's to expand.
-# Runs the tests of the workflows' steps (R28 in docs/decisions.md): every test_ function of
-# tests/*.test.sh, or of the files given, each as a bash process of its own. A function that set -e
-# runs in an if or after || ignores set -e for every command in it, so a test run in a subshell
-# of this script could fail and still pass; a process of its own cannot. Each test sources its
-# file, which sources tests/lib.sh, and runs between harness_begin and harness_end.
+# Runs the tests of the workflows' steps (R28): every test_ function of tests/*.test.sh, or of the
+# files given, each as a bash process of its own. A function run in an if or after || ignores
+# set -e for every command in it, so a test run in a subshell of this script could fail and still
+# pass; a process of its own cannot.
 #
-# yq is the one self-ci.yml pins, by version and SHA-256 (R08): YQ names it, and its version has to
-# be YQ_VERSION of self-ci.yml. The runner image has a yq of its own, at a version nobody here
-# pins, so PATH is not asked. Locally, take the same file as the step Install yq does:
+# yq is the one self-ci.yml pins, by version and SHA-256 (R28). The runner image has a yq of its
+# own, at a version nobody here pins, so PATH is not asked. Locally, take the same file as the
+# step Install yq does:
 #
 #   YQ=/path/to/yq bash tests/run.sh
 #

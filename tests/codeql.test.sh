@@ -1,9 +1,7 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of codeql.yml's step "Go of the caller's toolchain stage" (R45): it takes the archive
-# of go.dev that ARG GO_VERSION and GO_SHA256_AMD64 of the stage toolchain pin, checks it against
-# that sum and puts its Go ahead of the runner's, with no docker at all. The stand-in curl answers
-# with an archive the case builds: a go/bin/go that says its version, as go.dev's archive holds
-# go/ at its top.
+# The tests of codeql.yml's step "Go of the caller's toolchain stage" (R45). The stand-in curl
+# answers with an archive the case builds: a go/bin/go that says its version, as go.dev's archive
+# holds go/ at its top.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 

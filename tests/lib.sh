@@ -1,12 +1,11 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The harness of the tests of the workflows' steps (R28 in docs/decisions.md). A test takes a step
-# of a workflow as its file has it, the run script byte for byte and the env as GitHub would hand
-# it in. It runs that step with this machine's bash, in a directory of its own. In CI that machine
-# is the runner, where the step runs in earnest, with the runner's own jq, tar, openssl and git.
-# docker, gh, curl, wget, cosign and npm, which would reach the network or a container, are stand-ins,
-# tests/stubs/, that fail until a case stands one of its own in. Neither a program a step calls by
-# its absolute path nor git has one: a step that fetches by them gets its stand-ins with its cases. Each test is one bash process of its own (tests/run.sh), which sources its file,
-# and its file sources this one.
+# The harness of the tests of the workflows' steps (R28). A test takes a step as its file has it,
+# the run script byte for byte and the env as GitHub would hand it in, and runs it with this
+# machine's bash, in a directory of its own: in CI the runner, with its own jq, tar, openssl and
+# git. docker, gh, curl, wget, cosign and npm, which would reach the network or a container, are
+# stand-ins, tests/stubs/, that fail until a case stands one of its own in. Neither a program a
+# step calls by its absolute path nor git has one: a step that fetches by them gets its stand-ins
+# with its cases.
 #
 # A step gets what a runner would give it and nothing else: env -i, then PATH with the stand-ins
 # first, HOME, CI and GITHUB_ACTIONS, LANG and LC_ALL as they are here, fresh files for
@@ -380,7 +379,7 @@ run_step() {
     done
     # GitHub's shells on Linux: bash -e {0} when the step names none, and for shell: bash -e {0}, the
     # same template named, as the steps of a composite action name it (R49); bash --noprofile --norc
-    # -eo pipefail {0} for shell: bash (sources 2.3).
+    # -eo pipefail {0} for shell: bash.
     shell=$(harness_step -r '.jobs[$j].steps[$i].shell // .jobs[$j].defaults.run.shell // .defaults.run.shell // ""')
     case $shell in
         "" | "bash -e {0}") command=(/usr/bin/bash -e) ;;

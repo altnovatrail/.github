@@ -1,25 +1,23 @@
-# Dependabot proposes new versions of what it can see (R10): the actions of the workflows, shared
-# and self- alike, with the version comment beside each SHA, and the base image of the
-# devcontainer, tag and digest. An action it moves in a shared workflow comes out in the next
-# release of .github, and the callers' Dependabot moves their reference to it (R04).
+# Dependabot proposes new versions of what it can see (R10): the actions of the workflows and of
+# the composite action, with the version comment beside each SHA, the Go module and the base image
+# of the devcontainer, tag and digest. An action it moves in a shared workflow comes out in the
+# next release of .github, and the callers' Dependabot moves their reference to it (R04).
 #
-# Raised by hand, because no ecosystem here reads them: gitleaks, actionlint, shellcheck and the
-# yq of the tests (R08, R28), cosign and the Node of the npm step of release.yml (R18), and the
-# Codecov CLI of go.yml and typescript.yml, raised in both at once (R16, R19), each with the
-# sha256 of its download in the workflow that fetches it; and the ARGs of
+# Raised by hand, because no ecosystem reads them: gitleaks, actionlint, shellcheck and the yq of
+# the tests (R08, R28), cosign and the Node of the npm step of release.yml (R18), and the Codecov
+# CLI of go.yml and typescript.yml, raised in both at once (R16, R19), each with the sha256 of its
+# download in the workflow that fetches it; the tools of the justfile (R33); and the ARGs of
 # .devcontainer/Dockerfile, which come with a new tag of spec.
 #
-# Every ecosystem waits three days after a release before proposing it, as in spec: a bad
-# release gets time to be noticed (architecture 3.5). The base image is the exception in effect:
-# the Microsoft registry gives no release date, and Dependabot proposed a new image at once in
-# spec and in canvas-api (T15 in spec's RUN.md).
+# Every ecosystem waits three days after a release before proposing it, as in spec, so that a bad
+# release gets time to be noticed. The base image is the exception in effect: the Microsoft
+# registry gives no release date, so Dependabot proposes a new image at once.
 version: 2
 
 updates:
-  # The workflows, and the composite action of .github/actions/toolchain, which Dependabot reads only
-  # where a directory names it: / is .github/workflows and an action.yml at the root (sources 4.1).
-  # One pull request moves an action in both, so that go.yml and the action keep one SHA of
-  # actions/cache, as the suite of tests holds them (R49).
+  # Dependabot reads a composite action only where a directory names it: / is .github/workflows and
+  # an action.yml at the root. One pull request moves an action in both, so that go.yml and the
+  # action keep one SHA of actions/cache, as the suite of tests holds them (R49).
   - package-ecosystem: github-actions
     directories:
       - /
@@ -32,8 +30,8 @@ updates:
       actions:
         group-by: dependency-name
 
-  # The Go module of the tool of the rules of code, which requires nothing yet (R33): a require it
-  # comes to have is proposed like any other.
+  # tools/coderules requires nothing yet (R33): a require it comes to have is proposed like any
+  # other.
   - package-ecosystem: gomod
     directory: /tools/coderules
     schedule:

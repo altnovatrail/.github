@@ -4,13 +4,13 @@
 # and, as env, the build variables it got — GOOS, GOARCH, GOAMD64 and GODEBUG, a value or unset.
 # It answers go env GOHOSTARCH by stub/go.hostarch, amd64 by default, and go env GOROOT with
 # /usr/local/go; go list with stub/go.packages.<GOARCH>, or else stub/go.packages, one import
-# path a line. A build with -o /dev/null and -gcflags=-S
-# prints a stand-in for the assembler: "TEXT <package> fused" where stub/go.fuses names the package
-# with the target, "<package> <GOARCH>/<GOAMD64>", or with "*" for every target, and "TEXT
-# <package> plain" otherwise or with -d=fmahash=n. A package stub/go.triggered names prints "TEXT
-# <package> plain" and "fmahash triggered" in both builds: the same assembler, so that only the
-# message tells. The control, the package . of a module named by -C, fuses on every
-# target unless stub/go.control-unfused is there. A package stub/go.broken names does not build.
+# path a line. A build with -o /dev/null and -gcflags=-S prints a stand-in for the assembler:
+# "TEXT <package> fused" where stub/go.fuses names the package with the target, "<package>
+# <GOARCH>/<GOAMD64>", or with "*" for every target, and "TEXT <package> plain" otherwise or with
+# -d=fmahash=n. A package stub/go.triggered names prints "TEXT <package> plain" and "fmahash
+# triggered" in both builds: the same assembler, so that only the message tells. The control, the
+# package . of a module named by -C, fuses on every target unless stub/go.control-unfused is
+# there. A package stub/go.broken names does not build.
 # Any other call — go test, go vet, a plain go build — ends with 1 when a line of stub/go.fails is
 # a word of the call's build variables, as GOARCH=386, and with 0 otherwise.
 set -euo pipefail

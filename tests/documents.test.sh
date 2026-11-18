@@ -1,10 +1,7 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of documents.yml (R08 and its amendments): spec's check of the documents, run by spec's
-# script toolchain.sh in the caller's spec submodule, which builds the toolchain stage, or loads it
-# from the file of the cache that TOOLCHAIN_IMAGE_FILE names (R36), and runs spec's recipe in it.
-# The script is spec's own, from .github's submodule, and docker the stand-in, which writes down
-# what the script asks of it. The steps of actions/cache the harness does not run: they are read as
-# text, against go.yml's, and the job Workflows of self-ci.yml has the same three.
+# The tests of documents.yml (R08, R36). The script is spec's own toolchain.sh, from .github's
+# submodule, and docker the stand-in, which writes down what the script asks of it. The steps of
+# actions/cache the harness does not run are read as text, against go.yml's.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 

@@ -6,8 +6,7 @@
 # copies into <folder>/dist/ what the case put in stub/docker-dist/, when it put anything: the
 # files the caller's release-files recipe would write. A docker save --output <file> writes the
 # file: the image it would hold, or, when the case makes it fail, the part a failed save leaves. It
-# exits as the case says: by stub_exit_on for its
-# subcommand, else by stub_exit, else 0.
+# exits as the case says: by stub_exit_on for its subcommand, else by stub_exit, else 0.
 set -euo pipefail
 state=$(cd -- "${0%/*}/.." && pwd -P)
 # shellcheck source=tests/stubs/record.sh
