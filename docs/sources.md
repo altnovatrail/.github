@@ -103,6 +103,9 @@ Read 2026-11-01 (R28, T35):
 Read 2026-11-08 (the 2026-11-08 amendment to R16, T47):
 - [GitHub Docs, GitHub-hosted runners reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), section Standard GitHub-hosted runners for public repositories: in the table, Linux arm64 has `ubuntu-24.04-arm`, `ubuntu-22.04-arm` and `ubuntu-26.04-arm`, 4 CPU and 16 GB, and "Use of the standard GitHub-hosted runners is free and unlimited on public repositories".
 
+Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
+- **how long a job runs** — github/docs at the commit 6946b3e (2026-11-12), `content/actions/reference/limits.md`, for all GitHub-hosted runners: "Job execution time | 6 hours | Each job in a workflow can run for up to 6 hours of execution time. If a job reaches this limit, the job is terminated and fails."
+
 ### 2.7. `actions/checkout`
 
 Read 2026-10-20 (R08):
@@ -571,7 +574,7 @@ Read 2026-11-16 (R43, T62), Go 1.27.4 of the devcontainer:
 
 Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
 - **what finds a build** — `src/cmd/go/internal/cache/cache.go` of Go 1.27.4, the Go of the `toolchain` stage, in the devcontainer's `GOROOT`: "An ActionID is a cache action key, the hash of a complete description of a repeatable computation (command line, environment variables, input file contents, executable contents)";
-- **golangci-lint's cache** — golangci-lint v2.15.0, its latest release (the GitHub API, `repos/golangci/golangci-lint/releases/latest`), the commit 25c5369: `internal/go/cache/cache.go` has the comment and the constants of Go's above — `mtimeInterval = 1 * time.Hour`, `trimInterval  = 24 * time.Hour`, `trimLimit     = 5 * 24 * time.Hour` —, `func (c *DiskCache) Close() error { return c.Trim() }` and the same `cutoff := now.Add(-trimLimit - mtimeInterval)`. Where `pkg/commands/run.go` makes its cache, `cache.NewCache`, no call of its `Close` was found.
+- **golangci-lint's cache** — golangci-lint v2.15.0, its latest release (the GitHub API, `repos/golangci/golangci-lint/releases/latest`), the commit 25c5369: `internal/go/cache/cache.go` has the comment and the constants of Go's above — `mtimeInterval = 1 * time.Hour`, `trimInterval  = 24 * time.Hour`, `trimLimit     = 5 * 24 * time.Hour` —, `func (c *DiskCache) Close() error { return c.Trim() }` and the same `cutoff := now.Add(-trimLimit - mtimeInterval)`. Where `pkg/commands/run.go` makes its cache, `cache.NewCache`, no call of its `Close` was found. The version a caller's `toolchain` stage installs is the caller's own.
 
 ### 10.2. go-licenses
 

@@ -149,8 +149,8 @@ runs:
             mkdir -p -- "$cache/mod"
             newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
             if [ -n "$newest" ]; then
-                find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
-                    -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+                find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 21600))" \
+                    -exec touch -c -d "@$(($(date +%s) - 25200))" -- {} +
             fi
             echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
             exit 0

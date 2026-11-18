@@ -774,7 +774,7 @@ test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
 
 # An entry of another go.sum, restored by the prefix of the key (R41): the modules, which go left
 # read-only, are dropped, and nothing is verified; the builds stay. Those of the run that saved
-# it, no more than two hours older than its newest, are set three hours back; an older one keeps
+# it, no more than six hours older than its newest, are set seven hours back; an older one keeps
 # its time, for go to trim.
 test_go_caches_restored_by_the_prefix_drop_the_modules_and_keep_the_builds() {
     local now
@@ -787,8 +787,8 @@ test_go_caches_restored_by_the_prefix_drop_the_modules_and_keep_the_builds() {
         printf 'a build\n' > "$step_temp/go-cache/$file"
     done
     touch -d '6 days ago' "$step_temp/go-cache/build/00/new-d"
-    touch -d '6 days ago 90 minutes ago' "$step_temp/go-cache/build/00/used-d" "$step_temp/go-cache/lint/00/used-d"
-    touch -d '6 days ago 3 hours ago' "$step_temp/go-cache/build/00/old-d" "$step_temp/go-cache/lint/00/old-d"
+    touch -d '6 days ago 5 hours ago' "$step_temp/go-cache/build/00/used-d" "$step_temp/go-cache/lint/00/used-d"
+    touch -d '6 days ago 7 hours ago' "$step_temp/go-cache/build/00/old-d" "$step_temp/go-cache/lint/00/old-d"
     now=$(date +%s)
     run_step
     assert_status 0
@@ -799,7 +799,7 @@ test_go_caches_restored_by_the_prefix_drop_the_modules_and_keep_the_builds() {
     local file at
     for file in build/00/new-d build/00/used-d lint/00/used-d; do
         at=$(stat -c %Y "$step_temp/go-cache/$file")
-        assert_eq "$(( at >= now - 10800 && at <= now - 10800 + 60 ))" 1 "$file set three hours back"
+        assert_eq "$(( at >= now - 25200 && at <= now - 25200 + 60 ))" 1 "$file set seven hours back"
     done
     for file in build/00/old-d lint/00/old-d; do
         assert_eq "$(find "$step_temp/go-cache/$file" -mtime +5 | wc -l)" 1 "$file keeps its time"

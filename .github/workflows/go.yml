@@ -337,13 +337,13 @@ jobs:
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
       # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
-      # are addressed by what they were built from: each deletes a file it has not used for five
-      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
-      # run that saved the entry had in use — no more than two hours older than its newest — are set
-      # three hours back, so that this run's first command keeps them and their next use renews them,
-      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
-      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
+      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
+      # time, at the end of a command, and renews the time of one it uses. The files the run that
+      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
+      # newest — are set seven hours back, so that this run's first command keeps them and their next
+      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
+      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
       # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
       # out too —: each module of their builds is hashed again against the hash it was downloaded
       # with, which go checks against go.sum whenever it takes the module. A tool run by go run
@@ -370,8 +370,8 @@ jobs:
               mkdir -p -- "$cache/mod"
               newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
               if [ -n "$newest" ]; then
-                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
-                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 21600))" \
+                      -exec touch -c -d "@$(($(date +%s) - 25200))" -- {} +
               fi
               echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
@@ -596,13 +596,13 @@ jobs:
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
       # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
-      # are addressed by what they were built from: each deletes a file it has not used for five
-      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
-      # run that saved the entry had in use — no more than two hours older than its newest — are set
-      # three hours back, so that this run's first command keeps them and their next use renews them,
-      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
-      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
+      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
+      # time, at the end of a command, and renews the time of one it uses. The files the run that
+      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
+      # newest — are set seven hours back, so that this run's first command keeps them and their next
+      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
+      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
       # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
       # out too —: each module of their builds is hashed again against the hash it was downloaded
       # with, which go checks against go.sum whenever it takes the module. A tool run by go run
@@ -629,8 +629,8 @@ jobs:
               mkdir -p -- "$cache/mod"
               newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
               if [ -n "$newest" ]; then
-                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
-                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 21600))" \
+                      -exec touch -c -d "@$(($(date +%s) - 25200))" -- {} +
               fi
               echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
@@ -838,13 +838,13 @@ jobs:
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
       # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
-      # are addressed by what they were built from: each deletes a file it has not used for five
-      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
-      # run that saved the entry had in use — no more than two hours older than its newest — are set
-      # three hours back, so that this run's first command keeps them and their next use renews them,
-      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
-      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
+      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
+      # time, at the end of a command, and renews the time of one it uses. The files the run that
+      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
+      # newest — are set seven hours back, so that this run's first command keeps them and their next
+      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
+      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
       # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
       # out too —: each module of their builds is hashed again against the hash it was downloaded
       # with, which go checks against go.sum whenever it takes the module. A tool run by go run
@@ -871,8 +871,8 @@ jobs:
               mkdir -p -- "$cache/mod"
               newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
               if [ -n "$newest" ]; then
-                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
-                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 21600))" \
+                      -exec touch -c -d "@$(($(date +%s) - 25200))" -- {} +
               fi
               echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
@@ -1203,13 +1203,13 @@ jobs:
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
       # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
-      # are addressed by what they were built from: each deletes a file it has not used for five
-      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
-      # run that saved the entry had in use — no more than two hours older than its newest — are set
-      # three hours back, so that this run's first command keeps them and their next use renews them,
-      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
-      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
+      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
+      # time, at the end of a command, and renews the time of one it uses. The files the run that
+      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
+      # newest — are set seven hours back, so that this run's first command keeps them and their next
+      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
+      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
       # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
       # out too —: each module of their builds is hashed again against the hash it was downloaded
       # with, which go checks against go.sum whenever it takes the module. A tool run by go run
@@ -1236,8 +1236,8 @@ jobs:
               mkdir -p -- "$cache/mod"
               newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
               if [ -n "$newest" ]; then
-                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
-                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 21600))" \
+                      -exec touch -c -d "@$(($(date +%s) - 25200))" -- {} +
               fi
               echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
