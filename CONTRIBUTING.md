@@ -8,7 +8,7 @@ NovaTrail is in early design. Its documents are the product for now, and each re
 
 - **Open an issue first**, unless the change fixes a typo or a broken link. Say what you would change and why: the maintainer plans each repository's work in its RUN.md, so a pull request that comes without an issue may wait, or be declined.
 - **Read the repository's `docs/decisions.md`** before you propose a change. What a decision rejected is not proposed again without new evidence; if you have such evidence, say so in the issue.
-- **Write issues and pull requests in English or Russian.** In the repositories themselves, the work plan — RUN.md and the tables under `run/` — is in English, and so is spec's cross-repository plan, COORDINATION.md, but for its section «Порядок»; the bodies of the plan's tasks and the epic archives under `docs/plan/` are in Russian; the documents under `docs/` are in English. A repository that has not moved its plan or translated its documents yet keeps them in Russian until it does; everything else — README, code, comments — is in English.
+- **Write issues and pull requests in English.** In the repositories themselves, the work plan — RUN.md and the tables under `run/` — is in English, and so is spec's cross-repository plan, COORDINATION.md, but for its section «Порядок»; the bodies of the plan's tasks and the epic archives under `docs/plan/` are in Russian; the documents under `docs/` are in English. A repository that has not moved its plan or translated its documents yet keeps them in Russian until it does; everything else — README, code, comments — is in English.
 
 ## What every contribution keeps to
 
