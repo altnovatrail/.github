@@ -1,7 +1,7 @@
 // Package coderules breaks every rule of code that coderules holds a module to by engine's lists,
 // coderules.json here, each line marked "// want" with the rules it breaks, and keeps beside each
-// break what the rules allow, so that the check is held to finding no more than it should either.
-// It came from engine's testdata/coderules, of its rules_test.go (R107 in spec).
+// break what the rules allow, so that the check is held to finding no more than it should either
+// (R107 spec).
 package coderules
 
 import "C" // want cgo
@@ -35,9 +35,9 @@ var (
 	_ = utf8.RuneLen
 )
 
-// The engine's own shapes (docs/architecture.md, section 3.7): a mean of two P against the target
-// of the corridor, which the compiler fuses on arm64 and elsewhere unless float64() holds the
-// quotient, and a mean over n P, which it does not fuse, but which the rule holds all the same.
+// The engine's own shapes: a mean of two P against the target of the corridor, which the compiler
+// fuses on arm64 and elsewhere unless float64() holds the quotient, and a mean over n P, which it
+// does not fuse, but which the rule holds all the same.
 func corridor(p1, p2, s float64, n int) float64 {
 	d1 := (p1+p2)/2 - 0.775 // want fused
 	d2 := float64((p1+p2)/2) - 0.775

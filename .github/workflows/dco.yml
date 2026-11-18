@@ -1,21 +1,18 @@
 # Shared check (R03): every commit of a pull request, merge commits aside, carries a
-# Signed-off-by line of its author — the Developer Certificate of Origin that every contribution
-# certifies (R22 and R30 in spec). The commits come from git, so the check needs no API and
-# nothing beyond `contents: read`.
+# Signed-off-by line of its author, the Developer Certificate of Origin that every contribution
+# certifies (R22 spec, R30 spec). The commits come from git, so the check needs no API and nothing
+# beyond `contents: read`.
 #
-# On pull_request, the checkout is the merge of the pull request into its base, and its two
-# parents bound the range: HEAD^1 is the base as GitHub merged it, HEAD^2 the head of the pull
-# request. The range does not depend on the event's payload, so a run again after the base moved
-# still reads only the pull request's own commits.
+# The range is the two parents of the merge checkout, not the event's payload, so a run again
+# after the base moved still reads only the pull request's own commits.
 #
-# The sign-off has to name the author exactly, by name and address; the key itself is matched as
-# git matches trailers, whatever its case. One exception is named: Dependabot authors its commits
-# as dependabot[bot] at its noreply address but signs them off as dependabot[bot]
-# <support@github.com>, and GitHub commits them — spec's commit c6b3cb5 shows all three. For
-# such a commit, in a pull request that dependabot[bot] opened, that line is the one that counts.
-# An author is only a string anyone can set, so the exception asks for all three, the pull
-# request's author among them, which nobody else can be. Commits made on github.com carry their
-# author's sign-off because the organization requires it for web-based commits (R22 in spec).
+# The sign-off names the author exactly, by name and address; the key is matched as git matches
+# trailers, whatever its case. Dependabot authors its commits as dependabot[bot] at its noreply
+# address but signs them off as dependabot[bot] <support@github.com>, and GitHub commits them: that
+# line counts only when the commit's author is Dependabot, its committer GitHub and the pull
+# request's author dependabot[bot], since an author is a string anyone can set and the pull
+# request's author is not. Commits made on github.com carry their sign-off because the
+# organization requires it for web-based commits (R22 spec).
 #
 # Called from a job that runs on pull_request only: on any other event there are no commits of a
 # pull request to read, and the check fails rather than pass with nothing checked.

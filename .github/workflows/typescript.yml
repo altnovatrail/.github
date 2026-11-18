@@ -1,41 +1,37 @@
-# Shared check (R03, R19): the TypeScript code of the repository that calls it, by four recipes of
-# that repository's own — ci-lint, ci-test, ci-vuln and ci-licenses — one job each, in the
-# toolchain stage of the caller's .devcontainer/Dockerfile, where the caller pins its Node and the
-# browsers its tests run in; the recipes pin the versions of the tools they run and install the
-# packages of the lock file themselves. What the checks do is the repository's; how they are run
-# is the same everywhere (R30 in spec). Each job is a check of the caller's ruleset of main:
-# "TypeScript / lint", "TypeScript / test", "TypeScript / vuln" and "TypeScript / licenses", when
-# the calling job is named TypeScript.
+# Shared check (R03, R19): the caller's TypeScript code by four recipes of its own — ci-lint,
+# ci-test, ci-vuln and ci-licenses —, a job each, in the toolchain stage of its
+# .devcontainer/Dockerfile, where the caller pins its Node and the browsers its tests run in; the
+# recipes pin the tools they run and install the packages of the lock file themselves. What the
+# checks do is the caller's; how they are run is the same everywhere (R30 spec). With the calling
+# job named TypeScript, the checks of the caller's ruleset are "TypeScript / lint",
+# "TypeScript / test", "TypeScript / vuln" and "TypeScript / licenses".
 #
 # With engines, a fifth job runs the caller's recipe ci-engines, the tests in WebKit and Firefox,
-# as the check "TypeScript / engines" beside "TypeScript / test", whose ci-test then runs them in
-# Node and Chromium with the coverage, so that the two take their time side by side rather than one
-# after the other. The three browsers are those of the toolchain stage of spec's kind typescript
-# (R79 in spec). Without the input the workflow is what it was (R19).
+# as the check "TypeScript / engines", while ci-test runs them in Node and Chromium with the
+# coverage, so that the two take their time side by side. The three browsers are those of the
+# toolchain stage of spec's kind typescript (R79 spec; R19).
 #
-# ci-test writes the coverage of the tests as an lcov report, coverage/lcov.info, and the job
-# coverage sends it to Codecov by OIDC, with no secret (R48 in spec). "TypeScript / coverage" is no
-# check of the ruleset: codecov/patch, which Codecov sets from the upload, is.
+# ci-test writes its coverage to coverage/lcov.info, which the job coverage sends to Codecov by
+# OIDC, with no secret (R48 spec). "TypeScript / coverage" is no check of the ruleset:
+# codecov/patch, which Codecov sets from the upload, is.
 #
-# ci-licenses checks every package of the lock file by spec's recipe licenses-check-repo, from the
-# caller's spec submodule, with the repository's own exceptions: the list and the rule of an
-# exception are spec's, at the tag the caller pins (R39 in spec). That is why the licenses job
-# alone checks the submodule out: there it is the tool of the check, while the code and its tests
-# read nothing of spec/. So this file carries no copy of the list: its callers take the list from
-# spec. go.yml keeps one, since spec has no recipe to check Go by. A repository's exceptions are
-# its own, each with its decision.
+# ci-licenses checks every package of the lock file by spec's recipe licenses-check-repo from the
+# caller's spec submodule, with the caller's own exceptions, each with its decision: the list and
+# the rule of an exception are spec's, at the tag the caller pins (R39 spec). So the licenses job
+# alone checks the submodule out, as the tool of its check, and this file carries no copy of the
+# list; go.yml keeps one, since spec has no recipe to check Go by.
 #
-# Each job that runs in the toolchain stage takes its image from the caller's cache of GitHub
-# Actions, so that an outage of what the Dockerfile downloads from does not fail the checks while
-# the Dockerfile stays the same (R36). On a miss the job toolchain alone builds it and hands it on
-# to the others by an artifact of the run, and a push to main alone saves it (R42). lint, vuln and
-# licenses, which start no browser and run no test, run in the stage toolchain-core, Node, just, Go
-# and buf, where the Dockerfile has one that holds less than toolchain, by an image of its own (R47).
+# The image of the toolchain stage comes from the caller's cache of GitHub Actions, so that an
+# outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the same
+# (R36): on a miss the job toolchain alone builds it and hands it on by an artifact of the run, and
+# a push to main alone saves it (R42). lint, vuln and licenses, which start no browser and run no
+# test, run in the smaller stage toolchain-core where the Dockerfile has one (R47).
 #
-# There is no TypeScript code in .github, so a change here is tried by a trial pull request of
-# .github that calls this file by local path and is never merged, before the release (R19). The
-# first trial, #40, keeps its commits at refs/pull/40/head: a new trial starts from them.
-# Called from a job that gives it `contents: read` and `id-token: write`: the coverage job alone
+# .github has no TypeScript code, so a change here is tried before its release by a trial pull
+# request of .github that calls this file by local path and is never merged; refs/pull/40/head
+# keeps the commits of the first trial to start from (R19).
+#
+# Called from a job that gives it `contents: read` and `id-token: write`: the job coverage alone
 # asks for the token, and a called workflow can only lower what its caller gives.
 
 name: TypeScript (shared)
@@ -52,30 +48,24 @@ permissions:
   contents: read
 
 jobs:
-  # The image of the toolchain stage of the caller's .devcontainer/Dockerfile, built at most once
-  # for the jobs of this file that run on amd64 (R36, R42). It comes from the caller's cache of
-  # GitHub Actions, as spec decided for the stage in CI and canvas does (the amendment of 2026-11-09
-  # to R31 in spec; R57 canvas): a file of docker save, by the key of the runner's OS and
-  # architecture and the hash of the Dockerfile. The Dockerfile pins everything it installs, by
-  # version and sum (R34, R40 in spec), so the image from the cache is the one it would build, and
-  # on a hit it does not run: nodejs.org, GitHub and the snapshot of Ubuntu's archive are not asked.
-  # On a hit this job only looks the entry up, and each job after it restores the file. On a miss
-  # it builds the image alone and hands the file to the jobs after it as an artifact of the run,
-  # kept a day and compressed fast. Only a push to main saves the file into the cache: an entry of a
-  # pull request is "restored by re-runs of the pull request" alone, and the one of main, which
-  # every pull request reads, its CI on a push to main saves. The path and the image's name are
-  # those of spec's toolchain.sh, by which documents.yml and spec's CI build the stage, so that a
-  # caller keeps one entry for all of them ("Cache Version" in the README of actions/cache); a
-  # change to how the image is built takes a new path in all of them at once. The file lies
-  # outside the checkout, where the recipes do not see it, and the Dockerfile copies nothing from
-  # the repository, so it is built without a context. A build or an upload that fails here fails
-  # no check: the jobs after this one build the image themselves, and fail with the build when the
-  # Dockerfile is broken.
+  # The image of the caller's toolchain stage, built at most once for the jobs of this file on
+  # amd64 (R36, R42): a file of docker save in the caller's cache of GitHub Actions, by the key of
+  # the runner's OS and architecture and the hash of the Dockerfile (R31 spec). The Dockerfile pins
+  # all it installs by version and sum (R34 spec, R40 spec), so the image from the cache is the one
+  # it would build, and a hit asks nothing of nodejs.org, GitHub or Ubuntu's snapshot. On a hit this
+  # job only looks the entry up, and each job after it restores the file; on a miss it builds the
+  # image and hands the file on as an artifact of the run, kept a day. Only a push to main saves: a
+  # pull request's entry would serve its own re-runs alone, and main's serves every pull request.
+  # The path and the image's name are those of spec's toolchain.sh, by which documents.yml and
+  # spec's CI build the stage, so that a caller keeps one entry for all of them, and a change to how
+  # the image is built takes a new path in all of them at once. The Dockerfile copies nothing from
+  # the repository, so it is built without a context. A build or an upload that fails here fails no
+  # check: the jobs after this one build the image themselves.
   #
-  # The checks that start no browser and run no test, lint, vuln and licenses, run in the stage
-  # toolchain-core where the Dockerfile has one that holds less than toolchain (R47): the same steps
-  # keep it in a file, an entry and an artifact of its own, novatrail-toolchain-core.tar by the key
-  # toolchain-core-…, and on a miss of both this job builds and hands on both.
+  # lint, vuln and licenses run in the stage toolchain-core where the Dockerfile has one that holds
+  # less than toolchain (R47), with a file, an entry and an artifact of its own,
+  # novatrail-toolchain-core.tar by the key toolchain-core-…; on a miss of both this job builds and
+  # hands on both.
   toolchain:
     name: toolchain
     runs-on: ubuntu-24.04
@@ -95,14 +85,11 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      # toolchain-core where the Dockerfile has the stage, FROM <image> AS toolchain-core, as spec's
-      # toolchain.sh finds it, and where its stage toolchain holds more: an instruction but SHELL,
-      # or another base than toolchain-core. Else toolchain, which holds all the core does: a
-      # Dockerfile older than the core, or one whose toolchain adds nothing to it, as spec's own and
-      # those of the kind go, would keep a second entry of the same files (R47). Instructions and
-      # names of stages are read without case, and lines of comments and empty ones are skipped;
-      # a line that continues an instruction counts as one, so a reading that errs gives the core
-      # a file of its own, which costs an entry and no verdict.
+      # toolchain-core where the Dockerfile has that stage, as spec's toolchain.sh finds it, and its
+      # stage toolchain holds more: an instruction but SHELL, or another base. Else toolchain, which
+      # holds all the core does, since a second entry of the same files would cost space alone
+      # (R47). A continued line counts as one instruction, so a reading that errs gives the core a
+      # file of its own, which costs an entry and no verdict.
       - name: Toolchain stages
         id: stages
         run: |
@@ -225,8 +212,7 @@ jobs:
 
   check:
     # Named after the check, so that each reads "<calling job> / <check>": "TypeScript / lint" for
-    # ci-lint. The check engines is in the matrix with the input alone: without it the jobs are the
-    # four they were, by the same names.
+    # ci-lint. The check engines is in the matrix with the input alone.
     name: ${{ matrix.check }}
     needs: toolchain
     if: ${{ !cancelled() }}
@@ -239,9 +225,9 @@ jobs:
         check: ${{ fromJSON(inputs.engines && '["lint", "test", "engines", "vuln", "licenses"]' || '["lint", "test", "vuln", "licenses"]') }}
     steps:
       # Without the spec submodule, but for the licenses job: code takes spec's files from spec's
-      # releases, not from the submodule (R21 in spec), so a check that reads spec/ fails here as
-      # it would for a user. The licenses job gets the submodule at the commit the caller pins, for
-      # ci-licenses to run spec's recipe from it (R39 in spec).
+      # releases, not from the submodule (R21 spec), so a check that reads spec/ fails here as it
+      # would for a user. The licenses job gets the submodule at the commit the caller pins, for
+      # ci-licenses to run spec's recipe from it (R39 spec).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: ${{ matrix.check == 'licenses' }}
@@ -323,12 +309,12 @@ jobs:
 
       # As in go.yml, the container runs as the runner's user, with its home in /tmp, and it has
       # the network npm ci and npm audit need. Playwright recommends --init for any container and
-      # --ipc=host for Chromium (R19); the latter only the jobs test and engines get, where the
-      # browsers run, so the checks that start none keep Docker's own IPC namespace. Playwright names
-      # it for Chromium alone, and WebKit and Firefox get it too: they ran under it in ci-test before
-      # the job of their own, and keep the container they passed in. Of the step's environment only
-      # CI goes in. CI, which GitHub sets to true on every runner, is how the tools learn they run
-      # in CI: by it Vitest runs its browser headless and refuses test.only.
+      # --ipc=host for Chromium (R19): only the jobs test and engines, where the browsers run, get
+      # the latter, and the checks that start none keep Docker's own IPC namespace. WebKit and
+      # Firefox get it too: without engines, ci-test runs them beside Chromium, and with it they
+      # keep the flags they run under there. Of the step's environment only CI goes in, which
+      # GitHub sets to true on every runner: by it Vitest runs its browser headless and refuses
+      # test.only.
       - name: ci-${{ matrix.check }}
         env:
           RECIPE: ci-${{ matrix.check }}
@@ -355,7 +341,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-  # Codecov takes the report by OIDC, with no secret (R48 in spec). This job alone may ask GitHub for
+  # Codecov takes the report by OIDC, with no secret (R48 spec). This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
   # none of the repository's code. A pull request from a fork gets no token: the action then sends
   # the report without one, as Codecov takes it from a fork's branch. The job waits for every check,

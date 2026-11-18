@@ -1,7 +1,7 @@
 // Package coderules breaks every rule of code that coderules holds a module to by learner-model's
 // lists, coderules.json here, each line marked "// want" with the rules it breaks, and keeps beside
 // each break what the rules allow, so that the check is held to finding no more than it should
-// either. It came from learner-model's testdata/coderules, of its rules_test.go (R107 in spec).
+// either (R107 spec).
 package coderules
 
 import "C" // want cgo

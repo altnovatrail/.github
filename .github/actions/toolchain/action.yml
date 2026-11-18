@@ -1,33 +1,30 @@
-# The image of the caller's toolchain stage and the caches of Go, for a job of the caller's own that
-# runs Go in that stage, as the job arm64 of the shared go.yml takes them, by this very action (R49):
-# a caller pins it by the SHA of a release of .github with its version beside it, as it pins the
-# shared workflows, and Dependabot moves it in their group, shared-workflows (R04). Nothing of it
-# is a copy in the caller, so a release that changes these steps reaches the caller's job with
-# the move of its reference.
+# The image of the caller's toolchain stage and the caches of Go, for a job of the caller's own
+# that runs Go in that stage, as the job arm64 of the shared go.yml takes them by this action
+# (R49). A caller pins it by the SHA of a release of .github with its version beside it, and
+# Dependabot moves it in the group shared-workflows (R04): nothing of it is copied into the caller.
 #
-# A job takes it twice, both times with its check, the word the key of the Go caches names it by:
-# first, before its work, without save — the image of the stage from the caller's cache of GitHub
-# Actions, or built from .devcontainer/Dockerfile on a miss, and saved at once, on a push to main
-# alone (R36, R42); then the Go caches from the same cache, by the exact key and checked by go mod
-# verify in every module of the caller, or of another go.sum by the prefix, without the modules
-# (R41) —; and last of all, after its work, with save: "true", which on a push to main
-# alone, and on a miss of the key the first call asked for, saves the Go caches by that key. The
-# default success() holds that step, so a job whose work failed saves nothing. The calls are checked:
-# a save without the call before the work, or a second call before it, fails with the reason.
+# A job calls it twice, both times with the same check, the word the key of the Go caches names
+# it by. First, before its work, without save: the image from the caller's cache of GitHub
+# Actions, or built from .devcontainer/Dockerfile on a miss and saved at once, on a push to main
+# alone (R36, R42); then the Go caches by the exact key, checked by go mod verify in every module
+# of the caller, or of another go.sum by the prefix, without the modules (R41). Last, after its
+# work, with save: "true", which saves the Go caches by the key the first call asked for, on a
+# push to main and a miss alone. The default success() holds that step, so a job whose work
+# failed saves nothing; a save without the first call, or a second first call, fails with the
+# reason.
 #
-# The image is novatrail-toolchain, and the Go caches lie in ${{ runner.temp }}/go-cache, outside the
-# checkout. Each docker run of the job's work mounts that folder at /go-cache and points Go into it,
-# as the steps of go.yml do:
+# The image is novatrail-toolchain, and the Go caches lie in ${{ runner.temp }}/go-cache, outside
+# the checkout. Each docker run of the job's work mounts that folder at /go-cache and points Go
+# into it, as go.yml's steps do:
 #
 #   --env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint \
 #   --volume "$PWD:/work" --volume "$RUNNER_TEMP/go-cache:/go-cache" --workdir /work \
 #
-# The file, the image, the paths and the keys are those of go.yml, so the entries are the ones its
-# jobs fill and read; a change to them is a change to this file and to go.yml at once, which the
-# suite of tests holds the same (R28), and so a release (R10). The job checks out the caller's tree
-# before the first step; it is the job's alone to run on ubuntu-24.04 or ubuntu-24.04-arm. The run
-# steps name bash -e {0}, the shell of go.yml's steps, which name none (sources 2.3, 2.12): the
-# scripts are the same, and so is how they fail.
+# The file, the image, the paths and the keys are go.yml's, so the entries are the ones its jobs
+# fill and read: a change to them changes this file and go.yml at once, which the suite of tests
+# holds the same (R28), and so a release (R10). The job checks out the caller's tree before the
+# first call and picks ubuntu-24.04 or ubuntu-24.04-arm itself. The run steps name bash -e {0},
+# the shell go.yml's steps get by naming none, so that the scripts fail the same way.
 name: Toolchain image and Go caches
 description: The image of the caller's toolchain stage and the caches of Go from the cache of GitHub Actions, as the shared go.yml takes them, and their save on a push to main.
 
@@ -193,9 +190,9 @@ runs:
         HIT: ${{ steps.go-cache.outputs.cache-hit }}
       run: printf '%s\n%s\n' "$KEY" "${HIT:-false}" > "$RUNNER_TEMP/novatrail-go-cache.key"
 
-    # The save, in a call of its own after the work: a composite action has no post step (sources
-    # 2.12). Its key is the first call's, and a key that hit is not saved again; without the first
-    # call there is nothing to save, and the step says so.
+    # The save, in a call of its own after the work: a composite action has no post step. Its key
+    # is the first call's, and a key that hit is not saved again; without the first call there is
+    # nothing to save, and the step says so.
     - name: Go caches to save
       id: go-cache-key
       if: inputs.save == 'true'

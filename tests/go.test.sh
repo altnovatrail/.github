@@ -1259,7 +1259,7 @@ test_go_fma_diff_fails_on_a_target_where_a_package_fuses() {
     run_container_script
     assert_script_status 1
     assert_eq "$(cat "$state/script.out")" "$(printf '%s\n' "fma-diff: arm64: ok" \
-        "fma-diff: ppc64le: the compiler fuses in example.com/m/sub; put float64() round the * or / (R107 in spec):" \
+        "fma-diff: ppc64le: the compiler fuses in example.com/m/sub; put float64() round the * or / (R107 spec):" \
         "1c1" "< TEXT example.com/m/sub fused" "---" "> TEXT example.com/m/sub plain" \
         "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
 }
@@ -1272,7 +1272,7 @@ test_go_fma_diff_fails_where_a_rule_would_have_fired() {
     assert_script_status 1
     local target
     for target in "${fma_targets[@]}"; do
-        assert_script_line "fma-diff: $target: the compiler fuses in example.com/m; put float64() round the * or / (R107 in spec):"
+        assert_script_line "fma-diff: $target: the compiler fuses in example.com/m; put float64() round the * or / (R107 spec):"
     done
 }
 

@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-// The controls: modules that break every rule, each by the lists of a module that kept its own
-// copy of this check, learner-model's and engine's. Each keeps its go.mod as go.mod.control and its
-// lists as coderules.json, and marks every line it breaks a rule on with "// want <rule>".
+// The controls: modules that break every rule, each by the lists of a caller of same-bits,
+// learner-model's and engine's. Each keeps its go.mod as go.mod.control and its lists as
+// coderules.json, and marks every line it breaks a rule on with "// want <rule>".
 var controls = []string{"learner-model", "engine"}
 
 // TestControls holds the check to its controls: every finding the "// want" comments of a control
