@@ -45,25 +45,8 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E24, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T75: next — T76.
+- **Done epics:** E1–E15 and E17–E25, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T75: next — T76.
 
-## Table 1. Current epic — E25. Кеши Go после смены `go.sum` — не холодные
+## Table 1. Current epic — none
 
-**Результат:** релиз `.github`, где задания Go `go.yml` и составное действие `toolchain` при смене `go.sum` берут по префиксу ключа сборки прошлой записи, без её модулей.
-
-| Статус | ID | Задача | Кто | План | Зависит от |
-|---|---|---|---|---|---|
-| [ ] | T75 | Кеши Go после смены `go.sum` — не холодные | Claude | — | — |
-
-**Почему эпик такой.** Задача живёт только в эпике (R40), а текущего эпика не было: E24 в архиве. Текст задачи дал оркестратор (правило 6 COORDINATION.md spec) — строка 2.7 «Порядка» (R156 spec; слово автора 2026-11-16). Одна задача на одно ревью и один релиз.
-
-**Не входит:** переход вызывающих на этот релиз — их задачи, по Dependabot группы `shared-workflows`.
-
-#### T75. Кеши Go после смены `go.sum` — не холодные
-
-- **Цель:** задания Go не идут холодными, когда `go.sum` изменился: «Go / test» в `api` — около 190 с вместо 381 с.
-- **Почему:** R76 spec, R156 spec, строка 2.7 COORDINATION.md spec; ответ автора на `api` В83 (через spec, В46 spec) — «Префикс без модулей»; measurements 13 api.
-- **Сделать:** `.github/actions/toolchain` и задания `go.yml` при промахе точного ключа берут `restore-keys` по префиксу без хеша `go.sum`; при неточном попадании кеш модулей (`mod`) выбрасывается — модули качаются за секунды, — `build` и `lint` остаются как есть, старое Go обрезает сам; сохранение — под новым точным ключом, на `main`, как сейчас; тесты `go.yml` и действия; датированные поправки к R41 и R49 `.github` — возражение о росте записей снято; релиз `.github`. Репозитории берут его своим переходом на релиз `.github`, не в этой задаче.
-- **Как проверить:** проверки `.github` по его RUN.md; тест, где точный ключ промахивается, а префикс попадает: `mod` пуст, `build` восстановлен.
-- **Разделы:** строка 2.7 COORDINATION.md spec; R41, R49 .github; measurements 13 api; R34 spec.
-- **Записано (2026-11-18):** текст задачи дал оркестратор (правило 6 COORDINATION.md spec); номер T75 был свободен. Текущего эпика не было, а задача живёт только в эпике (R40): она — эпик E25.
+The last done epic is E25, its archive [docs/plan/E25.md](docs/plan/E25.md).
