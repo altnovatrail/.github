@@ -467,6 +467,7 @@ Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-
 | `-workspaces--github` — E22, T69 to T72 | 2026-11-16T22:28 … 2026-11-17T15:34 | 5 | 361 / 34 | 165.3 / 65.0 | 1 | $24.60 |
 | `-workspaces--github` — E23, T73 | 2026-11-17T15:34 … 2026-11-17T16:04 | 2 | 68 / 14 | 96.1 / 55.2 | 0 | $4.04 |
 | `-workspaces--github` — E24, T74 | 2026-11-17T16:04 … 2026-11-18T00:59 | 2 | 36 / 0 | 96.6 / — | 0 | $1.69 |
+| `-workspaces--github` — E25, T75 | 2026-11-18T00:59 … 2026-11-18T01:36 | 2 | 108 / 17 | 133.3 / 61.8 | 0 | $7.14 |
 
 - The context of a call of the main session fell from 397.5 to 188.8 thousand tokens, of a subagent from 124.0 to 78.5. The window "before" holds a month of the tasks of every kind, and the row of E18 four tasks of documents, so the comparison across the sessions after the epic is T124 `spec`'s;
 - the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row;
@@ -476,6 +477,7 @@ Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-
 - the row of E22 is by `tokens-report --since 2026-11-16T22:28 --row`, measured 2026-11-17 at the archive of E22, while the session of T72 ran, before its review and the pull request: its five sessions are the end of T68's — the review's fixes and the pull request — and the four tasks' T69–T72, run by the orchestrator. The threshold of R145 spec is not reached: 165.3 thousand a main call over 361 calls is below the reference of `.github`, 191.4 thousand of its T124 (measurements 1.9 spec), and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 - the row of E23 is by `tokens-report --since 2026-11-17T15:34 --row`, measured 2026-11-17 at the archive of E23, while the session of T73 ran, before its review and the pull request: its two sessions are the end of T72's and T73's, run by the orchestrator. The threshold of R145 spec is not reached: 96.1 thousand a main call over 68 calls, and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 - the row of E24 is by `tokens-report --since 2026-11-17T16:04 --row`, measured 2026-11-18 at the archive of E24, while the session of T74 ran, before its review and the pull request: its two sessions are the end of T73's and T74's, run by the orchestrator. The threshold of R145 spec is not reached: 96.6 thousand a main call over 36 calls, and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
+- the row of E25 is by `tokens-report --since 2026-11-18T00:59 --row`, measured 2026-11-18 at the archive of E25, after the merge of T75's pull request #145: its two sessions are the end of T74's and T75's, run by the orchestrator, whose resumed runs after 01:36 are not in the row. The threshold of R145 spec is not reached: 133.3 thousand a main call over 108 calls is below the reference of `.github`, 191.4 thousand of its T124 (measurements 1.9 spec), and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 
 ## 12. The Go caches
 
