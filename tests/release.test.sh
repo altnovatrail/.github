@@ -36,7 +36,7 @@ npm_check_after_release() {
 gone_before="No release has that number yet, and every release of the line would take it again: raise RELEASE_LINE in the caller's release workflow, so that the next release gets a number npm has never held."
 gone_after="The next release, with a new number, publishes the package."
 # And of a package unpublished as a whole.
-whole="@altnovatrail/canvas was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3)."
+whole="@altnovatrail/canvas was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3 of .github)."
 
 # A package unpublished as a whole, as the registry answers for one (asdasd, aaaaaaa and
 # test-unpublish, 2026-11-02; sources 8.3): 200, and no versions, but a time with every number
@@ -175,7 +175,7 @@ test_npm_a_package_the_registry_lacks_stops_a_release() {
     registry 404 '{error: "Not found"}'
     run_step
     assert_status 1
-    assert_line "::error::@altnovatrail/canvas is not in the npm registry. Its first version is published by hand and a trusted publisher set on it; only then does a release publish (architecture 3.3)."
+    assert_line "::error::@altnovatrail/canvas is not in the npm registry. Its first version is published by hand and a trusted publisher set on it; only then does a release publish (architecture 3.3 of .github)."
     assert_registry_asked
     assert_calls npm-isolated 0
     refute_output action
@@ -679,7 +679,7 @@ test_identity_of_another_workflow_of_the_caller_stops_the_run() {
         identity "$ref"
         run_step
         assert_status 1
-        assert_line "::error::The caller's workflow is ${ref}, not altnovatrail/canvas/.github/workflows/release.yml@refs/heads/main. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 in spec): release from .github/workflows/release.yml on main."
+        assert_line "::error::The caller's workflow is ${ref}, not altnovatrail/canvas/.github/workflows/release.yml@refs/heads/main. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 spec): release from .github/workflows/release.yml on main."
     done
 }
 
@@ -694,7 +694,7 @@ test_identity_of_this_workflow_pinned_by_a_branch_a_tag_a_short_sha_or_from_else
         identity "" "$pin"
         run_step
         assert_status 1
-        assert_line "::error::The caller pins this workflow as ${pin}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 in spec): pin it by the SHA of a release, with its version beside it (R04)."
+        assert_line "::error::The caller pins this workflow as ${pin}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 spec): pin it by the SHA of a release, with its version beside it (R04)."
     done
 }
 
@@ -716,7 +716,7 @@ test_probe_of_a_spec_without_the_recipe_stops_the_release() {
     stub_exit docker 1
     run_step
     assert_status 1
-    assert_line "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+    assert_line "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 spec): move spec/ to v0.6.0 or newer, then run the release again."
     assert_recipe_call release-verify-probe --dry-run release-verify canvas v0.1.9 "$step_temp/dist/$again_archive"
 }
 
@@ -748,7 +748,7 @@ test_npm_again_of_an_archive_release_verify_refuses_stops_before_npm() {
     stub_exit docker 1
     run_step
     assert_status 1
-    assert_line "::error::spec's release-verify refused ${again_archive} of v0.1.9; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 in spec)."
+    assert_line "::error::spec's release-verify refused ${again_archive} of v0.1.9; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 spec)."
     assert_recipe_call release-verify release-verify canvas v0.1.9 "$step_temp/dist/$again_archive"
 }
 
@@ -902,7 +902,7 @@ test_previous_of_a_file_release_verify_refuses_stops_before_the_build() {
     stub_exit docker 1
     run_step
     assert_status 1
-    assert_line "::error::spec's release-verify refused ${index} of v0.1.8; the lines above say why, and nothing is built on it (R63, R77 in spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
+    assert_line "::error::spec's release-verify refused ${index} of v0.1.8; the lines above say why, and nothing is built on it (R63 spec, R77 spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
     assert_recipe_call previous-verify release-verify modules v0.1.8 "$step_temp/previous-release/$index"
     assert_nothing_for_the_build
     refute_output handed
@@ -916,7 +916,7 @@ test_previous_of_a_release_without_the_file_or_its_bundle_stops_before_any_check
         if [ -n "$name" ]; then release_files "$name"; fi
         run_step
         assert_status 1
-        assert_line "::error::v0.1.8 holds no ${index} with its bundle ${index}.sigstore.json, or gh could not download them; the lines above say which. release-files builds v0.1.9 on that file, and one that cannot be read stops the release (R63 in spec)."
+        assert_line "::error::v0.1.8 holds no ${index} with its bundle ${index}.sigstore.json, or gh could not download them; the lines above say which. release-files builds v0.1.9 on that file, and one that cannot be read stops the release (R63 spec)."
         assert_calls gh 1
         assert_previous_downloaded
         assert_calls docker 0
@@ -931,7 +931,7 @@ test_previous_of_a_file_whose_attestation_fails_stops_before_the_signature() {
     stub_exit gh-verify-asset 1
     run_step
     assert_status 1
-    assert_line "::error::The attestation of v0.1.8 does not hold for its ${index}; the lines above say why, and nothing is built on it (R63 in spec)."
+    assert_line "::error::The attestation of v0.1.8 does not hold for its ${index}; the lines above say why, and nothing is built on it (R63 spec)."
     assert_calls gh 2
     assert_calls docker 0
     assert_nothing_for_the_build
@@ -955,7 +955,7 @@ test_previous_at_the_first_release_of_a_spec_without_the_recipe_stops_the_releas
     stub_exit docker 1
     run_step
     assert_status 1
-    assert_line "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${index}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+    assert_line "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${index}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 spec): move spec/ to v0.6.0 or newer, then run the release again."
     assert_calls gh 0
     refute_output handed
 }

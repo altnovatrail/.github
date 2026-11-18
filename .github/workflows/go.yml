@@ -1,46 +1,39 @@
-# Shared check (R03, R16): the Go code of the repository that calls it, by four recipes of that
-# repository's own — ci-lint, ci-test, ci-vuln and ci-licenses — one job each, in the toolchain
-# stage of the caller's .devcontainer/Dockerfile, where the caller pins its Go; the recipes pin
-# the versions of the tools they run. What the checks do is the repository's; how they are run is
-# the same everywhere (R30 in spec). Each job is a check of the caller's ruleset of main:
-# "Go / lint", "Go / test", "Go / vuln" and "Go / licenses", when the calling job is named Go.
+# Shared check (R03, R16): the caller's Go code by four recipes of its own — ci-lint, ci-test,
+# ci-vuln and ci-licenses —, a job each, in the toolchain stage of its .devcontainer/Dockerfile,
+# where the caller pins its Go; the recipes pin the tools they run. What the checks do is the
+# caller's; how they are run is the same everywhere (R30 spec). With the calling job named Go,
+# the checks of the caller's ruleset are "Go / lint", "Go / test", "Go / vuln" and "Go / licenses".
 #
-# ci-test writes the coverage of the tests as one Go coverage profile, coverage/go.out, and the
-# job coverage sends it to Codecov by OIDC, with no secret (R48 in spec). "Go / coverage" is no
-# check of the ruleset: codecov/patch, which Codecov sets from the upload, is.
+# ci-test writes its coverage to coverage/go.out, which the job coverage sends to Codecov by OIDC,
+# with no secret (R48 spec). "Go / coverage" is no check of the ruleset: codecov/patch, which
+# Codecov sets from the upload, is.
 #
-# ci-licenses is handed the licenses a NovaTrail repository may build from: the ASF's Category A
-# as SPDX identifiers, the list spec checks its own tools against (R12 in spec). It lives here,
-# where a change to it is a change to this workflow and so a release (architecture 2.7), and
-# self-ci.yml holds it to spec's own list at the tag .github is on. A repository's exceptions are
-# its recipe's, each with its decision.
+# ci-licenses is handed the licenses a NovaTrail repository may build from, the ASF's Category A as
+# SPDX identifiers, the list spec checks its own tools against (R12 spec). It lives here, so that a
+# change to it is a release, and self-ci.yml holds it to spec's list at the tag .github is on
+# (R16). A repository's exceptions are its recipe's, each with its decision.
 #
-# Each job that runs in the toolchain stage takes its image from the caller's cache of GitHub
-# Actions, so that an outage of what the Dockerfile downloads from does not fail the checks while
-# the Dockerfile stays the same (R36). On a miss the job toolchain alone builds it and hands it on
-# to the others by an artifact of the run, and a push to main alone saves it (R42). lint, vuln and
-# licenses, which start no browser and run no test, run in the stage toolchain-core, Node, just, Go
-# and buf, where the Dockerfile has one that holds less than toolchain, by an image of its own (R47).
-# The caches of Go — the modules, the builds and golangci-lint's — come from the same cache, one
-# entry for each check, which a push to main alone saves (R41). The job arm64, which builds its
-# image on its own, takes both by the composite action .github/actions/toolchain, which a caller's
-# own job takes too (R49).
+# The image of the toolchain stage comes from the caller's cache of GitHub Actions, so that an
+# outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the same
+# (R36): on a miss the job toolchain alone builds it and hands it on by an artifact of the run, and
+# a push to main alone saves it (R42). lint, vuln and licenses, which start no browser and run no
+# test, run in the smaller stage toolchain-core where the Dockerfile has one (R47). The caches of
+# Go come from the same cache, an entry a check, saved by a push to main alone (R41).
 #
-# With same-bits, four more jobs hold the caller's bits the same on every build (R107 in spec), as
-# learner-model and engine held them each in a recipe of its own (R09 learner-model; R10 engine).
-# "Go / targets" holds the tests on the builds where the bits are most at risk, wasip1 among them,
-# which run at once, a job "Go / target (<target>)" each (R43); "Go / fma-diff" compares the
-# assembler of each package with fusion and without it, on its targets at once, with a control of
-# its own here; "Go / arm64" runs ci-test and the targets of its host on an arm64
-# runner; "Go / rules" holds the code to the rules of code by the tool tools/coderules of .github,
-# of this workflow's own version, and the caller's lists, .github/coderules.json (R33). Without the
-# input the workflow is what it was.
+# With same-bits, four more jobs hold the caller's bits the same on every build (R107 spec):
+# "Go / targets", the tests on the builds where the bits are most at risk, a job
+# "Go / target (<target>)" each (R39, R43); "Go / fma-diff", the assembler of each package with
+# fusion and without it; "Go / arm64", ci-test and the targets on an arm64 runner, by the composite
+# action .github/actions/toolchain (R49); "Go / rules", the rules of code by .github's tool
+# tools/coderules and the caller's lists, .github/coderules.json (R33). Without the input none of
+# them runs.
 #
-# .github's own Go code is the tool of the rules of code alone, which self-ci.yml checks by this
-# workflow without same-bits: a change here is tried from a Go repository's pull request that calls
-# this file by the SHA of the branch, or by a trial pull request of .github that calls it by local
-# path and is never merged, before the release (R16).
-# Called from a job that gives it `contents: read` and `id-token: write`: the coverage job alone
+# self-ci.yml checks .github's own Go code by this workflow without same-bits: a change here is
+# tried before its release from a Go repository's pull request that calls this file by the SHA of
+# the branch, or from a trial pull request of .github that calls it by local path and is never
+# merged (R16).
+#
+# Called from a job that gives it `contents: read` and `id-token: write`: the job coverage alone
 # asks for the token, and a called workflow can only lower what its caller gives.
 
 name: Go (shared)
@@ -49,7 +42,7 @@ on:
   workflow_call:
     inputs:
       same-bits:
-        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff", "Go / arm64" and "Go / rules" (R107 in spec).
+        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff", "Go / arm64" and "Go / rules" (R107 spec).
         type: boolean
         default: false
 
@@ -57,30 +50,24 @@ permissions:
   contents: read
 
 jobs:
-  # The image of the toolchain stage of the caller's .devcontainer/Dockerfile, built at most once
-  # for the jobs of this file that run on amd64 (R36, R42). It comes from the caller's cache of
-  # GitHub Actions, as spec decided for the stage in CI and canvas does (the amendment of 2026-11-09
-  # to R31 in spec; R57 canvas): a file of docker save, by the key of the runner's OS and
-  # architecture and the hash of the Dockerfile. The Dockerfile pins everything it installs, by
-  # version and sum (R34, R40 in spec), so the image from the cache is the one it would build, and
-  # on a hit it does not run: nodejs.org, GitHub and the snapshot of Ubuntu's archive are not asked.
-  # On a hit this job only looks the entry up, and each job after it restores the file. On a miss
-  # it builds the image alone and hands the file to the jobs after it as an artifact of the run,
-  # kept a day and compressed fast. Only a push to main saves the file into the cache: an entry of a
-  # pull request is "restored by re-runs of the pull request" alone, and the one of main, which
-  # every pull request reads, its CI on a push to main saves. The path and the image's name are
-  # those of spec's toolchain.sh, by which documents.yml and spec's CI build the stage, so that a
-  # caller keeps one entry for all of them ("Cache Version" in the README of actions/cache); a
-  # change to how the image is built takes a new path in all of them at once. The file lies
-  # outside the checkout, where the recipes do not see it, and the Dockerfile copies nothing from
-  # the repository, so it is built without a context. A build or an upload that fails here fails
-  # no check: the jobs after this one build the image themselves, and fail with the build when the
-  # Dockerfile is broken.
+  # The image of the caller's toolchain stage, built at most once for the jobs of this file on
+  # amd64 (R36, R42): a file of docker save in the caller's cache of GitHub Actions, by the key of
+  # the runner's OS and architecture and the hash of the Dockerfile (R31 spec). The Dockerfile pins
+  # all it installs by version and sum (R34 spec, R40 spec), so the image from the cache is the one
+  # it would build, and a hit asks nothing of nodejs.org, GitHub or Ubuntu's snapshot. On a hit this
+  # job only looks the entry up, and each job after it restores the file; on a miss it builds the
+  # image and hands the file on as an artifact of the run, kept a day. Only a push to main saves: a
+  # pull request's entry would serve its own re-runs alone, and main's serves every pull request.
+  # The path and the image's name are those of spec's toolchain.sh, by which documents.yml and
+  # spec's CI build the stage, so that a caller keeps one entry for all of them, and a change to how
+  # the image is built takes a new path in all of them at once. The Dockerfile copies nothing from
+  # the repository, so it is built without a context. A build or an upload that fails here fails no
+  # check: the jobs after this one build the image themselves.
   #
-  # The checks that start no browser and run no test, lint, vuln and licenses, run in the stage
-  # toolchain-core where the Dockerfile has one that holds less than toolchain (R47): the same steps
-  # keep it in a file, an entry and an artifact of its own, novatrail-toolchain-core.tar by the key
-  # toolchain-core-…, and on a miss of both this job builds and hands on both.
+  # lint, vuln and licenses run in the stage toolchain-core where the Dockerfile has one that holds
+  # less than toolchain (R47), with a file, an entry and an artifact of its own,
+  # novatrail-toolchain-core.tar by the key toolchain-core-…; on a miss of both this job builds and
+  # hands on both.
   toolchain:
     name: toolchain
     runs-on: ubuntu-24.04
@@ -100,14 +87,11 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      # toolchain-core where the Dockerfile has the stage, FROM <image> AS toolchain-core, as spec's
-      # toolchain.sh finds it, and where its stage toolchain holds more: an instruction but SHELL,
-      # or another base than toolchain-core. Else toolchain, which holds all the core does: a
-      # Dockerfile older than the core, or one whose toolchain adds nothing to it, as spec's own and
-      # those of the kind go, would keep a second entry of the same files (R47). Instructions and
-      # names of stages are read without case, and lines of comments and empty ones are skipped;
-      # a line that continues an instruction counts as one, so a reading that errs gives the core
-      # a file of its own, which costs an entry and no verdict.
+      # toolchain-core where the Dockerfile has that stage, as spec's toolchain.sh finds it, and its
+      # stage toolchain holds more: an instruction but SHELL, or another base. Else toolchain, which
+      # holds all the core does, since a second entry of the same files would cost space alone
+      # (R47). A continued line counts as one instruction, so a reading that errs gives the core a
+      # file of its own, which costs an entry and no verdict.
       - name: Toolchain stages
         id: stages
         run: |
@@ -242,7 +226,7 @@ jobs:
         check: [lint, test, vuln, licenses]
     steps:
       # Without the spec submodule: code takes spec's files from spec's releases, not from the
-      # submodule (R21 in spec), so a check that reads spec/ fails here as it would for a user.
+      # submodule (R21 spec), so a check that reads spec/ fails here as it would for a user.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -336,23 +320,18 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
-      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
-      # time, at the end of a command, and renews the time of one it uses. The files the run that
-      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
-      # newest — are set seven hours back, so that this run's first command keeps them and their next
-      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
-      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
-      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
-      # out too —: each module of their builds is hashed again against the hash it was downloaded
-      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
-      # <module>@<version> go checks the same way against the checksum database, but its folder no
-      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
-      # costs the run its caches and not its verdict: they are deleted with a warning, and the
-      # recipes download and build as with none. Verified caches have their builds touched: an entry
-      # keeps the times of its save, so the first command of a job would delete what the next ones
-      # need (R41).
+      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix,
+      # loses its modules, which download in seconds, and keeps its builds, which go finds by what
+      # they were built from, and golangci-lint's. go deletes a build unused for five days, by its
+      # time, at the end of a command, and an entry keeps the times of its save: the files the
+      # saving run had in use — up to six hours, the longest a job runs, older than its newest — are
+      # set seven hours back, so that this run's first command keeps them and their next use renews
+      # them, and the rest keep their times, for go to trim. What an exact hit gave is checked first
+      # by go mod verify in every module of the caller — each go.mod git tracks outside the folders
+      # ./... leaves out —, which hashes each module again against the hash go held to go.sum when it
+      # downloaded it. The folder of a tool run by go run <module>@<version> no verify hashes: main's
+      # scope holds it, as it holds GOCACHE. A check that fails or cannot run costs the run its
+      # caches, deleted with a warning, and not its verdict (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -442,7 +421,7 @@ jobs:
           path: ${{ runner.temp }}/go-cache
           key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
-  # Codecov takes the report by OIDC, with no secret (R48 in spec). This job alone may ask GitHub for
+  # Codecov takes the report by OIDC, with no secret (R48 spec). This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
   # none of the repository's code. A pull request from a fork gets no token: the action then sends
   # the report without one, as Codecov takes it from a fork's branch. The job waits for the four
@@ -507,13 +486,12 @@ jobs:
   # GODEBUG=cpu.all=off, with no processor extension for the runtime and the standard library to
   # pick their path by; on 386; in js/wasm, in the Node of the toolchain stage; and in wasip1, in
   # node:wasi of the same Node, by an executor the script writes, since Go's go_wasip1_wasm_exec
-  # knows only runtimes the stage does not have (sources 10.1); wasip1 is vetted too. A host other
-  # than amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off. The
-  # list is learner-model's and engine's recipe test-targets (R107 in spec), with wasip1 run by the
-  # amendment of 2026-11-11 to it (R39). Each target is a job of the matrix, so that they run at
-  # once, and the job targets after them is the one check of the caller's ruleset (R43). The script
-  # is one for the matrix and arm64: it runs the targets TARGETS names, in order, in one container
-  # on stdin, so that arm64's three keep one build cache.
+  # knows only runtimes the stage does not have; wasip1 is vetted too (R39). A host other than
+  # amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off. Each target
+  # is a job of the matrix, so that they run at once, and the job targets after them is the one
+  # check of the caller's ruleset (R43). The script is one for the matrix and arm64: it runs the
+  # targets TARGETS names, in order, in one container on stdin, so that arm64's three keep one
+  # build cache (R107 spec).
   target:
     # GitHub adds the target to the name, "Go / target (amd64-v3)": none of these is a check of the
     # ruleset, "Go / targets" is. A name with the matrix in it would be shown unexpanded on every
@@ -595,23 +573,7 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
-      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
-      # time, at the end of a command, and renews the time of one it uses. The files the run that
-      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
-      # newest — are set seven hours back, so that this run's first command keeps them and their next
-      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
-      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
-      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
-      # out too —: each module of their builds is hashed again against the hash it was downloaded
-      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
-      # <module>@<version> go checks the same way against the checksum database, but its folder no
-      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
-      # costs the run its caches and not its verdict: they are deleted with a warning, and the
-      # recipes download and build as with none. Verified caches have their builds touched: an entry
-      # keeps the times of its save, so the first command of a job would delete what the next ones
-      # need (R41).
+      # The three folders, as in the job check (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -762,8 +724,7 @@ jobs:
   # report no place where a rule would have fired, "fmahash triggered". A control of three shapes
   # the compiler fuses, one at least on every target, must differ on every target, or the check
   # has stopped seeing fusion; it is a module of its own, written here, so that a caller keeps
-  # none. The output does not depend on the host. The check is learner-model's and engine's recipe
-  # fma-diff (R107 in spec).
+  # none. The output does not depend on the host (R107 spec).
   fma-diff:
     name: fma-diff
     needs: toolchain
@@ -837,23 +798,7 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
-      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
-      # time, at the end of a command, and renews the time of one it uses. The files the run that
-      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
-      # newest — are set seven hours back, so that this run's first command keeps them and their next
-      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
-      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
-      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
-      # out too —: each module of their builds is hashed again against the hash it was downloaded
-      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
-      # <module>@<version> go checks the same way against the checksum database, but its folder no
-      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
-      # costs the run its caches and not its verdict: they are deleted with a warning, and the
-      # recipes download and build as with none. Verified caches have their builds touched: an entry
-      # keeps the times of its save, so the first command of a job would delete what the next ones
-      # need (R41).
+      # The three folders, as in the job check (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -957,7 +902,7 @@ jobs:
                       continue
                   fi
                   if [ "$fused" != "$plain" ] || grep -q 'fmahash triggered' <<<"$plain"; then
-                      echo "fma-diff: $target: the compiler fuses in $pkg; put float64() round the * or / (R107 in spec):" >&2
+                      echo "fma-diff: $target: the compiler fuses in $pkg; put float64() round the * or / (R107 spec):" >&2
                       diff <(echo "$fused") <(echo "$plain") | head -n 40 >&2 || true
                       ok=0
                   fi
@@ -1003,12 +948,11 @@ jobs:
           path: ${{ runner.temp }}/go-cache
           key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
-  # ci-test and the tests on the targets again, on an arm64 host, a free runner of a public repository
-  # (sources 2.6): the caller's tests with the race detector and coverage, whose report goes
-  # nowhere — the test job sends the one report — then the script of targets, which on a host other
-  # than amd64 runs its own build with cpu.all=off, js/wasm and wasip1. fma-diff does not depend on
-  # the host and does not run again. learner-model and engine ran this as a job of their own, "Go
-  # arm64" (R107 in spec).
+  # ci-test and the tests on the targets again, on an arm64 host, a free runner of a public
+  # repository: the caller's tests with the race detector and coverage, whose report goes nowhere —
+  # the test job sends the one report —, then the script of targets, which on a host other than
+  # amd64 runs its own build with cpu.all=off, js/wasm and wasip1. fma-diff does not depend on the
+  # host and does not run again (R107 spec).
   arm64:
     name: arm64
     if: inputs.same-bits
@@ -1021,13 +965,13 @@ jobs:
         with:
           persist-credentials: false
 
-      # The toolchain stage and the Go caches by the composite action of .github of the very commit
-      # this workflow file comes from, $/ (sources 2.12): the action a caller's own job takes by the
-      # SHA of a release, so that the steps are one file in both (R49). The image comes from the
-      # cache on its own, as in no other job here: the image of an arm64 runner is no amd64 image,
-      # and the job toolchain builds none for it. On a miss the action builds the image, and only a
-      # push to main writes and saves its file (R36, R42); the Go caches come by the key of the check
-      # arm64 and are checked by go mod verify, as in the job check (R41).
+      # The toolchain stage and the Go caches by the composite action of .github of the commit this
+      # workflow file comes from, $/, the action a caller's own job takes by the SHA of a release,
+      # so that the steps are one file in both (R49). The image comes from the cache on its own, as
+      # in no other job here: the image of an arm64 runner is no amd64 image, and the job toolchain
+      # builds none for it. On a miss the action builds the image, and only a push to main writes
+      # and saves its file (R36, R42); the Go caches come by the key of the check arm64 and are
+      # checked by go mod verify, as in the job check (R41).
       - name: Toolchain image and Go caches
         uses: $/.github/actions/toolchain
         with:
@@ -1114,12 +1058,11 @@ jobs:
 
   # The rules of code that keep the bits the same on every build — float64() round every * and /,
   # math and the imports by the lists, no cgo, assembler, linkname or build constraint, no map
-  # range or goroutine in code, no require the lists do not name, no replace, no nested module —
-  # held by the tool of .github, tools/coderules, which learner-model and engine kept each as a
-  # rules_test.go of its own (R107 in spec; R33). The tool is .github's of the very commit this
-  # workflow file comes from, job.workflow_sha, so that a caller pinned to a release runs the tool
-  # of that release; it is built by the Go of the caller's toolchain stage, as the caller's code
-  # is, and reads the caller's lists, .github/coderules.json. actions/checkout puts it in the
+  # range or goroutine in code, no require the lists do not name, no replace, no nested module —,
+  # held by .github's tool tools/coderules (R107 spec; R33). The tool is .github's of the commit
+  # this workflow file comes from, job.workflow_sha, so that a caller pinned to a release runs the
+  # tool of that release; it is built by the Go of the caller's toolchain stage, as the caller's
+  # code is, and reads the caller's lists, .github/coderules.json. actions/checkout puts it in the
   # workspace alone, so the step moves it out before anything reads the caller's module, which
   # would hold it as a module nested in its own.
   rules:
@@ -1202,23 +1145,7 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
-      # its modules, which download in seconds, and keeps its builds, which go finds by what they were
-      # built from, and golangci-lint's. go deletes a build it has not used for five days, by its
-      # time, at the end of a command, and renews the time of one it uses. The files the run that
-      # saved the entry had in use — no more than six hours, the longest a job runs, older than its
-      # newest — are set seven hours back, so that this run's first command keeps them and their next
-      # use renews them, and the rest keep their times, for go to trim what no run uses (R41). What an
-      # exact hit gave is checked first by go mod verify, in every module of the caller — each go.mod git tracks
-      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
-      # out too —: each module of their builds is hashed again against the hash it was downloaded
-      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
-      # <module>@<version> go checks the same way against the checksum database, but its folder no
-      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
-      # costs the run its caches and not its verdict: they are deleted with a warning, and the
-      # recipes download and build as with none. Verified caches have their builds touched: an entry
-      # keeps the times of its save, so the first command of a job would delete what the next ones
-      # need (R41).
+      # The three folders, as in the job check (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}

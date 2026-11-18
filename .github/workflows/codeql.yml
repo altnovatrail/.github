@@ -1,23 +1,15 @@
-# Shared check (R03): CodeQL, as advanced setup, over the workflows of the repository that calls
-# it — language actions, always — and over the languages it names (R30 in spec). The default
-# setup of code scanning stays off: with it on, GitHub disables a workflow like this one.
+# Shared check (R03): CodeQL, as advanced setup, over the caller's workflows — language actions,
+# always — and over the languages it names (R30 spec). The default setup of code scanning stays
+# off: with it on, GitHub disables a workflow like this one.
 #
-# The caller's job gives it `contents: read` and `security-events: write`, which it needs to
-# upload what it finds; a called workflow cannot raise what its caller gave. The check names are
-# "<caller's job> / languages" and "<caller's job> / analyze (<language>)", one per language —
-# CodeQL / languages and CodeQL / analyze (actions); the analyses hold the merge. Each language's
-# results go up under a category of their own, /language:<language>, which stays the same
-# whatever the caller's file or job is called. Paths the caller names are left out of the
-# analysis of its languages — spec's draft/, a prototype a design tool built, say — while the
-# analysis of actions reads every workflow, whatever the caller passes.
+# The caller's job gives it `contents: read` and `security-events: write`: a called workflow
+# cannot raise what its caller gave. The checks are "<caller's job> / languages" and
+# "<caller's job> / analyze (<language>)"; the analyses hold the merge. Each language's results go
+# up under the category /language:<language>, the same whatever the caller's file or job is called.
 #
-# Go is analysed from a build, with the caller's own Go: the one in the toolchain stage of its
-# .devcontainer/Dockerfile, which its Go checks run with too (R16). A caller that names go installs
-# Go there as spec's Dockerfile does, from go.dev's archive by ARG GO_VERSION and GO_SHA256_AMD64
-# (with GO_SHA256_ARM64 for arm64), and this workflow takes the same archive by them, without
-# building the stage (R45). The build runs on the runner with the step's token, like any code a
-# pull request brings into its own checks. paths-ignore does not reach it: CodeQL leaves paths
-# out only of what it reads without a build.
+# Go is analysed from a build, with the Go of the caller's toolchain stage, which its Go checks run
+# with too (R16), taken without building the stage (R45). The build runs on the runner with the
+# step's token, like any code a pull request brings into its own checks.
 
 name: CodeQL (shared)
 
@@ -47,13 +39,12 @@ permissions:
   contents: read
 
 jobs:
-  # actions and the languages the caller names, each once. Besides actions, javascript-typescript
-  # and go are taken: the platform's code is Go and TypeScript (R03). Any other name stops the
-  # check with its reason. This job is a check of its own, CodeQL / languages, and need not be
-  # required: when it fails, the matrix never expands, the one check GitHub reports for it is a
-  # skipped "analyze (${{ matrix.language }})", and the required analyses never come, so the merge
-  # waits. This check says why. It also turns paths-ignore into the configuration that the
-  # analyses of the caller's languages take.
+  # Besides actions, javascript-typescript and go are taken: the platform's code is Go and
+  # TypeScript (R03). Any other name stops the check with its reason. The job also turns
+  # paths-ignore into the configuration the analyses of the caller's languages take. It is a check
+  # of its own and need not be required: when it fails, the matrix never expands, the one check
+  # GitHub reports for it is a skipped "analyze (${{ matrix.language }})", the required analyses
+  # never come, and the merge waits; this check says why.
   languages:
     name: languages
     runs-on: ubuntu-24.04
@@ -85,14 +76,10 @@ jobs:
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
           echo "languages: ${matrix}"
 
-      # One line of YAML, `paths-ignore: [...]`, with every path as a JSON string: YAML reads
-      # those as double-quoted scalars, so a path that starts with * or holds a colon stays a
-      # string. Blank lines, comment lines and the spaces around a path are dropped. A comma
-      # anywhere, a # after a space or a tab, a leading "- " and a quote at either end stop the
-      # check: in a block of lines each would end up inside one pattern, as a list, a comment
-      # or quotes never meant as a path, and the path would match nothing. A control character
-      # stops it too: it would break the YAML init parses. Without paths there is no
-      # configuration, and init takes none.
+      # Every path as a JSON string, which YAML reads as a double-quoted scalar, so a path that
+      # starts with * or holds a colon stays a string. A comma, a # after a blank, a leading "- "
+      # or a quote at either end would end up inside the pattern and match nothing, and a control
+      # character would break the YAML init parses: each stops the check.
       - id: config
         env:
           PATHS_IGNORE: ${{ inputs.paths-ignore }}
@@ -124,14 +111,11 @@ jobs:
           echo "config=${config}" >> "$GITHUB_OUTPUT"
           echo "configuration: ${config:-none}"
 
-  # build-mode none is what actions and javascript-typescript take, and go takes autobuild: CodeQL
-  # reads Go only from a build, and with that mode the analyze step runs it itself. The queries are
-  # security-extended, as canvas-api's (R50 canvas-api). tools: linked takes the CodeQL bundle
-  # that this commit of the action ships with; without it, GitHub's flags choose the bundle at
-  # run time. Only the analysis of javascript-typescript takes the caller's paths-ignore: that of
-  # actions reads every workflow, as R09 keeps it, and that of go reads what the build compiled.
-  # A green analysis says that CodeQL ran, not that it found nothing: what it found holds a merge
-  # through the ruleset (architecture 3.1).
+  # Go takes autobuild: CodeQL reads Go only from a build. tools: linked takes the bundle this
+  # commit of the action ships with; without it, GitHub's flags choose the bundle at run time. Only
+  # javascript-typescript takes paths-ignore: actions reads every workflow (R09), and go what the
+  # build compiled. A green analysis says that CodeQL ran, not that it found nothing: what it found
+  # holds a merge through the ruleset. The queries are security-extended (R50 canvas-api).
   analyze:
     name: analyze (${{ matrix.language }})
     needs: languages
@@ -149,21 +133,13 @@ jobs:
         with:
           persist-credentials: false
 
-      # The Go of the caller's toolchain stage, without building the stage (R45): the archive of
-      # go.dev that the stage installs, by the ARGs that pin it there, checked against the same
-      # sum and unpacked onto the runner ahead of the runner's own Go. The job runs on X64, so the
-      # ARGs are GO_VERSION and GO_SHA256_AMD64, each once as ARG <name>=<value> in the stage
-      # toolchain or a stage it is built from — FROM <stage> AS ... —, where Docker reads them.
-      # The Dockerfile is read as Docker's parser reads it: carriage returns and the blanks at the
-      # ends of lines, comment lines and empty lines dropped, the lines continued by \ joined, and
-      # the instructions taken in any case. Its escape character has to be \, Docker's default. A
-      # Dockerfile that pins Go otherwise names none of these ARGs there, and the step stops,
-      # saying so. The image would hand the build its GO and CGO_ variables, which a stage takes
-      # from those it is built from: those stages of spec's Dockerfile set none but
-      # GOTOOLCHAIN=local, which the step sets itself, to keep the go command on this Go rather
-      # than on one a go.mod would have it fetch. One they set besides, which the step cannot work
-      # out without the image, stops it too, by its name; what the base image sets, it does not
-      # see, and the template's sets none.
+      # The Go of the caller's toolchain stage without building the stage (R45): go.dev's archive
+      # by the stage's ARG GO_VERSION and GO_SHA256_AMD64 — the job runs on X64 —, each once in the
+      # stage or a stage it is built from, where Docker reads them. The Dockerfile is read as
+      # Docker's parser reads it, with \ as its escape character. The build would take from the
+      # image the GO and CGO_ variables its stages set: one other than GOTOOLCHAIN=local, which the
+      # step sets itself, cannot be worked out without the image and stops the step; what the base
+      # image sets, the step does not see.
       - name: Go of the caller's toolchain stage
         if: matrix.language == 'go'
         run: |

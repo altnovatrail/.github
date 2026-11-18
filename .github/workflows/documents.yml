@@ -1,24 +1,15 @@
-# Shared check (R03): the documents of the repository that calls it, with the docs-check of the
-# spec it pins as its submodule — `just -f spec/justfile docs-check-repo` (R32 in spec). spec
-# itself does not call it: its own CI runs `just docs-check`.
+# Shared check (R03): the caller's documents, by the docs-check of the spec it pins as its
+# submodule, `just -f spec/justfile docs-check-repo` (R32 spec). spec runs its own `just
+# docs-check` instead.
 #
-# It runs in the stage toolchain-core of the caller's .devcontainer/Dockerfile, where it has one
-# that holds less than toolchain, and in toolchain otherwise (R47), with the Node and just of the
-# caller's devcontainer, as spec's CI runs its checks: a check that is green locally is
-# green here. Both the stage and the submodule come with every repository from spec's template.
-# How the stage is built and how a recipe runs in it are spec's, in the script
-# spec/tools/toolchain/toolchain.sh of the submodule, at the tag the caller pins, as spec's CI and
-# the shared release run them (R31 in spec; the 2026-11-08 amendment to R08): spec ships it from
-# v0.2.17, and a submodule older than that stops the check with the reason.
+# It runs in the stage toolchain-core of the caller's .devcontainer/Dockerfile where it has one,
+# and in toolchain otherwise (R47), by spec's script tools/toolchain/toolchain.sh of the
+# submodule, as spec's CI and the shared release run it, so that a check green locally is green
+# here (R31 spec). The image comes from the caller's cache by the key and the file go.yml's jobs
+# use, built only on a miss and saved only from a push to main (R36, R42). A script of an older
+# spec, which reads no TOOLCHAIN_STAGE, builds toolchain, which holds all the core does: an entry
+# of the core may then hold toolchain, which costs its size and no verdict.
 #
-# The image of the stage comes from the caller's cache of GitHub Actions, by the key and the file
-# go.yml's jobs use, and is built only on a miss (R36, R42): the script loads and writes the file
-# TOOLCHAIN_IMAGE_FILE names from v0.13.0 of spec (the second 2026-11-09 amendment to R31 in spec),
-# and an older one never sees the variable and builds the stage as before, so the step sets it
-# whatever the tag. Only a push to main saves the file. The stage goes to the script by
-# TOOLCHAIN_STAGE, which spec's script reads from v0.18.4 (the 2026-11-16 amendment to R31 in spec):
-# an older one builds toolchain, which holds all the core does, and an entry of the core may then
-# hold toolchain, which costs its size and no verdict.
 # Called from a job that gives it `contents: read`.
 
 name: Documents (shared)
@@ -41,9 +32,8 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # The stage the check runs in: toolchain-core, Node, just, Go and buf, where the Dockerfile
-      # has one that holds less than toolchain, by the script and the reading of the job toolchain
-      # of go.yml and typescript.yml, and toolchain otherwise (R47).
+      # toolchain-core where the Dockerfile has one that holds less than toolchain, by the reading
+      # of go.yml's and typescript.yml's job toolchain, and toolchain otherwise (R47).
       - name: Toolchain stages
         id: stages
         run: |
@@ -65,10 +55,9 @@ jobs:
           echo "The checks without a browser run in the stage ${core}."
           echo "core=${core}" >> "$GITHUB_OUTPUT"
 
-      # The stage from the cache, by the key, the file and the image go.yml's jobs use for it, the
-      # ones spec's script and spec's CI give, so that the caller keeps one entry a stage for all of
-      # them (R36, R42, R47). The build is a step of its own, so that the image is saved before the check
-      # runs, and a red check still fills the cache. Only a push to main saves.
+      # The key, the file and the image go.yml's jobs and spec's CI give the stage, so that the
+      # caller keeps one entry a stage for all of them (R36, R42, R47). The build is a step of its
+      # own, so that a red check still fills the cache.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -76,10 +65,9 @@ jobs:
           path: ${{ runner.temp }}/novatrail-${{ steps.stages.outputs.core }}.tar
           key: ${{ steps.stages.outputs.core }}-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}
 
-      # spec's script loads the image from the file, or builds the stage and writes the file. A run
-      # that saves nothing has the script write no file: without a file from the cache it is not
-      # handed the variable, and only builds. A script of a tag before v0.13.0 builds the stage
-      # alone and writes nothing, and the save then only warns.
+      # A run that saves nothing hands the script no file it would only write and drop: without
+      # one from the cache, the script only builds. A script of a spec older than v0.13.0 writes no
+      # file, and the save then only warns.
       - name: Toolchain image
         env:
           TOOLCHAIN_STAGE: ${{ steps.stages.outputs.core }}
@@ -87,7 +75,7 @@ jobs:
           SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
-              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 in spec): move the spec submodule to v0.2.17 or newer, then run the check again."
+              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 spec): move the spec submodule to v0.2.17 or newer, then run the check again."
               exit 1
           fi
           if [ "$SAVE" != true ] && [ ! -f "$TOOLCHAIN_IMAGE_FILE" ]; then

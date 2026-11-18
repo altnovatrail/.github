@@ -1,49 +1,45 @@
 # Shared release (R03, R18): what a green main of a repository with code produces — the files its
 # own recipe builds, each signed without a key, and the tag created with the release, as spec's
-# release creates its own (R31 in spec). Nobody tags by hand: the version is the next patch of the
+# release creates its own (R31 spec). Nobody tags by hand: the version is the next patch of the
 # line the caller's release workflow sets, RELEASE_LINE, worked out by spec's own recipe, as
-# .github's release works out its own (R14). Module packages are files like any other and are
-# signed the same way (R17 in spec).
+# .github's release works out its own (R10). Module packages are files like any other and are
+# signed the same way (R17 spec).
 #
 # A commit gets a release only when a path the caller names in paths has changed since the
 # release before it; the first release comes out always. A library would otherwise bring every
 # repository that imports it a new tag for a change of its documents alone.
 #
 # The signature is cosign's, keyless. Its certificate names this workflow, at the ref the caller
-# pins, as what signed, and the caller's repository and workflow as the run that signed
-# (architecture 2.3). What a consumer checks of it is R77 in spec, by spec's recipe
-# release-verify: this workflow at the SHA of a release of .github, v0.1.7 or newer, at the call of
-# the caller's .github/workflows/release.yml on main, of the commit of the tag. A run that
-# publishes stops before anything else when the caller's workflow is not that file on main, or
-# when it pins this workflow by anything but a commit's SHA; whether that SHA is a release of
-# .github, v0.1.7 or newer, the consumer's check asks.
+# pins, as what signed, and the caller's repository and workflow as the run that signed. spec's
+# release-verify lets a file in by it only from this workflow at the SHA of a release of .github,
+# v0.1.7 or newer, at the call of the caller's .github/workflows/release.yml on main, of the commit
+# of the tag (R77 spec). A run that publishes stops before anything else when the caller's
+# workflow is not that file on main, or when it pins this workflow by anything but a commit's SHA;
+# whether that SHA is a release of .github, the consumer's check asks.
 #
 # With npm-package, the release also publishes that package to npm, in the @altnovatrail scope:
 # the archive npm pack names for it, one of the files the run signs and puts in the release, the
-# same bytes (R37 in spec). npm takes it by trusted publishing, with no token kept anywhere: the
+# same bytes (R37 spec). npm takes it by trusted publishing, with no token kept anywhere: the
 # registry trusts the caller's release workflow by its file name, as the package's trusted
 # publisher names it, and npm gets a short-lived token by the job's OIDC. The first version of a
 # package is published by hand, since a trusted publisher is set on a package the registry has.
 #
 # With previous-file, the caller's release-files recipe also gets a file of the release before
-# this one: module-index.json, say, the cumulative index of modules, which a release builds from
-# the index of the release before it (R63 in spec). The run downloads that file with its bundle
-# from the newest release, which the number step names as the previous one, and checks it before
-# anything is built: the release's attestation here on the runner, the signature by spec's
-# release-verify. The recipe gets the version and, as its second argument, the path of the checked
-# file, mounted read-only; the first release, which has none, gets an empty second argument. A
-# file the run cannot download or check stops it (the 2026-11-02 amendment to R63 in spec). The
-# release's own files hold a file of that name, for the release after it to take.
+# this one — module-index.json, say, the cumulative index of modules (R63 spec) —, downloaded with
+# its bundle from the newest release and checked before anything is built: the release's
+# attestation here on the runner, the signature by spec's release-verify. The recipe gets the
+# version and, as its second argument, the path of the checked file, mounted read-only, or an
+# empty one at the first release; a file the run cannot download or check stops it. The release's
+# own files hold a file of that name, for the release after it to take.
 #
-# The caller's release workflow runs on the workflow_run of its CI and on the button, gives this
-# job contents: write, id-token: write and actions: read, and sets RELEASE_LINE in its own env.
-# Its repository keeps its releases immutable and its tags v* under a ruleset (architecture 3.3),
-# and its spec submodule is at v0.2.17 or newer: spec's recipes run by the script that spec ships
-# from that tag (R31 in spec). The caller's workflow is .github/workflows/release.yml, and it pins
-# this one by the SHA of a release. With npm-package or previous-file, the spec submodule is at
-# v0.6.0 or newer, whose release-verify checks the file a run takes from a release.
-# With publish: false a run builds, signs and checks the signatures and publishes nothing, which
-# lets a pull request try a change here.
+# The caller's release workflow is .github/workflows/release.yml: it runs on the workflow_run of
+# its CI and on the button, pins this workflow by the SHA of a release, gives this job contents:
+# write, id-token: write and actions: read, and sets RELEASE_LINE in its own env. Its repository
+# keeps its releases immutable and its tags v* under a ruleset, and its spec submodule is at
+# v0.2.17 or newer, whose script tools/toolchain/toolchain.sh runs spec's recipes (R31 spec) — at
+# v0.6.0 or newer with npm-package or previous-file, whose release-verify checks the file a run
+# takes from a release. With publish: false a run builds, signs and checks the signatures and
+# publishes nothing, which lets a pull request try a change here.
 
 name: Release (shared)
 
@@ -87,10 +83,10 @@ jobs:
   release:
     name: release
     # Releases queue rather than overlap: each has to see the version the one before it
-    # published before it can work out the next. queue: max keeps up to 100 runs pending
-    # (GitHub Docs, Workflow syntax, concurrency, read 2026-10-20); actionlint does not know the
-    # key yet: .github/actionlint.yaml. A trial queues apart, by its ref, and does not hold up a
-    # release; the calling job sets no concurrency of its own, or the two would wait on each other.
+    # published before it can work out the next. queue: max keeps up to 100 runs pending, a key
+    # actionlint does not know: .github/actionlint.yaml. A trial queues apart, by its ref, and does
+    # not hold up a release; the calling job sets no concurrency of its own, or the two would wait
+    # on each other.
     concurrency:
       group: ${{ inputs.publish && 'release' || format('release-trial-{0}', github.ref) }}
       cancel-in-progress: false
@@ -106,8 +102,8 @@ jobs:
       github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-24.04
     # The step "Publish to npm" waits for the registry twenty minutes, and three more at most for
-    # the round under way, and the rest of a run took five and a half at most at the callers by
-    # 2026-11-08 (measurements 5.11): 45 holds both, with room for a slower build.
+    # the round under way, and the rest of a run takes five and a half at most at the callers: 45
+    # holds both, with room for a slower build.
     timeout-minutes: 45
     # bash with pipefail, as in .github's own release.
     defaults:
@@ -127,7 +123,7 @@ jobs:
       actions: read
     steps:
       # The npm package the caller names is checked on every run, whether or not it releases: a
-      # name of the @altnovatrail scope and no other (R37 in spec). Its archive is named as npm pack
+      # name of the @altnovatrail scope and no other (R37 spec). Its archive is named as npm pack
       # names it, the scope and the name joined by a dash, then the version: the steps below take
       # that stem from here.
       - id: npm-name
@@ -137,7 +133,7 @@ jobs:
           NPM_PACKAGE: ${{ inputs.npm-package }}
         run: |
           if ! [[ "$NPM_PACKAGE" =~ ^@altnovatrail/[a-z0-9][a-z0-9._-]*$ ]]; then
-              echo "::error::npm-package is \"${NPM_PACKAGE}\", which is no package of the @altnovatrail scope, as @altnovatrail/canvas is (R37 in spec)."
+              echo "::error::npm-package is \"${NPM_PACKAGE}\", which is no package of the @altnovatrail scope, as @altnovatrail/canvas is (R37 spec)."
               exit 1
           fi
           name="${NPM_PACKAGE#@}"
@@ -158,7 +154,7 @@ jobs:
 
       # Asked before anything of the repository is fetched: a run on another branch publishes
       # nothing, and neither does a commit whose CI on main has not finished green. The caller's
-      # CI is ci.yml, as architecture 3.3 has it.
+      # CI is its ci.yml.
       - name: Whether this commit may be released by hand
         if: github.event_name == 'workflow_dispatch' && inputs.publish
         env:
@@ -177,12 +173,12 @@ jobs:
           fi
 
       # What the certificate of this run's signature will name, asked before anything else when the
-      # run publishes. R77 in spec lets in no file whose certificate names another workflow of the
-      # caller than its .github/workflows/release.yml on main, or this workflow at anything but a
-      # commit's SHA, and a release's files are immutable. The job's condition and the step above
-      # keep the run on main; the file and the pin nothing else holds. Whether the SHA is a release
-      # of .github, v0.1.7 or newer, the consumer's release-verify asks, and Dependabot offers the
-      # SHAs of releases alone (R04).
+      # run publishes. spec's release-verify lets in no file whose certificate names another
+      # workflow of the caller than its .github/workflows/release.yml on main, or this workflow at
+      # anything but a commit's SHA, and a release's files are immutable (R77 spec). The job's
+      # condition and the step above keep the run on main; the file and the pin nothing else holds.
+      # Whether the SHA is a release of .github, v0.1.7 or newer, the consumer's release-verify
+      # asks, and Dependabot offers the SHAs of releases alone (R04).
       - name: The identity the signature will carry
         if: inputs.publish
         env:
@@ -191,11 +187,11 @@ jobs:
         run: |
           wanted="${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/heads/main"
           if [ "$CALLER_WORKFLOW_REF" != "$wanted" ]; then
-              echo "::error::The caller's workflow is ${CALLER_WORKFLOW_REF}, not ${wanted}. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 in spec): release from .github/workflows/release.yml on main."
+              echo "::error::The caller's workflow is ${CALLER_WORKFLOW_REF}, not ${wanted}. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 spec): release from .github/workflows/release.yml on main."
               exit 1
           fi
           if ! [[ "$SHARED_WORKFLOW_REF" =~ ^altnovatrail/\.github/\.github/workflows/release\.yml@[0-9a-f]{40}$ ]]; then
-              echo "::error::The caller pins this workflow as ${SHARED_WORKFLOW_REF}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 in spec): pin it by the SHA of a release, with its version beside it (R04)."
+              echo "::error::The caller pins this workflow as ${SHARED_WORKFLOW_REF}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 spec): pin it by the SHA of a release, with its version beside it (R04)."
               exit 1
           fi
 
@@ -208,7 +204,7 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # As .github's own release works it out (R14): spec's release-version, run in the toolchain
+      # As .github's own release works it out (R10): spec's release-version, run in the toolchain
       # stage, handed TARGET and the caller's release workflow — the file github.workflow_ref
       # names, since the github context of a called workflow is the caller's — whose RELEASE_LINE
       # at TARGET is the line. release-refusal runs only after a refusal, so just's dry run asks
@@ -217,13 +213,13 @@ jobs:
       # release behind it was pushed by hand and stops the run.
       #
       # The recipes run by spec's own script, tools/toolchain/toolchain.sh in the caller's spec
-      # submodule, at the tag it pins (R31 in spec). The script itself runs on the runner, in this
+      # submodule, at the tag it pins (R31 spec). The script itself runs on the runner, in this
       # step's environment and the job's, where the caller's own code runs in a container with no
       # token (R18). So the run first asks that spec/ be a submodule of altnovatrail/spec, checked
-      # out at the commit the caller pins and at a tag of spec — every NovaTrail repository pins
-      # spec at an exact tag (RULES.md) — and that the tag hold the script, which spec ships from
-      # v0.2.17; anything else stops it before anything is built, with the reason. A run of a
-      # commit older than the tip leaves before that, without a release, as it always has.
+      # out at the commit the caller pins and at a tag of spec, as every NovaTrail repository pins
+      # it (R21 spec), and that the tag hold the script, which spec ships from v0.2.17; anything
+      # else stops it before anything is built, with the reason. A run of a commit older than the
+      # tip leaves before that, without a release.
       #
       # Every container the script starts has the folder it runs from mounted read-write, .git and
       # all, so the script runs from a copy of the checkout, in RUNNER_TEMP. The runner's own git
@@ -234,9 +230,8 @@ jobs:
       # tag holds.
       #
       # The script builds the stage toolchain-core, Node, just, Go and buf, which every recipe of a
-      # release needs and no more, by TOOLCHAIN_STAGE (the 2026-11-16 amendment to R31 in spec;
-      # R47): a Dockerfile without it gets toolchain, with a notice, and a script of a tag of spec
-      # before v0.18.4 builds toolchain as before. Either is the image the steps after this one run
+      # release needs and no more, by TOOLCHAIN_STAGE (R31 spec; R47): a Dockerfile without it, or
+      # a script of an older spec, gets toolchain. Either is the image the steps after this one run
       # spec's recipes in.
       - id: version
         name: Work out the version
@@ -306,7 +301,7 @@ jobs:
               exit 1
           fi
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
-              echo "::error::spec ${tag} has no executable tools/toolchain/toolchain.sh. This release runs spec's recipes by that script, which spec ships from v0.2.17 (R31 in spec): move spec/ to v0.2.17 or newer, then run the release again."
+              echo "::error::spec ${tag} has no executable tools/toolchain/toolchain.sh. This release runs spec's recipes by that script, which spec ships from v0.2.17 (R31 spec): move spec/ to v0.2.17 or newer, then run the release again."
               exit 1
           fi
           toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
@@ -378,24 +373,24 @@ jobs:
           cd "$RUNNER_TEMP/release-verify-probe"
           if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
               "$VERSION" "$RUNNER_TEMP/dist/${STEM}-${VERSION#v}.tgz"; then
-              echo "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+              echo "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 spec): move spec/ to v0.6.0 or newer, then run the release again."
               exit 1
           fi
 
       # The file of the release before this one that the caller names by previous-file, which its
-      # release-files recipe builds on: the cumulative index of modules builds on the index of the
-      # release before it (R63 in spec). The recipe runs with no network, token or spec/, so the
-      # file is downloaded and checked here, before anything is built (the 2026-11-02 amendment to
-      # R63 in spec): from the newest release, which the number step names as the previous one,
-      # with its bundle. The release's attestation is checked on the runner, and the signature by
-      # spec's release-verify, the one way a file of a NovaTrail release enters CI (R77 in spec), as
-      # a run again checks its archive (below): from a new copy of spec/ alone, and without the
-      # token. The checked file alone goes into a folder of its own, which the build mounts
-      # read-only. A file the previous release lacks, or one a check refuses, stops the run: an
-      # index that cannot be read is a refusal (R63 in spec). The first release has no previous one,
-      # and just's dry run asks for the recipe all the same, with the arguments the release after it
-      # will give it: a caller on a tag of spec without it stops at its first release, not at its
-      # second. The output handed says what the build gets, file or none, and the build goes by it.
+      # release-files recipe builds on, as the cumulative index of modules builds on the index of
+      # the release before it (R63 spec). The recipe runs with no network, token or spec/, so the
+      # file is downloaded and checked here, before anything is built: from the newest release,
+      # which the number step names as the previous one, with its bundle. The release's
+      # attestation is checked on the runner, and the signature by spec's release-verify, the one
+      # way a file of a NovaTrail release enters CI (R77 spec), as a run again checks its archive
+      # (below): from a new copy of spec/ alone, and without the token. The checked file alone goes
+      # into a folder of its own, which the build mounts read-only. A file the previous release
+      # lacks, or one a check refuses, stops the run: an index that cannot be read is a refusal
+      # (R63 spec). The first release has no previous one, and just's dry run asks for the recipe
+      # all the same, with the arguments the release after it will give it: a caller on a tag of
+      # spec without it stops at its first release, not at its second. The output handed says what
+      # the build gets, file or none, and the build goes by it.
       - id: previous
         name: The previous release's file
         if: inputs.previous-file != '' && steps.version.outputs.version != ''
@@ -412,7 +407,7 @@ jobs:
               cd "$RUNNER_TEMP/previous-verify"
               if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec --dry-run release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
                   "$VERSION" "$folder/$PREVIOUS_FILE"; then
-                  echo "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${PREVIOUS_FILE}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 in spec): move spec/ to v0.6.0 or newer, then run the release again."
+                  echo "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${PREVIOUS_FILE}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 spec): move spec/ to v0.6.0 or newer, then run the release again."
                   exit 1
               fi
               echo "::notice::${VERSION} is the first release, with no ${PREVIOUS_FILE} before it: release-files gets an empty second argument."
@@ -423,17 +418,17 @@ jobs:
           gh release download "$PREVIOUS" --repo "$GITHUB_REPOSITORY" --dir "$folder" \
               --pattern "$PREVIOUS_FILE" --pattern "${PREVIOUS_FILE}.sigstore.json" || true
           if [ ! -f "$folder/$PREVIOUS_FILE" ] || [ ! -f "$folder/${PREVIOUS_FILE}.sigstore.json" ]; then
-              echo "::error::${PREVIOUS} holds no ${PREVIOUS_FILE} with its bundle ${PREVIOUS_FILE}.sigstore.json, or gh could not download them; the lines above say which. release-files builds ${VERSION} on that file, and one that cannot be read stops the release (R63 in spec)."
+              echo "::error::${PREVIOUS} holds no ${PREVIOUS_FILE} with its bundle ${PREVIOUS_FILE}.sigstore.json, or gh could not download them; the lines above say which. release-files builds ${VERSION} on that file, and one that cannot be read stops the release (R63 spec)."
               exit 1
           fi
           if ! gh release verify-asset "$PREVIOUS" "$folder/$PREVIOUS_FILE" --repo "$GITHUB_REPOSITORY"; then
-              echo "::error::The attestation of ${PREVIOUS} does not hold for its ${PREVIOUS_FILE}; the lines above say why, and nothing is built on it (R63 in spec)."
+              echo "::error::The attestation of ${PREVIOUS} does not hold for its ${PREVIOUS_FILE}; the lines above say why, and nothing is built on it (R63 spec)."
               exit 1
           fi
           cd "$RUNNER_TEMP/previous-verify"
           if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
               "$PREVIOUS" "$folder/$PREVIOUS_FILE"; then
-              echo "::error::spec's release-verify refused ${PREVIOUS_FILE} of ${PREVIOUS}; the lines above say why, and nothing is built on it (R63, R77 in spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
+              echo "::error::spec's release-verify refused ${PREVIOUS_FILE} of ${PREVIOUS}; the lines above say why, and nothing is built on it (R63 spec, R77 spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
               exit 1
           fi
           mkdir "$RUNNER_TEMP/previous"
@@ -526,18 +521,17 @@ jobs:
           chmod +x "$cosign"
 
       # Node at an exact version, with the npm it ships, checked against the sum in SHASUMS256.txt
-      # of its release, as cosign is (R08): 24.22.1, the newest security release of Node 24 when
-      # T27 was written, with npm 11.19.1. Trusted publishing takes npm 11.5.1 and Node 22.14.0 or
-      # newer (R37 in spec). npm runs on the runner, not in the caller's toolchain stage, which gets
-      # no token (R18).
+      # of its release, as cosign is (R08). Trusted publishing takes npm 11.5.1 and Node 22.14.0 or
+      # newer (R37 spec). npm runs on the runner, not in the caller's toolchain stage, which gets no
+      # token (R18).
       #
       # npm-isolated, which the check and the publish below both run, is npm kept from every
       # setting this workflow did not choose: from an empty folder, so no package.json or .npmrc
       # of a project is read; with no user or global config and no npm_config_ variables,
       # NODE_OPTIONS or NPM_ID_TOKEN; with the registry named on its command line, which no
       # publishConfig overrides; and with no scripts. That guards against stray settings, not
-      # against code that ran on the runner before (В23 in RUN.md). No container runs after this
-      # step, so nothing but this workflow writes the script.
+      # against code that ran on the runner before. No container runs after this step, so nothing
+      # but this workflow writes the script.
       - name: Node and npm
         if: >-
           inputs.npm-package != '' &&
@@ -573,16 +567,16 @@ jobs:
           chmod +x "$RUNNER_TEMP/npm-isolated"
 
       # A run again of a commit released already publishes the archive its release holds, not one
-      # built anew. It downloads that file with its bundle, and checks both before npm sees them.
-      # The release's attestation is checked here on the runner. The signature is checked by
-      # spec's release-verify, the one way a file of a NovaTrail release enters CI (R77 in spec;
-      # RULES.md, Hard rules). It wants this workflow at the SHA of a release of .github, v0.1.7
-      # or newer — whichever the run that released pinned, since the button may run with another —
-      # at the call of this repository's release.yml on main, of the commit of the tag. The recipe
-      # runs in the caller's toolchain stage, as the number does, from a new copy of spec/ alone,
-      # and reads Sigstore, GitHub and the npm registry: when one cannot be read, it refuses, and
-      # the job is run again. Of the npm steps only this one has the token, which neither the
-      # recipe's container nor npm, which reads an archive the caller's code built, ever sees.
+      # built anew. It downloads that file with its bundle, and checks both before npm sees them:
+      # the release's attestation here on the runner, the signature by spec's release-verify, the
+      # one way a file of a NovaTrail release enters CI (R77 spec). That wants this workflow at the
+      # SHA of a release of .github, v0.1.7 or newer — whichever the run that released pinned, since
+      # the button may run with another —, at the call of this repository's release.yml on main, of
+      # the commit of the tag. The recipe runs in the caller's toolchain stage, as the number does,
+      # from a new copy of spec/ alone, and reads Sigstore, GitHub and the npm registry: when one
+      # cannot be read, it refuses, and the job is run again. Of the npm steps only this one has the
+      # token, which neither the recipe's container nor npm, which reads an archive the caller's
+      # code built, ever sees.
       - name: The npm package of the release
         if: inputs.npm-package != '' && inputs.publish && steps.version.outputs.released != ''
         env:
@@ -604,7 +598,7 @@ jobs:
           cd "$RUNNER_TEMP/release-verify"
           if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
               "$RELEASED" "$RUNNER_TEMP/dist/$file"; then
-              echo "::error::spec's release-verify refused ${file} of ${RELEASED}; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 in spec)."
+              echo "::error::spec's release-verify refused ${file} of ${RELEASED}; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 spec)."
               exit 1
           fi
 
@@ -617,26 +611,23 @@ jobs:
       #   where and how npm publishes it;
       # - its repository is an object whose url is this repository, as the registry asks of a
       #   package with provenance.
-      # The registry is read by its packument, with write=true, as npm reads one before it writes:
-      # so the registry's CDN serves no copy cached for minutes. A package it lacks stops a release:
-      # its first version is published by hand (architecture 3.3). So does a package unpublished as
-      # a whole, which the registry answers with 200 and a packument with no versions, whose time
-      # has unpublished, and which npm view takes for a 404 (npm/cli v11.19.1, lib/commands/view.js,
-      # read 2026-11-01): it takes no new version for 24 hours, and then its next one is published
-      # by hand too. A version it held keeps its time even then, and the numbers it held last lie
-      # under time.unpublished.versions too (sources 8.3): the step looks in both, as spec's
-      # does. A version it holds with this archive's integrity is published already. With another,
-      # or with none, or a version it held once and that was unpublished, the number is gone: "Once
-      # package@version has been used, you can never use it again" (npm/documentation,
-      # content/policies/unpublish.mdx, read 2026-11-01). Before the release, such a number stops
-      # every release of the line, each of which would take it again, until the caller raises
-      # RELEASE_LINE; after the release, the next one has a new number. A version below the highest
-      # one npm holds goes out with the tag previous, since npm puts none below the highest under
-      # latest, and latest is never named. Then npm's own dry run, npm-isolated, reads the archive,
-      # and has to read the same file and integrity. The check's own files lie apart from the empty
-      # folder npm runs in. This step has no token and no OIDC variables, so the dry run, which
-      # tries npm's token exchange too, gets nothing to exchange: npm gets a token in the last step
-      # alone, which runs only when publish is true.
+      # The registry is read by its packument, with write=true, as npm reads one before it writes,
+      # so that its CDN serves no copy cached for minutes. A package it lacks stops a release: its
+      # first version is published by hand. So does a package unpublished as a whole, which the
+      # registry answers with 200 and a packument with no versions whose time has unpublished, and
+      # which npm view takes for a 404: it takes no new version for 24 hours, and then its next one
+      # is published by hand too. A version it held keeps its time even then, and the numbers it
+      # held last lie under time.unpublished.versions too: the step looks in both, as spec's does.
+      # A version it holds with this archive's integrity is published already. With another, or
+      # with none, or a version it held once and that was unpublished, the number is gone for good
+      # on npm. Before the release, such a number stops every release of the line, each of which
+      # would take it again, until the caller raises RELEASE_LINE; after the release, the next one
+      # has a new number. A version below the highest one npm holds goes out with the tag previous,
+      # since npm puts none below the highest under latest, and latest is never named. Then npm's
+      # own dry run, npm-isolated, reads the archive, and has to read the same file and integrity.
+      # The check's own files lie apart from the empty folder npm runs in. This step has no token
+      # and no OIDC variables, so the dry run, which tries npm's token exchange too, gets nothing to
+      # exchange: npm gets a token in the last step alone, which runs only when publish is true.
       - id: npm
         name: Check the npm package
         if: >-
@@ -697,7 +688,7 @@ jobs:
           case "$code" in
               404)
                   if [ "$PUBLISH" = true ]; then
-                      echo "::error::${NPM_PACKAGE} is not in the npm registry. Its first version is published by hand and a trusted publisher set on it; only then does a release publish (architecture 3.3)."
+                      echo "::error::${NPM_PACKAGE} is not in the npm registry. Its first version is published by hand and a trusted publisher set on it; only then does a release publish (architecture 3.3 of .github)."
                       exit 1
                   fi
                   echo "::notice::${NPM_PACKAGE} is not in the npm registry yet, which matters not with publish false."
@@ -707,7 +698,7 @@ jobs:
                   published=$(jq -r --arg v "$version" '(.versions // {}) | if has($v) then .[$v].dist.integrity // "none" else "" end' "$packument")
                   whole=""
                   if jq -e '((.time // {}) | has("unpublished")) and ((.versions // {}) | length == 0)' "$packument" > /dev/null; then
-                      whole="${NPM_PACKAGE} was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3)."
+                      whole="${NPM_PACKAGE} was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3 of .github)."
                   fi
                   if [ -n "$published" ] && [ "$published" != "$integrity" ]; then
                       echo "::error::${NPM_PACKAGE}@${version} is in the npm registry with the integrity ${published}, and this archive's is ${integrity}. npm never takes a version back. ${gone}"
@@ -762,19 +753,17 @@ jobs:
       # is this workflow at the ref the caller pins, job.workflow_ref, issued to GitHub Actions, in
       # the caller's repository, at TARGET. The certificate of the first file is printed, its
       # extensions among it, for whoever checks the signatures later, as spec's release-verify does
-      # by R77 in spec; a print that fails says so and holds nothing up.
+      # (R77 spec); a print that fails says so and holds nothing up.
       #
-      # The files are signed AT_ONCE at a time, by xargs -P: one after another, cosign took about
-      # 1.4 s a file, and api's release has 141 (measurements 3.1 in spec). Sigstore names no
-      # number of calls at once that its public instance takes (sources 7.3): eight sign those 141
-      # in about 35 s, and ask little more of it at once than one call did. Each file is signed and
-      # checked with a TUF cache of its own, TUF_ROOT: the TUF client cosign builds on reads back
-      # each file of metadata it writes and fails when another process has written another, and
-      # writes the trusted root over in place (sources 7.3). cosign initialize fills one cache
-      # first, and each file starts from a copy of it, so that the calls refresh the metadata
-      # rather than fetch Sigstore's whole TUF repository again. What cosign says of a file goes to
-      # a log of its own, printed whole in the order of the files once all have run; a file without
-      # the mark that both its calls held is named by ::error::, and the step fails.
+      # The files are signed AT_ONCE at a time, by xargs -P, since one after another a release of a
+      # hundred files takes minutes (R44). Each file is signed and checked with a TUF cache of its
+      # own, TUF_ROOT: the TUF client cosign builds on fails when another process has written
+      # another copy of a file of metadata it wrote, and writes the trusted root over in place.
+      # cosign initialize fills one cache first, and each file starts from a copy of it, so that the
+      # calls refresh the metadata rather than fetch Sigstore's whole TUF repository again. What
+      # cosign says of a file goes to a log of its own, printed whole in the order of the files once
+      # all have run; a file without the mark that both its calls held is named by ::error::, and
+      # the step fails.
       - name: Sign every file
         if: steps.version.outputs.version != ''
         env:
@@ -836,7 +825,7 @@ jobs:
       # Every release is marked Latest: its number is the highest so far, and the tip of main may
       # get no release of its own when it changes nothing the release is built from. The notes run
       # from the release before this one. A refusal of the Releases API is let pass only as
-      # spec's release-refusal decides, as in .github's own release (R14). The recipe runs in a
+      # spec's release-refusal decides, as in .github's own release (R10). The recipe runs in a
       # new copy of the checkout, taken after main is fetched again: the version step's copy has
       # no new tip, and a fetch there would read a .git/config a container may have changed. No
       # container has had the checkout, so the new copy's script is the one the tag holds.
@@ -872,18 +861,15 @@ jobs:
 
       # The release is immutable and attested, and so is every file in it; the attestation may
       # take a moment to appear. A run again of a commit released already verifies its release.
-      # gh release verify checks the release's attestation and, with --format json, prints the
-      # statement it verified, whose subjects are the release's files, each by its name and
-      # sha256 (measurements 5.12): each file here is held to the sha256 of a subject, as
-      # verify-asset holds it, all by that one call. Not to the name: GitHub renames a file with
-      # special characters when it is uploaded (sources 3.7), and the names release-files may give
-      # hold +. gh release verify-asset checks one file a call, against the same attestation,
-      # fetched again with the tag's commit for each (sources 3.5): at api, 282 calls one after
-      # another took 633 s (measurements 3.1 in spec), and run at once they would spend that many
-      # requests sooner of the GITHUB_TOKEN's 1,000 an hour and its 900 points a minute (sources
-      # 3.6). A file whose bytes the statement does not name is named by ::error::, every one, and
-      # the step fails; a statement that names no file by its sha256 fails it with a message of its
-      # own: gh may have printed another shape.
+      # gh release verify --format json prints the statement it verified, whose subjects are the
+      # release's files, each by its name and sha256: each file is held to the sha256 of a subject,
+      # as verify-asset holds it, all by that one call. Not to the name: GitHub renames a file with
+      # special characters when it is uploaded, and the names release-files may give hold +. gh
+      # release verify-asset checks one file a call and fetches the attestation again for each: for
+      # a release of hundreds of files that takes minutes, and run at once the calls would spend the
+      # GITHUB_TOKEN's limits of requests. A file whose bytes the statement does not name is named
+      # by ::error::, every one, and the step fails; a statement that names no file by its sha256
+      # fails it with a message of its own: gh may have printed another shape (R44).
       - name: Verify the release
         if: steps.publish.outputs.published == 'true' || (steps.version.outputs.released != '' && inputs.publish)
         env:
@@ -930,24 +916,18 @@ jobs:
       # publishing: npm exchanges the job's OIDC token for one that may publish this package, if a
       # trusted publisher of the package names the caller's repository and release workflow, and
       # makes its provenance itself. npm-isolated runs it as in the check above, but with the OIDC
-      # variables. Its exit status is not the verdict, the registry is: npm may end well with a
-      # version only staged, or fail on a version that went out (npm/cli#9889). And a version npm
-      # took is not readable at once: the registry answers the upload with 202 and "Your package is
-      # being processed and may take a few minutes to become available" (its notice in the run of
-      # spec's v0.6.7, 2026-11-02), since it scans the package first, with "a short delay between
-      # publishing and availability, typically around five minutes. It may take longer, up to 15
-      # minutes or more, at peak times" (GitHub Changelog, npm publish-time malware scanning,
-      # 2026-07-28, read 2026-11-02; the 2026-11-02 amendment to R37 in spec). Nor does a version the packument shows have its archive at once: the archive of
-      # @altnovatrail/spec 0.7.2 answered 404 for five minutes after its packument showed it (the
-      # second 2026-11-03 amendment to R37 in spec). So the step asks the packument, with
-      # write=true, until the version is there, and then the archive, until the registry serves
-      # it — a round every ten seconds, for twenty minutes, as spec's step does, or three rounds
-      # while npm failed and the packument does not show the version — and the archive has to be
-      # this file, byte for byte. A version npm holds already is not published again, and a
-      # refusal release-refusal lets pass leaves the step out, as publish false does. If npm fails
-      # after the release is out, running the job again publishes the release's file, and if the
-      # registry is slower still, the check of the npm package finds the version by its integrity:
-      # the integrity in the packument holds the archive's bytes, which npm checks on install.
+      # variables. The registry is the verdict, not npm's exit status: npm may end well with a
+      # version only staged, or fail on a version that went out (npm/cli#9889). The registry scans
+      # a package before it serves it, typically for five minutes and at peak times for fifteen or
+      # more, and an archive may answer 404 for minutes after the packument shows its version (R37
+      # spec). So the step asks the packument, with write=true, until the version is there, and then
+      # the archive, until the registry serves it — a round every ten seconds, for twenty minutes,
+      # as spec's step does, or three rounds while npm failed and the packument does not show the
+      # version — and the archive has to be this file, byte for byte. A version npm holds already is
+      # not published again, and a refusal release-refusal lets pass leaves the step out, as publish
+      # false does. If npm fails after the release is out, running the job again publishes the
+      # release's file, and if the registry is slower still, the check of the npm package finds the
+      # version by its integrity, which holds the archive's bytes.
       - name: Publish to npm
         if: >-
           inputs.npm-package != '' &&

@@ -1,7 +1,6 @@
 // Command coderules holds the code of a Go module to the rules that keep its bits the same on
-// every build (R107 in spec): the test of the rules of code that learner-model and engine kept each
-// in a rules_test.go of its own, as a tool of .github, with the lists a caller gives it. The shared
-// go.yml runs it with same-bits:
+// every build, by the lists a caller gives it (R107 spec; R33). The shared go.yml runs it with
+// same-bits:
 //
 //	coderules -lists .github/coderules.json .
 //
