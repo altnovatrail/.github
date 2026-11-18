@@ -45,30 +45,8 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E26, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T81: next — T82.
+- **Done epics:** E1–E15 and E17–E27, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T81: next — T82.
 
-## Table 1. Current epic — E27. Тексты без истории (R160 spec)
+## Table 1. Current epic — none
 
-**Результат:** `.github` на теге `spec` v0.18.34 и пишет по R160 spec: план, документы и комментарии кода держат текущее состояние, а не историю; `docs-check-repo` проверяет предел записи журнала 12 КБ и номера решений в комментариях кода.
-
-| Статус | ID | Задача | Кто | План | Зависит от |
-|---|---|---|---|---|---|
-| [x] | T77 | Тексты без истории (R160 spec) и тег `spec` v0.18.34 | Claude | да | — |
-| [x] | T78 | Документы без истории: вводная и разделы 1–2 `docs/architecture.md`, README, CLAUDE.md | Claude | — | T77 |
-| [x] | T79 | Документы без истории: разделы 3–4 `docs/architecture.md` | Claude | — | T78 |
-| [x] | T80 | Комментарии общих workflow, действия `toolchain` и `tools/coderules/`, проверка номеров решений | Claude | — | T77 |
-| [ ] | T81 | Комментарии `tests/`, `self-` workflow, `justfile` и файлов настроек | Claude | — | T80 |
-
-## Epic E27. Тексты без истории (R160 spec)
-
-**Почему эпик такой.** Строка 7.26 COORDINATION.md spec (R160 spec, R76 spec, R156 spec): текст задачи дал оркестратор (правило 6 COORDINATION.md spec), и правило 11 разделило его на пять задач по одному ревью. Задача живёт только в эпике (R40), поэтому части T77 — задачи этого эпика, а не `run/TASKS.md`: оркестратор берёт их из таблицы 1 после мержа T77. Файлы, после которых выходит релиз (R10), — общие workflow, `.github/actions/` и `tools/coderules/` — меняет одна T80, и с ней включается проверка номеров решений в комментариях: правка номеров и правка комментариев выходят одним релизом, а не двумя (architecture 3.5).
-
-**Не входит:** записи журнала, которые задачи не меняют, — их переписывает задача, что их коснётся (R160 spec; Д14); `.devcontainer/` — копия шаблона (Д13).
-
-#### T81. Комментарии `tests/`, `self-` workflow, `justfile` и файлов настроек
-
-- **Цель:** комментарии `tests/`, `.github/workflows/self-*.yml`, `justfile`, `.github/codecov.yml`, `.github/dependabot.yml`, `.github/actionlint.yaml` и `.sonarcloud.properties` — по R160 spec, «Comments»; эти файлы релиза не дают (R10).
-- **Почему:** строка 7.26 COORDINATION.md spec; R160 spec; часть T77 по правилу 11.
-- **Сделать:** как T80, без релиза: без номеров задач в заголовках случаев `tests/` — «The tests of same-bits (T46 and T47 …)», «the steps T39 changed» —, без пересказа шагов, которые случай проверяет; `R… in spec` в строках — с ожиданиями тестов, что их ищут.
-- **Как проверить:** `just -f spec/justfile docs-check-repo`; `bash tests/run.sh` с yq по `self-ci.yml`; `ci-lint`, `ci-test`, `ci-vuln` и `ci-licenses`; `/code-review high`.
-- **Разделы:** R160 spec, «Comments»; R28, R33.
+The last done epic is E27, its archive [docs/plan/E27.md](docs/plan/E27.md).
