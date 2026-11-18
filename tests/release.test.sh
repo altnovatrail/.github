@@ -574,7 +574,7 @@ test_npm_a_dry_run_that_reads_another_file_or_integrity_stops_the_release() {
     assert_line "::error::npm's dry run did not read altnovatrail-canvas-0.1.9.tgz with the integrity ${integrity}."
 }
 
-# The tests of the steps T39 changed, by R77 in spec: "The identity the signature will carry", which
+# The tests of the steps T39 changed, by R77 spec: "The identity the signature will carry", which
 # stops a run that publishes when the caller's workflow or its pin of this one would give the files
 # a signature a consumer's release-verify refuses; "spec's release-verify, asked ahead", just's dry
 # run of the recipe before anything is built; and "The npm package of the release", whose run again
@@ -777,7 +777,7 @@ test_npm_again_of_an_archive_whose_attestation_fails_stops_before_the_signature(
     assert_calls docker 0
 }
 
-# The tests of the steps T41 brings and changes, by the 2026-11-02 amendment to R63 in spec: "The
+# The tests of the steps T41 brings and changes, by the 2026-11-02 amendment to R63 spec: "The
 # name of previous-file", checked on every run; "The previous release's file", which downloads the
 # file previous-file names from the release before this one, with its bundle, checks it by
 # release-verify before anything is built, and says by handed what the build gets; and "Build the
@@ -1023,7 +1023,7 @@ test_build_builds_toolchain_where_the_dockerfile_has_no_core() {
 }
 
 # spec's script builds the core for the steps that run spec's recipes (the 2026-11-16 amendment to
-# R31 in spec; R47).
+# R31 spec; R47).
 test_release_works_the_version_out_in_the_core() {
     use_workflow release.yml
     assert_eq "$(wf_raw '.jobs.release.steps[] | select(.id == "version") | .env.TOOLCHAIN_STAGE')" toolchain-core "the stage of spec's script"
@@ -1073,7 +1073,7 @@ test_build_that_writes_nothing_stops_the_release() {
     assert_line "::error::release-files wrote nothing into dist/, or dist/ is a link."
 }
 
-# The tests of the step T44 changes, by the amendments to R37 in spec of 2026-11-02 and of
+# The tests of the step T44 changes, by the amendments to R37 spec of 2026-11-02 and of
 # 2026-11-03: "Publish to npm" waits for the registry in rounds, every ten seconds, until the
 # packument shows the version and the registry serves its archive, for twenty minutes or 120 rounds
 # at most, or three rounds while npm failed and the packument does not show it. The registry is
@@ -1347,7 +1347,7 @@ test_publish_a_version_without_provenance_passes_with_a_warning() {
     assert_line "::warning::@altnovatrail/canvas@0.1.9 has no provenance in the registry."
 }
 
-# The releases take no cache (the amendment of 2026-11-09 to R31 in spec; R36): the image of the job
+# The releases take no cache (the amendment of 2026-11-09 to R31 spec; R36): the image of the job
 # that signs is built from the Dockerfile, as the cache of the checks is not.
 test_release_and_self_release_take_no_cache() {
     local file

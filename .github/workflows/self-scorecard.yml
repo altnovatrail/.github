@@ -1,5 +1,5 @@
 # OpenSSF Scorecard over .github itself (R03): the shared scorecard.yml, called by local path. It
-# runs on main and once a week, as the action supports, and holds no merge (R30 in spec).
+# runs on main and once a week, as the action supports, and holds no merge (R30 spec).
 #
 # This file keeps to the Scorecard server's rules for the workflow that publishes: nothing at the
 # top but read permission, no `env` or `defaults`. Its job has to give the shared workflow
