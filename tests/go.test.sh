@@ -528,7 +528,7 @@ test_go_composite_action_takes_the_toolchain_stage_and_the_go_caches_as_go_yml_d
     image=$(jq -nc --arg if "$before" --arg shell "$shell" --arg save "\${{ $on_main }}" '{name: "Toolchain image", if: $if, shell: $shell, env: {SAVE: $save, STAGES: "toolchain"}}')
     save=$(jq -c --arg if "$before && steps.toolchain.outputs.cache-hit != 'true' && $on_main" '.if = $if' <<< "$toolchain_save")
     go_restore=$(jq -c --arg if "$before" '{name, id, if: $if, uses, with}' <<< "${go_cache_restore//<check>/\$\{\{ inputs.check \}\}}")
-    go_caches=$(jq -nc --arg if "$before" --arg shell "$shell" '{name: "Go caches", if: $if, shell: $shell, env: {RESTORED: "${{ steps.go-cache.outputs.cache-matched-key }}"}}')
+    go_caches=$(jq -nc --arg if "$before" --arg shell "$shell" '{name: "Go caches", if: $if, shell: $shell, env: {RESTORED: "${{ steps.go-cache.outputs.cache-matched-key }}", KEY: "${{ steps.go-cache.outputs.cache-primary-key }}"}}')
     go_key=$(jq -nc --arg if "$before" --arg shell "$shell" '{name: "Go caches key", if: $if, shell: $shell, env: {KEY: "${{ steps.go-cache.outputs.cache-primary-key }}", HIT: "${{ steps.go-cache.outputs.cache-hit }}"}}')
     go_to_save=$(jq -nc --arg if "$after" --arg shell "$shell" '{name: "Go caches to save", id: "go-cache-key", if: $if, shell: $shell}')
     go_save=$(jq -c --arg if "$after && steps.go-cache-key.outputs.key != '' && $on_main" '.if = $if | .with.key = "${{ steps.go-cache-key.outputs.key }}"' <<< "$go_cache_save")
@@ -665,8 +665,8 @@ test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_im
 go_cache_env=(--env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint)
 
 # The restore and the save of the job check, with the SHA of the action as <sha>; the check in the
-# key is the job's own, and there is no restore key.
-go_cache_restore='{"name":"Go caches from the cache","id":"go-cache","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-${{ hashFiles('"'"'**/go.sum'"'"') }}"}}'
+# key is the job's own, and the restore key is the key without the hash of go.sum.
+go_cache_restore='{"name":"Go caches from the cache","id":"go-cache","uses":"actions/cache/restore@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-${{ hashFiles('"'"'**/go.sum'"'"') }}","restore-keys":"go-${{ runner.os }}-${{ runner.arch }}-<check>-${{ hashFiles('"'"'.devcontainer/Dockerfile'"'"') }}-"}}'
 go_cache_save='{"name":"Go caches into the cache","if":"steps.go-cache.outputs.cache-hit != '"'"'true'"'"' && github.event_name == '"'"'push'"'"' && github.ref == '"'"'refs/heads/main'"'"'","uses":"actions/cache/save@<sha>","with":{"path":"${{ runner.temp }}/go-cache","key":"${{ steps.go-cache.outputs.cache-primary-key }}"}}'
 
 test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
@@ -715,11 +715,12 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
 go_cache_warning="::warning::The Go caches of go-Linux-X64-test-a-b did not pass go mod verify: they are deleted, and the job downloads and builds without them. An entry that fails on every run stays until it is deleted (gh cache delete) or go.sum or the Dockerfile changes."
 
 # The step "Go caches" of the job check, in a workspace that git tracks, with the key the cache
-# restored, or none.
+# restored, or none, and the key it was asked for, go-Linux-X64-test-a-b.
 go_caches_step() {
     use_workflow go.yml
     select_step check 'name=Go caches'
     ctx steps.go-cache.outputs.cache-matched-key "$1"
+    ctx steps.go-cache.outputs.cache-primary-key go-Linux-X64-test-a-b
     stub docker
 }
 
@@ -769,6 +770,50 @@ test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
     # go deletes a build not used for five days at the end of a command: the step touches the builds.
     assert_eq "$(find "$step_temp/go-cache/build" "$step_temp/go-cache/lint" -type f -mmin +60 | wc -l)" 0 "the builds older than an hour"
     assert_eq "$(find "$step_temp/go-cache/mod" -type f -mmin +60 | wc -l)" 1 "the modules older than an hour"
+}
+
+# An entry of another go.sum, restored by the prefix of the key (R41): the modules, which go left
+# read-only, are dropped, and nothing is verified; the builds stay. Those of the run that saved
+# it, no more than two hours older than its newest, are set three hours back; an older one keeps
+# its time, for go to trim.
+test_go_caches_restored_by_the_prefix_drop_the_modules_and_keep_the_builds() {
+    local now
+    go_modules_workspace
+    go_caches_step go-Linux-X64-test-a-0
+    mkdir -p "$step_temp/go-cache/mod/example.com/m@v1.0.0" "$step_temp/go-cache/build/00" "$step_temp/go-cache/lint/00"
+    printf 'package m\n' > "$step_temp/go-cache/mod/example.com/m@v1.0.0/m.go"
+    chmod -R a-w "$step_temp/go-cache/mod/example.com"
+    for file in build/00/new-d build/00/used-d build/00/old-d lint/00/used-d lint/00/old-d; do
+        printf 'a build\n' > "$step_temp/go-cache/$file"
+    done
+    touch -d '6 days ago' "$step_temp/go-cache/build/00/new-d"
+    touch -d '6 days ago 90 minutes ago' "$step_temp/go-cache/build/00/used-d" "$step_temp/go-cache/lint/00/used-d"
+    touch -d '6 days ago 3 hours ago' "$step_temp/go-cache/build/00/old-d" "$step_temp/go-cache/lint/00/old-d"
+    now=$(date +%s)
+    run_step
+    assert_status 0
+    assert_calls docker 0
+    assert_line "Go caches: go-Linux-X64-test-a-0, by the prefix of go-Linux-X64-test-a-b: its modules are dropped, and its builds kept."
+    refute_has "verified"
+    assert_eq "$(go_cache_listing)" "./build ./build/00 ./build/00/new-d ./build/00/old-d ./build/00/used-d ./lint ./lint/00 ./lint/00/old-d ./lint/00/used-d ./mod " "the caches"
+    local file at
+    for file in build/00/new-d build/00/used-d lint/00/used-d; do
+        at=$(stat -c %Y "$step_temp/go-cache/$file")
+        assert_eq "$(( at >= now - 10800 && at <= now - 10800 + 60 ))" 1 "$file set three hours back"
+    done
+    for file in build/00/old-d lint/00/old-d; do
+        assert_eq "$(find "$step_temp/go-cache/$file" -mtime +5 | wc -l)" 1 "$file keeps its time"
+    done
+}
+
+test_go_caches_restored_by_the_prefix_with_no_builds_are_kept_empty() {
+    go_caches_step go-Linux-X64-test-a-0
+    mkdir -p "$step_temp/go-cache/mod/example.com"
+    run_step
+    assert_status 0
+    assert_calls docker 0
+    assert_line "Go caches: go-Linux-X64-test-a-0, by the prefix of go-Linux-X64-test-a-b: its modules are dropped, and its builds kept."
+    assert_eq "$(go_cache_listing)" "./build ./lint ./mod " "the caches"
 }
 
 # The script the container runs verifies each module in turn and stops at the first that fails.

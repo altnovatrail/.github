@@ -324,36 +324,56 @@ jobs:
       # the checkout: the modules, GOMODCACHE, the builds, GOCACHE, and golangci-lint's,
       # GOLANGCI_LINT_CACHE (R41). Each docker run of the job mounts it at /go-cache and points the
       # three variables into it. The key is the runner's OS and architecture, the check, the
-      # Dockerfile, which pins the Go, and the go.sum files, which pin the modules, and there is no
-      # restore key: an entry restored by a prefix would carry every module and build of the
-      # entries before it into the next, which nothing prunes. Only a push to main saves an entry
-      # (below), so a pull request reads main's.
+      # Dockerfile, which pins the Go, and the go.sum files, which pin the modules; on a miss the
+      # newest entry of the same check and Dockerfile comes by the prefix without go.sum, whose
+      # modules the next step drops and whose builds it keeps. Only a push to main saves an entry,
+      # under the exact key (below), so a pull request reads main's.
       - name: Go caches from the cache
         id: go-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/go-cache
           key: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-${{ matrix.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
-      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
-      # folders whose names start with . or _, which ./... leaves out too —: each module of their
-      # builds is hashed again against the hash it was downloaded with, which go checks against
-      # go.sum whenever it takes the module. A tool run by go run <module>@<version> go checks the
-      # same way against the checksum database, but its folder no verify hashes: it is held, like
-      # GOCACHE, by main's scope. A check that fails or cannot run costs the run its caches and not
-      # its verdict: they are deleted with a warning, and the recipes download and build as with
-      # none. Verified caches have their builds touched: go deletes a build it has not used for five
-      # days, by its time, at the end of a command, and an entry keeps the times of its save, so
-      # the first command of a job would delete what the next ones need (R41).
+      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
+      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
+      # are addressed by what they were built from: each deletes a file it has not used for five
+      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
+      # run that saved the entry had in use — no more than two hours older than its newest — are set
+      # three hours back, so that this run's first command keeps them and their next use renews them,
+      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
+      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
+      # out too —: each module of their builds is hashed again against the hash it was downloaded
+      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
+      # <module>@<version> go checks the same way against the checksum database, but its folder no
+      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
+      # costs the run its caches and not its verdict: they are deleted with a warning, and the
+      # recipes download and build as with none. Verified caches have their builds touched: an entry
+      # keeps the times of its save, so the first command of a job would delete what the next ones
+      # need (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+          KEY: ${{ steps.go-cache.outputs.cache-primary-key }}
         run: |
           cache=$RUNNER_TEMP/go-cache
           mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
           if [ -z "$RESTORED" ]; then
               echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          if [ "$RESTORED" != "$KEY" ]; then
+              chmod -R u+w -- "$cache/mod"
+              rm -rf -- "$cache/mod"
+              mkdir -p -- "$cache/mod"
+              newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
+              if [ -n "$newest" ]; then
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
+                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+              fi
+              echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
           fi
           verified=false
@@ -573,26 +593,46 @@ jobs:
         with:
           path: ${{ runner.temp }}/go-cache
           key: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
-      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
-      # folders whose names start with . or _, which ./... leaves out too —: each module of their
-      # builds is hashed again against the hash it was downloaded with, which go checks against
-      # go.sum whenever it takes the module. A tool run by go run <module>@<version> go checks the
-      # same way against the checksum database, but its folder no verify hashes: it is held, like
-      # GOCACHE, by main's scope. A check that fails or cannot run costs the run its caches and not
-      # its verdict: they are deleted with a warning, and the recipes download and build as with
-      # none. Verified caches have their builds touched: go deletes a build it has not used for five
-      # days, by its time, at the end of a command, and an entry keeps the times of its save, so
-      # the first command of a job would delete what the next ones need (R41).
+      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
+      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
+      # are addressed by what they were built from: each deletes a file it has not used for five
+      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
+      # run that saved the entry had in use — no more than two hours older than its newest — are set
+      # three hours back, so that this run's first command keeps them and their next use renews them,
+      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
+      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
+      # out too —: each module of their builds is hashed again against the hash it was downloaded
+      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
+      # <module>@<version> go checks the same way against the checksum database, but its folder no
+      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
+      # costs the run its caches and not its verdict: they are deleted with a warning, and the
+      # recipes download and build as with none. Verified caches have their builds touched: an entry
+      # keeps the times of its save, so the first command of a job would delete what the next ones
+      # need (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+          KEY: ${{ steps.go-cache.outputs.cache-primary-key }}
         run: |
           cache=$RUNNER_TEMP/go-cache
           mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
           if [ -z "$RESTORED" ]; then
               echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          if [ "$RESTORED" != "$KEY" ]; then
+              chmod -R u+w -- "$cache/mod"
+              rm -rf -- "$cache/mod"
+              mkdir -p -- "$cache/mod"
+              newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
+              if [ -n "$newest" ]; then
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
+                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+              fi
+              echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
           fi
           verified=false
@@ -795,26 +835,46 @@ jobs:
         with:
           path: ${{ runner.temp }}/go-cache
           key: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
-      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
-      # folders whose names start with . or _, which ./... leaves out too —: each module of their
-      # builds is hashed again against the hash it was downloaded with, which go checks against
-      # go.sum whenever it takes the module. A tool run by go run <module>@<version> go checks the
-      # same way against the checksum database, but its folder no verify hashes: it is held, like
-      # GOCACHE, by main's scope. A check that fails or cannot run costs the run its caches and not
-      # its verdict: they are deleted with a warning, and the recipes download and build as with
-      # none. Verified caches have their builds touched: go deletes a build it has not used for five
-      # days, by its time, at the end of a command, and an entry keeps the times of its save, so
-      # the first command of a job would delete what the next ones need (R41).
+      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
+      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
+      # are addressed by what they were built from: each deletes a file it has not used for five
+      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
+      # run that saved the entry had in use — no more than two hours older than its newest — are set
+      # three hours back, so that this run's first command keeps them and their next use renews them,
+      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
+      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
+      # out too —: each module of their builds is hashed again against the hash it was downloaded
+      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
+      # <module>@<version> go checks the same way against the checksum database, but its folder no
+      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
+      # costs the run its caches and not its verdict: they are deleted with a warning, and the
+      # recipes download and build as with none. Verified caches have their builds touched: an entry
+      # keeps the times of its save, so the first command of a job would delete what the next ones
+      # need (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+          KEY: ${{ steps.go-cache.outputs.cache-primary-key }}
         run: |
           cache=$RUNNER_TEMP/go-cache
           mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
           if [ -z "$RESTORED" ]; then
               echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          if [ "$RESTORED" != "$KEY" ]; then
+              chmod -R u+w -- "$cache/mod"
+              rm -rf -- "$cache/mod"
+              mkdir -p -- "$cache/mod"
+              newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
+              if [ -n "$newest" ]; then
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
+                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+              fi
+              echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
           fi
           verified=false
@@ -1140,26 +1200,46 @@ jobs:
         with:
           path: ${{ runner.temp }}/go-cache
           key: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, empty on a miss. What the cache gave is checked first by go mod verify,
-      # in every module of the caller — each go.mod git tracks outside testdata/, vendor/ and the
-      # folders whose names start with . or _, which ./... leaves out too —: each module of their
-      # builds is hashed again against the hash it was downloaded with, which go checks against
-      # go.sum whenever it takes the module. A tool run by go run <module>@<version> go checks the
-      # same way against the checksum database, but its folder no verify hashes: it is held, like
-      # GOCACHE, by main's scope. A check that fails or cannot run costs the run its caches and not
-      # its verdict: they are deleted with a warning, and the recipes download and build as with
-      # none. Verified caches have their builds touched: go deletes a build it has not used for five
-      # days, by its time, at the end of a command, and an entry keeps the times of its save, so
-      # the first command of a job would delete what the next ones need (R41).
+      # The three folders, empty on a miss. An entry of another go.sum, restored by the prefix, loses
+      # its modules, which download in seconds, and keeps the builds of go and golangci-lint, which
+      # are addressed by what they were built from: each deletes a file it has not used for five
+      # days, by its time, at the end of a command, and renews the time of one it uses. The files the
+      # run that saved the entry had in use — no more than two hours older than its newest — are set
+      # three hours back, so that this run's first command keeps them and their next use renews them,
+      # and the rest keep their times, for go to trim what no run uses (R41). What an exact hit gave
+      # is checked first by go mod verify, in every module of the caller — each go.mod git tracks
+      # outside testdata/, vendor/ and the folders whose names start with . or _, which ./... leaves
+      # out too —: each module of their builds is hashed again against the hash it was downloaded
+      # with, which go checks against go.sum whenever it takes the module. A tool run by go run
+      # <module>@<version> go checks the same way against the checksum database, but its folder no
+      # verify hashes: it is held, like GOCACHE, by main's scope. A check that fails or cannot run
+      # costs the run its caches and not its verdict: they are deleted with a warning, and the
+      # recipes download and build as with none. Verified caches have their builds touched: an entry
+      # keeps the times of its save, so the first command of a job would delete what the next ones
+      # need (R41).
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+          KEY: ${{ steps.go-cache.outputs.cache-primary-key }}
         run: |
           cache=$RUNNER_TEMP/go-cache
           mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
           if [ -z "$RESTORED" ]; then
               echo "Go caches: none in the cache; the job starts with empty ones."
+              exit 0
+          fi
+          if [ "$RESTORED" != "$KEY" ]; then
+              chmod -R u+w -- "$cache/mod"
+              rm -rf -- "$cache/mod"
+              mkdir -p -- "$cache/mod"
+              newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
+              if [ -n "$newest" ]; then
+                  find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
+                      -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+              fi
+              echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
               exit 0
           fi
           verified=false

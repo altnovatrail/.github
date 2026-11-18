@@ -134,6 +134,10 @@ Read 2026-11-16 (R42, T61):
 - **a lookup without the download** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `lookup-only` — "Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache", `default: 'false'`. `src/restoreImpl.ts` at the same commit: on a miss — "`cache-hit` is intentionally not set to `false` here to preserve existing behavior"; on a hit it sets `cache-hit` by `isExactKeyMatch` and, with `lookupOnly`, writes "Cache found and can be restored from key: ${cacheKey}" instead of "Cache restored from key: ${cacheKey}";
 - **the limit and the eviction** — github/docs at the commit d59b263 (2026-11-13), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Usage limits and eviction policy": "GitHub will remove any cache entries that have not been accessed in over 7 days. There is no limit on the number of caches you can store, but the total size of all caches in a repository is limited. By default, the limit is 10 GB per repository"; "Cache access for low-trust workflow triggers": "only these workflow triggers can create or overwrite caches in the default branch’s scope:" — `push`, `workflow_dispatch`, `repository_dispatch`, `delete`, `registry_package`, `page_build`, `schedule` —, and "The `pull_request` event is not affected. Caches created by a `pull_request` run are already scoped to the merge ref (`refs/pull/.../merge`) and cannot be written to the default branch's scope".
 
+Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
+- **which entry a restore key gives** — github/docs at the commit 6d84733 (2026-11-16), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Matching a cache key": "If there are multiple partial matches for a restore key, the action returns the most recently created cache"; and "If there are still no hits in the current branch, the `cache` action retries the same steps on the default branch";
+- **`cache-hit` by a restore key** — the README at the tag v6.1.0, commit 55cc834: "The `cache` action provides a `cache-hit` output which is set to `true` when the cache is restored using the primary `key` and `false` when the cache is restored using `restore-keys` or no cache is restored."
+
 ### 2.9. `actions/upload-artifact`
 
 Read 2026-10-20 (R09):
@@ -564,6 +568,10 @@ Read 2026-11-16 (R41, T60), Go 1.27.4 of the devcontainer, the Go of the `toolch
 
 Read 2026-11-16 (R43, T62), Go 1.27.4 of the devcontainer:
 - **the build cache at once** — `go help cache`: "The cache is safe for concurrent invocations of the go command."
+
+Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
+- **what finds a build** — `src/cmd/go/internal/cache/cache.go` of Go 1.27.4, the Go of the `toolchain` stage, in the devcontainer's `GOROOT`: "An ActionID is a cache action key, the hash of a complete description of a repeatable computation (command line, environment variables, input file contents, executable contents)";
+- **golangci-lint's cache** — golangci-lint v2.15.0, its latest release (the GitHub API, `repos/golangci/golangci-lint/releases/latest`), the commit 25c5369: `internal/go/cache/cache.go` has the comment and the constants of Go's above — `mtimeInterval = 1 * time.Hour`, `trimInterval  = 24 * time.Hour`, `trimLimit     = 5 * 24 * time.Hour` —, `func (c *DiskCache) Close() error { return c.Trim() }` and the same `cutoff := now.Add(-trimLimit - mtimeInterval)`. Where `pkg/commands/run.go` makes its cache, `cache.NewCache`, no call of its `Close` was found.
 
 ### 10.2. go-licenses
 

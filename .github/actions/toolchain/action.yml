@@ -8,8 +8,9 @@
 # A job takes it twice, both times with its check, the word the key of the Go caches names it by:
 # first, before its work, without save — the image of the stage from the caller's cache of GitHub
 # Actions, or built from .devcontainer/Dockerfile on a miss, and saved at once, on a push to main
-# alone (R36, R42); then the Go caches from the same cache, checked by go mod verify in every module
-# of the caller (R41) —; and last of all, after its work, with save: "true", which on a push to main
+# alone (R36, R42); then the Go caches from the same cache, by the exact key and checked by go mod
+# verify in every module of the caller, or of another go.sum by the prefix, without the modules
+# (R41) —; and last of all, after its work, with save: "true", which on a push to main
 # alone, and on a miss of the key the first call asked for, saves the Go caches by that key. The
 # default success() holds that step, so a job whose work failed saves nothing. The calls are checked:
 # a save without the call before the work, or a second call before it, fails with the reason.
@@ -127,17 +128,31 @@ runs:
       with:
         path: ${{ runner.temp }}/go-cache
         key: go-${{ runner.os }}-${{ runner.arch }}-${{ inputs.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: go-${{ runner.os }}-${{ runner.arch }}-${{ inputs.check }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
     - name: Go caches
       if: inputs.save != 'true'
       shell: bash -e {0}
       env:
         RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
+        KEY: ${{ steps.go-cache.outputs.cache-primary-key }}
       run: |
         cache=$RUNNER_TEMP/go-cache
         mkdir -p -- "$cache/mod" "$cache/build" "$cache/lint"
         if [ -z "$RESTORED" ]; then
             echo "Go caches: none in the cache; the job starts with empty ones."
+            exit 0
+        fi
+        if [ "$RESTORED" != "$KEY" ]; then
+            chmod -R u+w -- "$cache/mod"
+            rm -rf -- "$cache/mod"
+            mkdir -p -- "$cache/mod"
+            newest=$(find "$cache/build" "$cache/lint" -type f -printf '%T@\n' | sort -n | tail -n 1)
+            if [ -n "$newest" ]; then
+                find "$cache/build" "$cache/lint" -type f -newermt "@$((${newest%.*} - 7200))" \
+                    -exec touch -c -d "@$(($(date +%s) - 10800))" -- {} +
+            fi
+            echo "Go caches: ${RESTORED}, by the prefix of ${KEY}: its modules are dropped, and its builds kept."
             exit 0
         fi
         verified=false
