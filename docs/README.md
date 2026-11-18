@@ -1,8 +1,8 @@
 # The documents of .github
 
-What the [README](../README.md) of the repository leaves out, which says only what the component is and where it stands in NovaTrail (the second 2026-11-17 amendment to R21 spec). How to build and run the component, and anything else of the kind, is added here as it comes, or in a document of its own that this list names.
+What the [README](../README.md) of the repository leaves out, which says only what the component is and where it stands in NovaTrail (R21 spec). How to build and run the component, and anything else of the kind, is added here as it comes, or in a document of its own that this list names.
 
-- [architecture.md](architecture.md) — the component: what it does and does not do, its data and links, and what is still to decide.
+- [architecture.md](architecture.md) — the component: what it does and does not do, its data and links, what the card left to decide and the decisions on it, and how it is built.
 - [decisions.md](decisions.md) — the decision log: what was decided, why, and what was rejected.
 - [sources.md](sources.md) — the records of external facts the documents rest on, each with its source, its date and its quote.
 - [measurements.md](measurements.md) — the results of measurements: trial runs of the shared workflows, the suite of their tests, durations and sizes.
