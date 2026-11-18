@@ -435,6 +435,11 @@ Measured 2026-11-17 (R50, T71):
 - **the draft** — `just new-repo-draft .github docs 3.11 v0.18.14` and `… v0.18.6` on clones of `spec` at those tags in a temporary folder: the two drafts differ in README.md — no Status, License, sentence of the languages or tag —, in rule 10 of RUN.md and in the name of the tag alone; `.devcontainer/` and `.claude/settings.json` of `.github` are the same as the new draft's;
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.18.14 and yq 4.54.1 by the sum of `self-ci.yml` — 228 tests, 0 failed; `docs-check-repo` on v0.18.14 ok before the edits and after.
 
+Measured 2026-11-18 (R51, T76):
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.18.27` and `… v0.18.14` on clones of `spec` at those tags in a temporary folder: the two drafts differ in README.md — a description alone, its list of the documents and the clone gone —, in `docs/README.md`, new, which takes them, in the line of CLAUDE.md that names it, in the comment of the heading of `.devcontainer/Dockerfile` on `spec`'s stage `orchestrator` — "and the Dev Containers CLI (R156 spec, R158 spec)" — and in the name of the tag alone. `devcontainer.json`, `host-network.sh`, `.claude/settings.json` and AGENTS.md of `.github` are the same as the new draft's, and its Dockerfile differs from it by that comment alone;
+- **the README** — `readmeProblems` of `spec/tools/new-repo/check.mjs` at v0.18.27, the check `new-repo-check` holds a copy's README by, on the new README.md of `.github`: no problem;
+- **the checks** — the suite `tests/run.sh` with the submodule at v0.18.27 and yq 4.54.1 by the sum of `self-ci.yml` — 230 tests, 0 failed; `docs-check-repo` on v0.18.27 ok before the edits and after.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55
@@ -457,17 +462,18 @@ Measured 2026-11-13 (the 2026-11-13 amendment to R38, T57), by `just -f spec/jus
 
 Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-11-12T14:27 --row`, from the end of the window "before", the row `-workspaces--github` of measurements 1.9 spec. The table is that of measurements 1.9 spec; a row is added at the archive of each epic (RUN.md, «Как устроен план: эпики»).
 
-| Project | Window, UTC | Sessions | Calls, main / subagents | Context of a call, k, main / subagents | Compactions | Cost at API prices |
-|---|---|---|---|---|---|---|
-| `-workspaces--github` — before E18, measurements 1.9 spec | 2026-10-13T00:00 … 2026-11-12T14:27 | 14 | 4,196 / 2,565 | 397.5 / 124.0 | 10 | $739.31 |
-| `-workspaces--github` — E18, T54 to T57 | 2026-11-12T14:27 … 2026-11-13T04:44 | 4 | 410 / 353 | 188.8 / 78.5 | 1 | $49.77 |
-| `-workspaces--github` — E19, T58 | 2026-11-13T04:44 … 2026-11-13T05:35 | 2 | 171 / 30 | 170.2 / 70.2 | 0 | $11.31 |
-| `-workspaces--github` — E20, T59 | 2026-11-13T05:35 … 2026-11-16T02:52 | 2 | 90 / 16 | 157.3 / 71.1 | 0 | $6.46 |
-| `-workspaces--github` — E21, T60 to T68 | 2026-11-16T02:52 … 2026-11-16T22:28 | 10 | 1,206 / 170 | 190.6 / 62.9 | 1 | $91.67 |
-| `-workspaces--github` — E22, T69 to T72 | 2026-11-16T22:28 … 2026-11-17T15:34 | 5 | 361 / 34 | 165.3 / 65.0 | 1 | $24.60 |
-| `-workspaces--github` — E23, T73 | 2026-11-17T15:34 … 2026-11-17T16:04 | 2 | 68 / 14 | 96.1 / 55.2 | 0 | $4.04 |
-| `-workspaces--github` — E24, T74 | 2026-11-17T16:04 … 2026-11-18T00:59 | 2 | 36 / 0 | 96.6 / — | 0 | $1.69 |
-| `-workspaces--github` — E25, T75 | 2026-11-18T00:59 … 2026-11-18T01:36 | 2 | 108 / 17 | 133.3 / 61.8 | 0 | $7.14 |
+| Project | Window, UTC | Sessions | Calls, main / subagents | Context of a call, k, main / subagents | Compactions | Cost at API prices | Context of a main call among its session's first 80, k |
+|---|---|---|---|---|---|---|---|
+| `-workspaces--github` — before E18, measurements 1.9 spec | 2026-10-13T00:00 … 2026-11-12T14:27 | 14 | 4,196 / 2,565 | 397.5 / 124.0 | 10 | $739.31 | — |
+| `-workspaces--github` — E18, T54 to T57 | 2026-11-12T14:27 … 2026-11-13T04:44 | 4 | 410 / 353 | 188.8 / 78.5 | 1 | $49.77 | — |
+| `-workspaces--github` — E19, T58 | 2026-11-13T04:44 … 2026-11-13T05:35 | 2 | 171 / 30 | 170.2 / 70.2 | 0 | $11.31 | — |
+| `-workspaces--github` — E20, T59 | 2026-11-13T05:35 … 2026-11-16T02:52 | 2 | 90 / 16 | 157.3 / 71.1 | 0 | $6.46 | — |
+| `-workspaces--github` — E21, T60 to T68 | 2026-11-16T02:52 … 2026-11-16T22:28 | 10 | 1,206 / 170 | 190.6 / 62.9 | 1 | $91.67 | — |
+| `-workspaces--github` — E22, T69 to T72 | 2026-11-16T22:28 … 2026-11-17T15:34 | 5 | 361 / 34 | 165.3 / 65.0 | 1 | $24.60 | — |
+| `-workspaces--github` — E23, T73 | 2026-11-17T15:34 … 2026-11-17T16:04 | 2 | 68 / 14 | 96.1 / 55.2 | 0 | $4.04 | — |
+| `-workspaces--github` — E24, T74 | 2026-11-17T16:04 … 2026-11-18T00:59 | 2 | 36 / 0 | 96.6 / — | 0 | $1.69 | — |
+| `-workspaces--github` — E25, T75 | 2026-11-18T00:59 … 2026-11-18T01:36 | 2 | 108 / 17 | 133.3 / 61.8 | 0 | $7.14 | — |
+| `-workspaces--github` — E26, T76 | 2026-11-18T01:36 … 2026-11-18T05:36 | 2 | 80 / 0 | 132.3 / — | 0 | $4.19 | 104.7 |
 
 - The context of a call of the main session fell from 397.5 to 188.8 thousand tokens, of a subagent from 124.0 to 78.5. The window "before" holds a month of the tasks of every kind, and the row of E18 four tasks of documents, so the comparison across the sessions after the epic is T124 `spec`'s;
 - the session of T57 was measured while it ran: what it spent after 04:44 — the review, the epic E19 and the merge — is in the next row;
@@ -478,6 +484,7 @@ Measured 2026-11-13 (T57), by `just -f spec/justfile tokens-report --since 2026-
 - the row of E23 is by `tokens-report --since 2026-11-17T15:34 --row`, measured 2026-11-17 at the archive of E23, while the session of T73 ran, before its review and the pull request: its two sessions are the end of T72's and T73's, run by the orchestrator. The threshold of R145 spec is not reached: 96.1 thousand a main call over 68 calls, and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 - the row of E24 is by `tokens-report --since 2026-11-17T16:04 --row`, measured 2026-11-18 at the archive of E24, while the session of T74 ran, before its review and the pull request: its two sessions are the end of T73's and T74's, run by the orchestrator. The threshold of R145 spec is not reached: 96.6 thousand a main call over 36 calls, and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 - the row of E25 is by `tokens-report --since 2026-11-18T00:59 --row`, measured 2026-11-18 at the archive of E25, after the merge of T75's pull request #145: its two sessions are the end of T74's and T75's, run by the orchestrator, whose resumed runs after 01:36 are not in the row. The threshold of R145 spec is not reached: 133.3 thousand a main call over 108 calls is below the reference of `.github`, 191.4 thousand of its T124 (measurements 1.9 spec), and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
+- the row of E26 is by `tokens-report --since 2026-11-18T01:36 --row`, measured 2026-11-18 at the archive of E26, while the session of T76 ran, before its review and the pull request: its two sessions are the end of T75's — its resumed runs after the merge of #145 — and T76's, run by the orchestrator. Its last column, the context of a main call among the first 80 of each session, comes with `spec` v0.18.27 (T199 `spec`; R51), and the rows before it have "—" there, as measurements 1.9 spec has. The threshold of R145 spec is not reached: 132.3 thousand a main call over 80 calls is below the reference of `.github`, 191.4 thousand of its T124 (measurements 1.9 spec), and no budget was raised in the epic; so no epic of analysis goes into [run/EPICS.md](../run/EPICS.md).
 
 ## 12. The Go caches
 

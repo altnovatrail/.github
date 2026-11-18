@@ -807,6 +807,19 @@ Read 2026-11-17 (R50, T71):
 - **the card 3.11 spec** — one line changed, of `infra`: "and the reading mode as `API_READING_MODE` — on `novatrail` `single`, one reader";
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.6: Д88, Д134, Д146, Д195, Д213, Д217 and Д236; COORDINATION.md, point 2: «Следующая — 2.6», its rows unchanged.
 
+### 12.17. `spec` v0.18.27
+
+Read 2026-11-18 (R51, T76):
+- **the tag** — v0.18.27, commit 49686e7, the merge of pull request 188 of `spec` (T199 `spec`), came out 2026-11-18 at 01:16 UTC; the API's latest release is v0.18.27, `gh release view` calls it immutable, and `gh release verify v0.18.27 -R altnovatrail/spec` — "Release v0.18.27 verified!";
+- **what changed** (`git log --oneline v0.18.14..v0.18.27`, `git diff --stat v0.18.14 v0.18.27`) — 38 commits, 56 files, T187–T199 `spec`; among them RULES.md — a rule of How we work and the phrase of Language —, `repo-template/files/README.md`, `files/docs/README.md`, new, and `files/CLAUDE.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, `tools/tokens/`, `.devcontainer/Dockerfile` — the stage `orchestrator` and the heading's comment on it —, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md` and `docs/architecture.md`. `repo-template/files/RUN.md`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/main.mjs`, `tools/toolchain/toolchain.sh` and `tools/licenses/` did not change;
+- **RULES.md, How we work** — "A run longer than a few minutes — tests, a simulation, a build, CI — goes to the background, and the session waits for its notification or a Monitor of its condition, never a `sleep` loop in the foreground: each call that polls rereads the whole context (R143 spec).";
+- **RULES.md, Language** — "Commit messages, issues and a pull request's title and description are in English, a person's too, and a session's are terse, for the session that reads them; reports to the author are in Russian (the 2026-11-17 amendments to R14 spec).";
+- **the second 2026-11-17 amendment to R21 spec** — "the README of a repository — spec's, the template's and so every copy's — is its title, its badges (R48) and a description alone: one to three paragraphs of what the component is and why, and its place in NovaTrail's architecture […] It has no other section and no command, code block or instruction, and names no status, version, date, number or language. What it held before goes to `docs/README.md`, the index of `docs/` […]", and "Each of `module-kit`, `learner-model`, `engine`, `tutor`, `canvas`, `app`, `api` and `skill-map` does its part in a task of its own in the same run; the author named no other repository.";
+- **the second 2026-11-17 amendment to R14 spec and the 2026-11-17 amendment to R22 spec** — the same text as at v0.18.26, commit fdb0072: `git diff fdb0072 v0.18.27 -- docs/decisions.md` adds one amendment, to `tokens-report`;
+- **`tokens-report --row`** — an eighth column, "Context of a main call among its session's first 80, k", the header of measurements 1.9 spec;
+- **the card 3.11 spec** — one line added under the shared workflows: "beside them, the shared composite action `toolchain`, `.github/actions/toolchain` […] (R49 .github)";
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217; Д134, Д195 and Д236 are deleted. Table 5, `run/INBOX.md`: `.github` В41 — option 1, the card `.github` of `architecture 3.11` in `spec` — "the composite action `toolchain` (R49 .github)", В43 — "T194 (В45), option 1: Д134, Д195 and Д236 closed — done in every repository they named, checked on `main` 2026-11-17". COORDINATION.md, point 2: «Следующая — 2.8», rows 2.6 and 2.7 still `[ ]` with «задачи нет».
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
