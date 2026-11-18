@@ -1,16 +1,8 @@
-# actionlint does not know concurrency's queue key yet, which GitHub documents: "max: Up to 100
-# jobs or workflow runs can be pending in the concurrency group" (GitHub Docs, Workflow syntax,
-# read 2026-10-19, as spec's .github/actionlint.yaml cites it). Nor does it know job.workflow_ref,
-# "The full ref of the workflow file that defines the current job" (GitHub Docs, Contexts
-# reference, job context, read 2026-10-21), which release.yml signs under; nor job.workflow_sha
-# and job.workflow_repository of the same context, "The commit SHA of the workflow file that
-# defines the current job" and "The owner/repo of the repository containing the workflow file that
-# defines the current job" (read 2026-11-08), by which go.yml checks out the tool of its own
-# version; nor the self repository reference $/, which "references an action stored in the same
-# repository as the workflow or action that is currently running, and resolves to that repository
-# at the running commit" (GitHub Docs, Workflow syntax, read 2026-11-16; sources 2.12), by which
-# go.yml takes the composite action of its own version (R49). Only those complaints, only in the
-# workflows that use them, are waived.
+# What GitHub documents and actionlint does not know yet: concurrency's key queue; the
+# properties job.workflow_ref, which release.yml signs under, and job.workflow_sha and
+# job.workflow_repository, by which go.yml checks out the tool of its own version; and the self
+# repository reference $/, by which go.yml takes the composite action of its own version (R18,
+# R33, R49). Only those complaints, only in the workflows that use them, are waived.
 paths:
   .github/workflows/self-release.yml:
     ignore:

@@ -1,10 +1,9 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of release.yml's steps. Those of T39, of T41 and of T63 come last, each under its own heading. First come those
-# of the step "Check the npm package" (the amendments to R18 for T27 and T33): the archive a release
-# would publish to npm, checked before the GitHub release exists — which is immutable — against the
-# registry's packument, then by npm's own dry run. The registry is the stand-in curl, the dry run
-# the stand-in npm-isolated; the archives are made here with tar, laid out as npm pack lays one out,
-# and their integrity worked out without openssl, which the step uses.
+# The tests of release.yml's steps (R18), each group under its heading; first the step "Check the
+# npm package", which holds the archive a release would publish to npm before the GitHub release,
+# which is immutable, exists. The registry is the stand-in curl, the dry run the stand-in
+# npm-isolated; the archives are made here with tar, laid out as npm pack lays one out, and their
+# integrity worked out without openssl, which the step uses.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 
@@ -39,9 +38,9 @@ gone_after="The next release, with a new number, publishes the package."
 whole="@altnovatrail/canvas was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3 of .github)."
 
 # A package unpublished as a whole, as the registry answers for one (asdasd, aaaaaaa and
-# test-unpublish, 2026-11-02; sources 8.3): 200, and no versions, but a time with every number
-# it held — 0.1.7 among them, which unpublished.versions leaves out, as a version unpublished
-# before the rest — and unpublished.
+# test-unpublish, 2026-11-02): 200, and no versions, but a time with every number it held — 0.1.7
+# among them, which unpublished.versions leaves out, as a version unpublished before the rest — and
+# unpublished.
 tombstone() {
     registry 200 '{_id: "@altnovatrail/canvas", name: "@altnovatrail/canvas", _rev: "5-0",
         time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-03T00:00:00.000Z",
@@ -50,7 +49,7 @@ tombstone() {
 }
 
 # The same with a number under unpublished.versions alone, without its time, as none of the three
-# had it: spec's step looks there too, and the shared one with it (T42).
+# had it: spec's step looks there too, and the shared one with it.
 tombstone_without_its_time() {
     registry 200 '{_id: "@altnovatrail/canvas", name: "@altnovatrail/canvas", _rev: "5-0",
         time: {created: "2026-10-01T00:00:00.000Z", modified: "2026-10-03T00:00:00.000Z",
@@ -105,7 +104,7 @@ registry() {
 }
 
 # npm's dry run as npm 11 prints it with --json: an object by the package's name, with the file it
-# read and its integrity (measurements 5.5) — the archive's unless others are given.
+# read and its integrity — the archive's unless others are given.
 dry_run() {
     stub_in_temp npm-isolated
     jq -n --arg f "${1:-${archive##*/}}" --arg i "${2:-$integrity}" '{"@altnovatrail/canvas": {filename: $f, integrity: $i}}' \
@@ -574,13 +573,9 @@ test_npm_a_dry_run_that_reads_another_file_or_integrity_stops_the_release() {
     assert_line "::error::npm's dry run did not read altnovatrail-canvas-0.1.9.tgz with the integrity ${integrity}."
 }
 
-# The tests of the steps T39 changed, by R77 spec: "The identity the signature will carry", which
-# stops a run that publishes when the caller's workflow or its pin of this one would give the files
-# a signature a consumer's release-verify refuses; "spec's release-verify, asked ahead", just's dry
-# run of the recipe before anything is built; and "The npm package of the release", whose run again
-# checks the release's archive by that recipe. The recipe runs by the real toolchain.sh of the spec
-# submodule, which starts the stand-in docker: what a case holds is the call that would reach the
-# container.
+# The tests of the identity the signature will carry and of spec's release-verify, asked ahead and
+# on a run again (R77 spec). The recipe runs by the real toolchain.sh of the spec submodule, which
+# starts the stand-in docker: what a case holds is the call that would reach the container.
 
 shared_pin=altnovatrail/.github/.github/workflows/release.yml@c1b848779d9f1d73817ca078a7cba3664632f03b
 
@@ -777,14 +772,10 @@ test_npm_again_of_an_archive_whose_attestation_fails_stops_before_the_signature(
     assert_calls docker 0
 }
 
-# The tests of the steps T41 brings and changes, by the 2026-11-02 amendment to R63 spec: "The
-# name of previous-file", checked on every run; "The previous release's file", which downloads the
-# file previous-file names from the release before this one, with its bundle, checks it by
-# release-verify before anything is built, and says by handed what the build gets; and "Build the
-# files", which hands release-files that file, read-only, or an empty second argument at the first
-# release, and holds the release's own files to one of that name. The recipe runs by the real
-# toolchain.sh, as in the tests of T39. The build gets a git repository of its own, whose archive is
-# what it builds, and the stand-in docker writes into dist/ what stub/docker-dist holds.
+# The tests of previous-file: its name, the previous release's file checked by release-verify, and
+# the build it is handed to (R63 spec). The recipe runs by the real toolchain.sh, as above. The
+# build gets a git repository of its own, whose archive is what it builds, and the stand-in docker
+# writes into dist/ what stub/docker-dist holds.
 
 index=module-index.json
 
@@ -823,9 +814,9 @@ assert_nothing_for_the_build() {
 
 # The step "Build the files" of altnovatrail/modules, releasing v0.1.9, with previous-file as given,
 # module-index.json by default and none when "", after a previous step that handed what is given:
-# file by default, none at the first release, nothing when "". TARGET is the commit of a repository of its own in the workspace, a Dockerfile alone,
-# which git archive hands the build. The stand-in docker writes module-index.json and modules.tar
-# into dist/, unless dist_files says otherwise.
+# file by default, none at the first release, nothing when "". TARGET is the commit of a repository
+# of its own in the workspace, a Dockerfile alone, which git archive hands the build. The stand-in
+# docker writes module-index.json and modules.tar into dist/, unless dist_files says otherwise.
 build() {
     use_workflow release.yml
     select_step release 'name=Build the files'
@@ -1022,8 +1013,7 @@ test_build_builds_toolchain_where_the_dockerfile_has_no_core() {
     assert_built -- v0.1.9
 }
 
-# spec's script builds the core for the steps that run spec's recipes (the 2026-11-16 amendment to
-# R31 spec; R47).
+# spec's script builds the core for the steps that run spec's recipes (R31 spec, R47).
 test_release_works_the_version_out_in_the_core() {
     use_workflow release.yml
     assert_eq "$(wf_raw '.jobs.release.steps[] | select(.id == "version") | .env.TOOLCHAIN_STAGE')" toolchain-core "the stage of spec's script"
@@ -1073,10 +1063,7 @@ test_build_that_writes_nothing_stops_the_release() {
     assert_line "::error::release-files wrote nothing into dist/, or dist/ is a link."
 }
 
-# The tests of the step T44 changes, by the amendments to R37 spec of 2026-11-02 and of
-# 2026-11-03: "Publish to npm" waits for the registry in rounds, every ten seconds, until the
-# packument shows the version and the registry serves its archive, for twenty minutes or 120 rounds
-# at most, or three rounds while npm failed and the packument does not show it. The registry is
+# The tests of "Publish to npm", which waits for the registry in rounds (R37 spec). The registry is
 # the stand-in curl, with answers of its own for the packument and for the archive, and sleep a
 # stand-in that only writes its calls down: the rounds run in no time, and the twenty minutes of
 # the clock are the 120 rounds here, since a stand-in cannot move SECONDS.
@@ -1182,7 +1169,7 @@ test_publish_waits_in_rounds_for_the_packument_to_show_the_version() {
     assert_call sleep 2 10
 }
 
-# The race of spec's v0.7.2: the packument shows the version, and its archive answers 404 for a
+# The registry's race: the packument shows the version, and its archive answers 404 for a
 # while. The packument is not asked again once it shows the version.
 test_publish_waits_for_an_archive_the_registry_does_not_serve_yet() {
     publish_step
@@ -1347,8 +1334,8 @@ test_publish_a_version_without_provenance_passes_with_a_warning() {
     assert_line "::warning::@altnovatrail/canvas@0.1.9 has no provenance in the registry."
 }
 
-# The releases take no cache (the amendment of 2026-11-09 to R31 spec; R36): the image of the job
-# that signs is built from the Dockerfile, as the cache of the checks is not.
+# The releases take no cache (R31 spec, R36): the image of the job that signs is built from the
+# Dockerfile, as the cache of the checks is not.
 test_release_and_self_release_take_no_cache() {
     local file
     for file in release.yml self-release.yml; do
@@ -1357,11 +1344,8 @@ test_release_and_self_release_take_no_cache() {
     done
 }
 
-# The tests of the steps T63 changes: "Sign every file", which fills one TUF cache by cosign
-# initialize, then signs and checks the files AT_ONCE at a time, each from a copy of that cache,
-# its log printed whole in the order of the files; and "Verify the release", which holds each file
-# to the sha256 of a subject in the attestation that one gh release verify prints. cosign and gh
-# are the stand-ins; the certificate is made here by openssl, self-signed.
+# The tests of "Sign every file" and "Verify the release" (R18). cosign and gh are the stand-ins;
+# the certificate is made here by openssl, self-signed.
 
 sign_identity=https://github.com/$shared_pin
 
@@ -1573,9 +1557,9 @@ verify_step() {
     dist_holding "$@"
 }
 
-# The attestation gh release verify --format json prints, as for a release of altnovatrail's
-# (measurements 5.12): the tag's commit first, by its sha1 and no name, then every file the folder
-# given holds, by its name and sha256.
+# The attestation gh release verify --format json prints, as for a release of altnovatrail's: the
+# tag's commit first, by its sha1 and no name, then every file the folder given holds, by its name
+# and sha256.
 verify_attestation() {
     local file
     for file in "$1"/*; do
@@ -1625,8 +1609,8 @@ test_verify_a_file_whose_bytes_the_release_does_not_hold_fails_the_step_by_its_n
 }
 
 test_verify_a_file_github_renamed_holds_by_its_bytes() {
-    # GitHub renames a file with special characters on upload (sources 3.7): the subject has the
-    # new name, and the file here its old one.
+    # GitHub renames a file with special characters on upload: the subject has the new name, and
+    # the file here its old one.
     verify_step pkg-1.0.0+build.tgz
     verify_attestation "$step_temp/dist"
     jq '.verificationResult.statement.subject[1].name = "pkg-1.0.0.build.tgz"' "$state/stub/gh-verify.json" > "$state/renamed.json"

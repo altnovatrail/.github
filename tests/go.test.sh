@@ -1,15 +1,6 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of go.yml (R16 and its amendments): the shape its callers' rulesets name — "Go / lint",
-# "Go / test", "Go / vuln", "Go / licenses" — its steps "Toolchain image", with the cache of the
-# toolchain stage around it in every job that builds the stage (R36), and
-# ci-${{ matrix.check }}, each run with a stand-in docker that writes down what it was asked, and
-# the upload of the coverage: the report the test job hands on, the coverage job that alone gets
-# the OIDC token, and its step "Codecov CLI", run with a stand-in curl. The steps that use an
-# action the harness does not run: their inputs are read as text, and the actions are named
-# without their SHAs, which Dependabot moves.
-# The tests of same-bits (T46 and T47, R107 spec) come last, under their own headings: the jobs
-# "Go / targets", "Go / fma-diff" and "Go / arm64", and the scripts they hand the toolchain
-# container, run here with bash and the stand-in go.
+# The tests of go.yml (R16). The steps that use an action the harness does not run are read as
+# text, and the actions named without their SHAs, which Dependabot moves.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
 
@@ -136,20 +127,13 @@ test_go_fails_the_check_with_the_recipe() {
     assert_status 3
 }
 
-# The tests of the image of the toolchain stage (T52, T61, T66; R36, R42, R47): the step "Toolchain
-# image", one script in every job that builds a stage, with the file the steps before it restored
-# or downloaded, or none, with the stages STAGES names and with SAVE as its job gives it; the step
-# "Toolchain stages", which finds the stage of the checks without a browser in the Dockerfile; the
-# step "Toolchain stage" of the job check; and, read as text, the job toolchain that builds the
-# images once for the jobs on amd64, the steps of the jobs after it, and the job arm64, which builds
-# its own by the composite action .github/actions/toolchain (R49), in go.yml and typescript.yml
-# alike.
+# The tests of the image of the toolchain stage, in go.yml, typescript.yml and the composite action
+# alike (R36, R42, R47, R49).
 
 # The step "Toolchain image" of a job of go.yml, or of the composite action when the job is action,
 # a Dockerfile in the workspace, and, with a word, the file of the toolchain stage that came from
-# the cache or from the job toolchain. The job
-# toolchain is given the stages its two lookups missed, and the job check its stage, toolchain,
-# until the case says otherwise.
+# the cache or from the job toolchain. The job toolchain is given the stages its two lookups
+# missed, and the job check its stage, toolchain, until the case says otherwise.
 toolchain_step() {
     if [ "$1" = action ]; then use_action toolchain; else use_workflow go.yml; fi
     select_step "$1" 'name=Toolchain image'
@@ -657,9 +641,7 @@ test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_im
     assert_eq "$(grep -c 'toolchain\.tar' "$file")" "$(grep -c 'novatrail-toolchain\.tar' "$file")" "the files of the toolchain stage in the composite action"
 }
 
-# The tests of the Go caches (T60; R41): the three steps round the work of every job that runs Go,
-# read as text, the step "Go caches" with what the cache restored, or nothing, and the flags of
-# every docker run of the jobs' own work.
+# The tests of the Go caches (R41).
 
 # The flags that point the container's Go at the caches, beside the volume that holds them.
 go_cache_env=(--env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint)
@@ -883,11 +865,9 @@ test_go_caches_without_a_module_to_verify_them_by_are_kept() {
     assert_line "Go caches: go-Linux-X64-test-a-b, with no module of the repository to verify them by."
 }
 
-# The tests of same-bits (T46; R107 spec): learner-model's and engine's recipes test-targets
-# and fma-diff, as jobs of go.yml. A step hands its script to one toolchain container on stdin; the
-# cases run that script as the container would, with bash in the workspace, and with the stand-in
-# go first on PATH, which answers as the case says and writes down every call with its build
-# variables.
+# The tests of same-bits, the jobs targets and fma-diff (R107 spec). A step hands its script to one
+# toolchain container on stdin; the cases run that script as the container would, with bash in the
+# workspace, and with the stand-in go first on PATH.
 
 # The job's steps, as the jobs of the checks have them: the checkout without credentials, the
 # toolchain stage from the cache, then one step of its own.
@@ -1086,7 +1066,7 @@ test_go_targets_fails_with_its_target_and_stops_at_the_first_that_fails() {
     refute_script_has "GOOS=js"
 }
 
-# The tests on wasip1 (T58; R39): go test by an executor of the script's own in node:wasi, as
+# The tests on wasip1 (R39): go test by an executor of the script's own in node:wasi, as
 # js/wasm runs go_js_wasm_exec.
 
 # The executor that the go test of the index-th call of go runs, by its -exec. It sets two
@@ -1317,8 +1297,7 @@ test_go_fma_diff_builds_each_target_s_own_packages() {
     refute_script_has "does not build"
 }
 
-# The tests of the job T47 adds to same-bits: "Go / arm64", ci-test and the targets of its host on
-# an arm64 runner (R107 spec).
+# The tests of "Go / arm64": ci-test and the targets of its host on an arm64 runner (R107 spec).
 
 test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
     use_workflow go.yml
@@ -1354,8 +1333,8 @@ test_go_arm64_fails_with_ci_test() {
     assert_status 3
 }
 
-# The tests of the job T48 adds to same-bits: "Go / rules", the rules of code by the tool of
-# .github of this workflow's own version, tools/coderules, and the caller's lists (R33).
+# The tests of "Go / rules": the rules of code by tools/coderules of this workflow's own version and
+# the caller's lists (R33).
 
 test_go_runs_rules_with_same_bits_alone_by_the_tool_of_its_own_version() {
     use_workflow go.yml

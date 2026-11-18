@@ -1,11 +1,7 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of typescript.yml (R19 and its amendments): the shape its callers' rulesets name —
-# "TypeScript / lint", "/ test", "/ vuln", "/ licenses", and with the input engines "/ engines" —
-# and its steps "Toolchain image", with its cache, which go.yml's cases run, and
-# ci-${{ matrix.check }}, each run with a stand-in docker that writes down what it was asked, and
-# the upload of the coverage, which is go.yml's but for its artifact and its report: the cases of
-# go.yml run its steps, and the one here holds the two alike.
-# The checkout, which takes the spec submodule for the licenses job alone, is an action, and the
+# The tests of typescript.yml (R19). Its steps that are go.yml's, the toolchain image and the upload
+# of the coverage, run in go.yml's cases, and the cases here hold the two files alike. The
+# checkout, which takes the spec submodule for the licenses job alone, is an action, and the
 # harness runs no action: its input is read as text.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
