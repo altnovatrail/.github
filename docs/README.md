@@ -9,6 +9,12 @@ What the [README](../README.md) of the repository leaves out, which says only wh
 - [RUN.md](../RUN.md) — the work plan, in epics.
 - `run/` — the plan's other tables: [the epics for later](../run/EPICS.md), [the open questions](../run/QUESTIONS.md) and [the technical debt](../run/DEBT.md).
 
+What the other repositories take from it, by the SHA of a [release](https://github.com/altnovatrail/.github/releases):
+
+- [.github/workflows/](../.github/workflows/) — the shared workflows, beside `.github`'s own `self-` ones; what each does and the calling files a repository copies are in [architecture.md](architecture.md), sections 3.1 and 3.3.
+- [.github/actions/toolchain/](../.github/actions/toolchain/action.yml) — the composite action for a repository's own job: the image of its stage `toolchain` and the Go caches, architecture section 3.7.
+- [tools/coderules/](../tools/coderules/main.go) — the test of the rules of code that the Go wrapper runs, with its `justfile` recipes; [tests/](../tests/) — the suite of the workflows' steps.
+
 The profile and the community health files, which GitHub shows to everyone:
 
 - [profile/README.md](../profile/README.md) — the organization's profile.
