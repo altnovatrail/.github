@@ -771,7 +771,7 @@ Read 2026-11-12 (R38, T54):
 
 ### 12.13. `spec` v0.18.3
 
-Read 2026-11-16 (R40, T59):
+Read 2026-11-16 (T59):
 - **the tag** — v0.18.3, commit 922886a, the merge of pull request 162 of `spec`, came out 2026-11-16 at 00:42 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.3 -R altnovatrail/spec` — "Release v0.18.3 verified!";
 - **what changed** (`git log --oneline v0.16.3..v0.18.3`, `git diff --stat v0.16.3 v0.18.3`) — 77 commits, 258 files: RULES.md, `repo-template/` — RUN.md in English, the tables in `run/`, the alias in the network —, `run/` of `spec` itself, `.devcontainer/` — the base image `devcontainers/base:3.0.13-noble` and the stage `orchestrator` —, `tools/docs-check/` — the layout of `run/` and the key `entries` —, `tools/session/`, `tools/new-repo/` and the new `tools/orchestrator/` and `tools/mockup/`. `tools/toolchain/` adds a test alone, and `tools/licenses/` did not change;
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag: Д88, Д134, Д146, Д195, Д213, Д217, Д236 and Д250; table 5 of `run/INBOX.md` answers В37 and В38 by T149; row 7.13 of COORDINATION.md is `.github`'s, «задачи нет».
@@ -819,6 +819,14 @@ Read 2026-11-18 (R51, T76):
 - **`tokens-report --row`** — an eighth column, "Context of a main call among its session's first 80, k", the header of measurements 1.9 spec;
 - **the card 3.11 spec** — one line added under the shared workflows: "beside them, the shared composite action `toolchain`, `.github/actions/toolchain` […] (R49 .github)";
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217; Д134, Д195 and Д236 are deleted. Table 5, `run/INBOX.md`: `.github` В41 — option 1, the card `.github` of `architecture 3.11` in `spec` — "the composite action `toolchain` (R49 .github)", В43 — "T194 (В45), option 1: Д134, Д195 and Д236 closed — done in every repository they named, checked on `main` 2026-11-17". COORDINATION.md, point 2: «Следующая — 2.8», rows 2.6 and 2.7 still `[ ]` with «задачи нет».
+
+### 12.18. `spec` v0.19.4
+
+Read 2026-11-20 (T82):
+- **the tag** — v0.19.4, commit 2dad96a, the merge of pull request 210 of `spec` (E18 `spec`), came out 2026-11-20 at 20:54 UTC; the API's latest release is v0.19.4, `gh release view` calls it immutable, and `gh release verify v0.19.4 -R altnovatrail/spec` — "Release v0.19.4 verified!";
+- **what changed** (`git log --oneline v0.18.34..v0.19.4`, `git diff --stat v0.18.34 v0.19.4`) — 90 commits, 330 files, T207–T243 `spec`; for a copy: `.devcontainer/devcontainer.json` — the mount `"source=${localWorkspaceFolder}/../.epics,target=/workspaces/.epics,type=bind"` "(R166 spec)" and `"initializeCommand": "bash .devcontainer/host-network.sh && mkdir -p ../.epics"`, "since Docker refuses a missing bind source" (T242 `spec`); `.devcontainer/Dockerfile` — shorter comments; `repo-template/files/docs-budgets.json` — `{}`, "the block holds `entry` 12 and `"comments": true`" (`repo-template/README.md`); RULES.md, How we work — "Plan for the fewest pull requests and rounds of CI (R159 spec)" and "a task across repositories pushes each change and ships on the author's «да» (R166 spec)"; `repo-template/files/RUN.md` — the tag alone;
+- **the card 3.11 spec** — citations of amendments become citations of their entries, as "(R22)" for "(the 2026-11-01 amendment to R22)"; nothing of what `.github` does changes;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217. Д217 names "Pending: `skill-map`", and its column "When to return" still "`skill-map` and `.github` moves to a tag with T141". Table 5, `run/INBOX.md`: `.github` В44 — "T218 (В73), option (1): `.github` leaves Д217, which keeps `skill-map` alone".
 
 ## 13. Other repositories of NovaTrail
 
