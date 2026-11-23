@@ -1,73 +1,73 @@
 # .github — sources
 
-> The external facts that the documents of `docs/` stand on: the documentation of GitHub and of other providers, the code of actions and tools at a commit, the answers of the GitHub API and of npm's registry, the tags of `spec`, the files of other repositories. Here are their records: the address, the version or commit, the date read and the quote in the source's language, while [architecture.md](architecture.md) and the log hold the claim and a reference to the record by its number, as to a section: `sources 2.1` (RULES.md spec, The bar; R143 spec).
+> The external facts that the documents of `docs/` stand on: the documentation of GitHub and of other providers, the code of actions and tools at a commit, the answers of the GitHub API and of npm's registry, the tags of `spec`, the files of other repositories. Here are their records: the address, the version or commit, the date read and the quote in the source's language, while [architecture.md](architecture.md) and the decision log hold the claim and a citation of its one record by its number, `sources 2.1`, not a chain. A record's heading names its topic and date, not a task.
 >
 > The results of measurements — trial pull requests and their runs, steps run apart from the workflow, the suite of tests of the steps, durations and sizes — are in [measurements.md](measurements.md).
 
 ## 1. How to keep it
 
 - **A record** is a subsection "N.M" of a topic: one source — the pages of one publisher on one subject, the code or files of one project, a tag of `spec` — or one reading of several sources for the sake of one decision. It holds the address, the version, the commit or the date of the page, the date read and the quote in the source's language, word for word. What was read not from the primary source — a copy, a quote from a decision of `spec` — the record names as such.
-- **A reading** is a paragraph "Read <date> (<decision or task>):" and the items under it. The readings of one source on different dates are one record, by dates.
-- **A reference.** A claim of a document refers to a record by its number, as to a section: `sources 2.1`, and from another repository `sources 2.1 .github`. A record's number does not change: a new record goes to the end of its topic, a new topic to the end of the file.
-- **A source read again** is a new reading with its date in the same record, and the earlier text is not edited: the decisions of its day stand on it. If the source has changed and a claim has diverged from it, that is an amendment to the decision or an item of architecture 2, not an edit of the record.
-- **What is not here:** the results of measurements — they are in measurements.md, and a record that a trial stood beside names its measurement; the quotes that the entries of the log give themselves — they stay in the entry (RULES.md spec, How we work: a decision is not rewritten).
-- **Where from.** The records 2.1–14.2 are the former section "Sources" of architecture 4, sorted out by source on 2026-11-12 (T55). The items were moved word for word; an item where a trial stood beside the quote was cut in two, and both parts refer to each other. Which group of the section went to which records, the table of architecture 4 names. Not from it are the record 13.6 and the readings that name T55.
+- **A reading** is a paragraph "Read <date>:" and the items under it. The readings of one source on different dates are one record, by dates.
+- **A reference.** A claim of a document refers to a record by its number: `sources 2.1`, and from another repository `sources 2.1 .github`. A record's number does not change: a new record goes to the end of its topic, a new topic to the end of the file.
+- **A source read again** is a new reading with its date in the same record, and the earlier text is not edited: the decisions of its day stand on it. If the source has changed and a claim has diverged from it, that is a change of the decision or a question still open in `docs/architecture.md`, not an edit of the record.
+- **What is not here:** the results of measurements — they are in measurements.md, and a record that a trial stood beside names its measurement; the quotes that the entries of the log give themselves — they stay in the entry.
+- **Where from.** The records 2.1–14.2 are the former section "Sources" of `docs/architecture.md`, sorted out by source on 2026-11-12. The items were moved word for word; an item where a trial stood beside the quote was cut in two, and both parts refer to each other. Which group of the section went to which records, the table at the end of `docs/architecture.md` names. Not from it are the record 13.6 and the readings of 2026-11-12.
 
 ## 2. GitHub Actions
 
 ### 2.1. Reusable workflows
 
-Read 2026-10-19 (R03):
+Read 2026-10-19:
 - **calling and pinning** — [GitHub Docs, Reuse workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows), section Calling a reusable workflow: "`{owner}/{repo}/.github/workflows/{filename}@{ref}` for reusable workflows in public and private repositories" and "Using the commit SHA is the safest option for stability and security";
 - **the folder** — the same page, section Creating a reusable workflow: "Subdirectories of the `workflows` directory are not supported";
 - **limits** — [GitHub Docs, Reusing workflow configurations](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations), section Limitations of reusable workflows: "You can connect up to ten levels of workflows" and "You can call a maximum of 50 unique reusable workflows from a single workflow file";
 - **permissions** — the same page, section Supported keywords for jobs that call a reusable workflow: "If `jobs.<job_id>.permissions` is not specified in the calling job, the called workflow will have the default permissions for the `GITHUB_TOKEN`" and "The `GITHUB_TOKEN` permissions passed from the caller workflow can be only downgraded (not elevated) by the called workflow";
 - **context** — the same page, section `github` context: "When a reusable workflow is triggered by a caller workflow, the `github` context is always associated with the caller workflow";
 - **checkout** — [GitHub Docs, Reusing workflow configurations](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations) (Concepts), section Reusable workflows: "if the called workflow uses `actions/checkout`, the action checks out the contents of the repository that hosts the caller workflow, not the called workflow";
-- **the check's name** in a ruleset — "`<job name> / <reusable job name>`", a quote of GitHub Docs in R30 spec.
+- **the check's name** in a ruleset — "`<job name> / <reusable job name>`", a quote of GitHub Docs in the decision log of `spec`.
 
-Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
+Read 2026-11-01:
 - **permissions in a reusable workflow** — [GitHub Docs, Reusing workflow configurations](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations): "The `GITHUB_TOKEN` permissions passed from the caller workflow can be only downgraded (not elevated) by the called workflow". How a call without the permission ends, the page does not say. How it ended on the trial — measurements 4.1.
 
 ### 2.2. Contexts, variables and events
 
-Read 2026-10-19 (R03):
+Read 2026-10-19:
 - **the shared workflow's own files** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts), section `job` context: `job.workflow_sha` — "The commit SHA of the workflow file that defines the current job", `job.workflow_repository` — "The `owner/repo` of the repository containing the workflow file that defines the current job"; an example on the same page: "This example reusable workflow uses `job.workflow_repository` and `job.workflow_sha` to check out its own source code, rather than the caller's repository".
 
-Read 2026-10-20 (R10):
+Read 2026-10-20:
 - **the `workflow_run` context** — [GitHub Docs, Events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows), section `workflow_run`: `GITHUB_SHA` — "Last commit on default branch", `GITHUB_REF` — "Default branch".
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **the workflow file** — [GitHub Docs, Workflows](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflows), section Workflow triggers: "Each workflow run will use the version of the workflow that is present in the associated commit SHA or Git ref of the event". For `workflow_run` this is `GITHUB_SHA`, the last commit of the default branch (above, "the `workflow_run` context").
 
-Read 2026-10-21 (R18):
+Read 2026-10-21:
 - **`job.workflow_ref`** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts), section `job` context: "The full ref of the workflow file that defines the current job".
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **`CI`** — GitHub, [Variables reference](https://github.com/github/docs/blob/efd4783/content/actions/reference/workflows-and-actions/variables.md) at the commit efd4783, Default environment variables: "`CI` | Always set to `true`".
 
-Read 2026-11-01 (R28, T35):
+Read 2026-11-01:
 - **default variables** — github/docs at 33b1f4a, `data/reusables/actions/environment-variables-are-fixed.md`: "You can't overwrite the value of the default environment variables named `GITHUB_*` and `RUNNER_*`. Currently you can overwrite the value of the `CI` variable. However, it's not guaranteed that this will always be possible".
 
-Read 2026-11-08 (R33, T48):
+Read 2026-11-08:
 - **`job.workflow_repository` and `job.workflow_sha`** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts) describes them: "The commit SHA of the workflow file that defines the current job" and "The `owner/repo` of the repository containing the workflow file that defines the current job". That actionlint 1.7.12 does not know them — measurements 2.5.
 
-Read 2026-11-16 (the 2026-11-16 amendment to R19, T64):
+Read 2026-11-16:
 - **the contexts of a matrix** — github/docs at 6d84733, `content/actions/reference/workflows-and-actions/contexts.md`, Context availability: "`jobs.<job_id>.strategy` | `github, needs, vars, inputs`";
 - **`fromJSON`** — the same commit, `expressions.md`: "Returns a JSON object or JSON data type for `value`. You can use this function to provide a JSON object as an evaluated expression or to convert any data type that can be represented in JSON or JavaScript, such as strings, booleans, null values, arrays, and objects", and its example sets a matrix by it: "`matrix: ${{ fromJSON(needs.job1.outputs.matrix) }}`".
 
-Read 2026-11-16 (R45, T65):
+Read 2026-11-16:
 - **`RUNNER_ARCH`** — [GitHub Docs, Variables reference](https://docs.github.com/en/actions/reference/workflows-and-actions/variables), Default environment variables: "The architecture of the runner executing the job. Possible values are `X86`, `X64`, `ARM`, or `ARM64`." `GITHUB_PATH` — "The path on the runner to the file that sets system `PATH` variables from workflow commands. The path to this file is unique to the current step and changes for each step in a job."
 
 ### 2.3. The step's shell and `set -e`
 
-Read 2026-10-20 (R10):
+Read 2026-10-20:
 - **the step's shell** — without `shell` a step on Linux runs as `bash -e {0}`, and with `shell: bash` as `bash --noprofile --norc -eo pipefail {0}`: [GitHub Docs, Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), section `defaults.run.shell`.
 
-Read 2026-10-22 (R22, the amendments to R16 and R19, T26):
+Read 2026-10-22:
 - **the step's shell** — GitHub Docs, Workflow syntax, `content/actions/reference/workflows-and-actions/workflow-syntax.md` at the commit c67a936 of github/docs: "By default, fail-fast behavior is enforced using `set -e` for both `sh` and `bash`. When `shell: bash` is specified, `-o pipefail` is also applied".
 
-Read 2026-11-01 (R28, T35):
+Read 2026-11-01:
 - **the steps' shells** — github/docs at the commit 33b1f4a, `data/reusables/actions/supported-shells.md`. On Linux without `shell` — "`bash -e {0}`", and "Note that this runs a different command to when `bash` is specified explicitly". With `shell: bash` — "`bash --noprofile --norc -eo pipefail {0}`".
 - **`set -e` in bash** — [Bash Reference Manual, The Set Builtin](https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html), edition 5.3:
   - "The shell does not exit if the command that fails is part of the command list immediately following a while or until reserved word, part of the test in an if statement, part of any command executed in a && or || list except the command following the final && or ||";
@@ -75,7 +75,7 @@ Read 2026-11-01 (R28, T35):
 
 ### 2.4. Secrets, forks and skipped jobs
 
-Read 2026-10-19 (R05):
+Read 2026-10-19:
 - [GitHub Docs, Using secrets in GitHub Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets), section Using secrets in a workflow: "With the exception of `GITHUB_TOKEN`, secrets are not passed to the runner when a workflow is triggered from a forked repository";
 - [GitHub Docs, Securely using pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target), section Risks of `pull_request_target`: "Workflows triggered by `pull_request_target` run with elevated trust: the job receives the base repository's `GITHUB_TOKEN` and access to repository and organization secrets"; on the same page: "Workflows triggered by this event should not check out, build, or run code from an untrusted pull request with access to repository secrets or a privileged `GITHUB_TOKEN`";
 - [GitHub Docs, Status checks](https://docs.github.com/en/pull-requests/reference/status-checks): "A job that is skipped will report its status as "Success". It will not prevent a pull request from merging, even if it is a required check";
@@ -83,92 +83,92 @@ Read 2026-10-19 (R05):
 
 ### 2.5. OIDC in GitHub Actions
 
-Read 2026-10-19 (architecture 2.3):
+Read 2026-10-19:
 - [GitHub Docs, OpenID Connect reference](https://docs.github.com/en/actions/reference/security/oidc), section Custom claims provided by GitHub, `job_workflow_ref`: "For jobs using a reusable workflow, the ref path to the reusable workflow".
 
-Read 2026-10-22 (the amendments to R10 and R18, T25):
+Read 2026-10-22:
 - **the OIDC token in steps** — github/docs at the commit 5815d11, `content/actions/reference/security/oidc.md`, section Methods for requesting the OIDC token: "The following environment variables on the runner" — `ACTIONS_ID_TOKEN_REQUEST_URL` and `ACTIONS_ID_TOKEN_REQUEST_TOKEN`, "Bearer token for the request to the OIDC provider". How cosign reads them — sources 7.1.
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **GitHub OIDC** — github/docs at the commit 5815d11, `oidc-with-reusable-workflows.md`: "The `workflow`, `ref`, and other attributes describe the caller workflow, while `job_workflow_ref` refers to the called workflow".
 
 ### 2.6. GitHub's runners
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **Docker on the runner** — The ubuntu-24.04 runner has Docker 28.0.4 and Buildx 0.38.0 ([`Ubuntu2404-Readme.md`](https://github.com/actions/runner-images/blob/06f4a91/images/ubuntu/Ubuntu2404-Readme.md) at the commit 06f4a91, image 20261012.334.1).
 
-Read 2026-11-01 (R28, T35):
+Read 2026-11-01:
 - **the runner's image** — [`Ubuntu2404-Readme.md`](https://github.com/actions/runner-images/blob/4da2307112a0fad2fd2ecaca8ba7d08683b8c581/images/ubuntu/Ubuntu2404-Readme.md) at the commit 4da2307, image 20261026.354.1: Bash 5.2.21(1)-release, Git 2.56.0, jq 1.7, OpenSSL 3.0.13-0ubuntu3.16, tar 1.35+dfsg-3ubuntu0.4 and yq 4.54.1. In the devcontainer — bash 5.2.21, git 2.56.0, jq 1.7, OpenSSL 3.0.13 and GNU tar 1.35.
 
-Read 2026-11-08 (the 2026-11-08 amendment to R16, T47):
+Read 2026-11-08:
 - [GitHub Docs, GitHub-hosted runners reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), section Standard GitHub-hosted runners for public repositories: in the table, Linux arm64 has `ubuntu-24.04-arm`, `ubuntu-22.04-arm` and `ubuntu-26.04-arm`, 4 CPU and 16 GB, and "Use of the standard GitHub-hosted runners is free and unlimited on public repositories".
 
-Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
+Read 2026-11-18:
 - **how long a job runs** — github/docs at the commit 6946b3e (2026-11-12), `content/actions/reference/limits.md`, for all GitHub-hosted runners: "Job execution time | 6 hours | Each job in a workflow can run for up to 6 hours of execution time. If a job reaches this limit, the job is terminated and fails."
 
 ### 2.7. `actions/checkout`
 
-Read 2026-10-20 (R08):
+Read 2026-10-20:
 - **actions/checkout** v7.0.1 — the latest release (2026-07-20); the tag points to the commit `3d3c42e5aac5ba805825da76410c181273ba90b1` (the GitHub API, `repos/actions/checkout/git/refs/tags/v7.0.1`).
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **checkout v7.0.1 without `ref`** — [`src/input-helper.ts`](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/src/input-helper.ts) at the commit 3d3c42e. If `ref` is not set, checkout takes the event's ref and commit: `result.ref = github.context.ref` and `result.commit = github.context.sha`.
 
-Read 2026-10-22 (the amendments to R10 and R18, T28):
+Read 2026-10-22:
 - **the post step of `actions/checkout`** — v7.0.1 at the commit 3d3c42e, the one pinned in both releases. Its `action.yml` has `post: dist/index.js`, and on the post step `src/main.ts` calls `gitSourceProvider.cleanup(stateHelper.RepositoryPath)`. If the checkout has `.git/config`, `cleanup` in `src/git-source-provider.ts` calls `authHelper.removeAuth()`. And that one, in `src/git-auth-helper.ts`, runs in the checkout `git config --local` and `git submodule foreach --recursive` with `sh -c "git config --local …"`. What this step ran on the trial — measurements 5.4.
 
-Read 2026-10-22 (R22, the amendments to R16 and R19, T26):
+Read 2026-10-22:
 - **the `submodules` input** — actions/checkout v7.0.1, the commit 3d3c42e, `src/input-helper.ts`, lines 146–152: `const submodulesString = (core.getInput('submodules') || '').toUpperCase()`, and then a comparison with `'RECURSIVE'` and `'TRUE'`.
 
-Read 2026-11-16 (R42, T61):
+Read 2026-11-16:
 - **a sparse checkout** — `action.yml` at 3d3c42e: `sparse-checkout` — "Do a sparse checkout on given patterns. Each pattern should be separated with new lines."; `sparse-checkout-cone-mode` — "Specifies whether to use cone-mode when doing a sparse checkout.", `default: true`; `filter` — "Partially clone against a given filter. Overrides sparse-checkout if set.". `src/git-source-provider.ts` at 3d3c42e: `} else if (settings.sparseCheckout) { fetchOptions.filter = 'blob:none'`, and "For sparse checkouts, let `checkout` fetch the needed objects lazily"; without cone mode it calls `git.sparseCheckoutNonConeMode`.
 
 ### 2.8. `actions/cache`
 
-Read 2026-11-09 (R36, T52):
+Read 2026-11-09:
 - **`actions/cache`** — v6.1.0, the latest release, 2026-06-26 (the GitHub API, `repos/actions/cache/releases/latest`); the tag v6.1.0 is the commit 55cc8345863c7cc4c66a329aec7e433d2d1c52a9. The license is MIT: "The MIT License (MIT)", `LICENSE` at the tag. `canvas` pins the same commit in `page.yml` (`main` 66266e1 of `canvas`);
 - **entries** — the README at the tag v6.1.0: "The cache is scoped to the key, version, and branch. The default branch cache is available to other branches" ("Cache scopes"); "Cache version is a hash generated for a combination of compression tool used (Gzip, Zstd, etc. based on the runner OS) and the `path` of directories being cached", and an example: "`build-linux` will create two different caches as the `paths` are different" ("Cache Version");
 - **saving** — `src/saveImpl.ts` at the tag v6.1.0: the step writes an error of `saveCache` by `utils.logWarning`, and `saveOnlyRun` leaves the cause to the toolkit — "warning for most failures, info for benign concurrency races, error for 5xx"; the job goes on. The README, "Read-only access": "When the cache token is read-only, the save step does not fail the job".
 
-Read 2026-11-16 (R41, T60):
+Read 2026-11-16:
 - **restoring by a prefix** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `restore-keys` is "An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case."; the outputs are `cache-hit` — "A boolean value to indicate an exact match was found for the primary key", `cache-primary-key` — "A resolved cache key for which cache match was attempted", and `cache-matched-key` — "Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys".
 
-Read 2026-11-16 (R42, T61):
+Read 2026-11-16:
 - **a lookup without the download** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `lookup-only` — "Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache", `default: 'false'`. `src/restoreImpl.ts` at the same commit: on a miss — "`cache-hit` is intentionally not set to `false` here to preserve existing behavior"; on a hit it sets `cache-hit` by `isExactKeyMatch` and, with `lookupOnly`, writes "Cache found and can be restored from key: ${cacheKey}" instead of "Cache restored from key: ${cacheKey}";
 - **the limit and the eviction** — github/docs at the commit d59b263 (2026-11-13), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Usage limits and eviction policy": "GitHub will remove any cache entries that have not been accessed in over 7 days. There is no limit on the number of caches you can store, but the total size of all caches in a repository is limited. By default, the limit is 10 GB per repository"; "Cache access for low-trust workflow triggers": "only these workflow triggers can create or overwrite caches in the default branch’s scope:" — `push`, `workflow_dispatch`, `repository_dispatch`, `delete`, `registry_package`, `page_build`, `schedule` —, and "The `pull_request` event is not affected. Caches created by a `pull_request` run are already scoped to the merge ref (`refs/pull/.../merge`) and cannot be written to the default branch's scope".
 
-Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
+Read 2026-11-18:
 - **which entry a restore key gives** — github/docs at the commit 6d84733 (2026-11-16), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Matching a cache key": "If there are multiple partial matches for a restore key, the action returns the most recently created cache"; and "If there are still no hits in the current branch, the `cache` action retries the same steps on the default branch";
 - **`cache-hit` by a restore key** — the README at the tag v6.1.0, commit 55cc834: "The `cache` action provides a `cache-hit` output which is set to `true` when the cache is restored using the primary `key` and `false` when the cache is restored using `restore-keys` or no cache is restored."
 
 ### 2.9. `actions/upload-artifact`
 
-Read 2026-10-20 (R09):
+Read 2026-10-20:
 - **actions/upload-artifact** v7.0.2 — the latest release (2026-10-07, `repos/actions/upload-artifact/releases/latest`), the tag points to the commit `cf430e030ddbb5b0abf93d22962f4752f3646cd9` (`repos/actions/upload-artifact/git/refs/tags/v7.0.2`).
 
-Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
+Read 2026-11-01:
 - **artifact names** — the README of `actions/upload-artifact` at cf430e0, v7.0.2: "Artifact names must be unique since each created artifact is idempotent so multiple jobs cannot modify the same artifact". `spec` already has an artifact `coverage` in its `ci.yml`.
 
-Read 2026-11-16 (R42, T61):
+Read 2026-11-16:
 - **the inputs** — `action.yml` at cf430e0, v7.0.2: `retention-days` — "Duration after which artifact will expire in days. 0 means using default retention. Minimum 1 day."; `compression-level` — "0: No compression", "For large files that are not easily compressed, a value of 0 is recommended for significantly faster uploads"; `overwrite` — "If true, an artifact with a matching name will be deleted before a new one is uploaded. If false, the action will fail if an artifact for the given name already exists."; `if-no-files-found` — "ignore: Do not output any warnings or errors, the action does not fail"; `archive` — "When `archive` is `false`, only a single file can be uploaded. The name of the file will be used as the artifact name (ignoring the `name` parameter)"; the output `artifact-id` — "A unique identifier for the artifact that was just uploaded. Empty if the artifact upload failed.";
 - **the limits** — the README at cf430e0, "Limitations": "You may also be limited by Artifacts if you have exceeded your shared storage quota. Storage is calculated every 6-12 hours".
 
 ### 2.10. `actions/download-artifact`
 
-Read 2026-11-16 (R42, T61):
+Read 2026-11-16:
 - **the version** — v8.0.2, the commit `9000827ccba6bdab643e8b6fd33ac0654aef8333`, as `go.yml` and `typescript.yml` pin it (sources 10.3);
 - **by its ID** — `action.yml` at 9000827: `artifact-ids` — "IDs of the artifacts to download, comma-separated. Either inputs `artifact-ids` or `name` can be used, but not both."; `path` — "Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE"; `digest-mismatch` — "Default is error which will fail the action"; without `github-token` — "the action will attempt to download artifacts from the current repository and the current workflow run". `src/download-artifact.ts` at 9000827: by IDs it throws "None of the provided artifact IDs were found", and it downloads into `path` itself when `isSingleArtifactDownload || inputs.mergeMultiple || artifacts.length === 1`, with `expectedHash: artifact.digest`.
 
 ### 2.11. Jobs that need another, re-runs and the storage of artifacts
 
-Read 2026-11-16 (R42, T61), github/docs at the commit d59b263 (2026-11-13):
+Read 2026-11-16, github/docs at the commit d59b263 (2026-11-13):
 - **`needs`** — `data/reusables/actions/jobs/section-using-jobs-in-a-workflow-needs.md`: "If a job fails or is skipped, all jobs that need it are skipped unless the jobs use a conditional expression that causes the job to continue"; `content/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions.md`: "A job that is skipped will report its status as "Success". It will not prevent a pull request from merging, even if it is a required check" (as in sources 2.4);
 - **`!cancelled()`** — `content/actions/reference/workflows-and-actions/expressions.md`, "Status check functions": "A default status check of `success()` is applied unless you include one of these functions", and "If you want to run a job or step regardless of its success or failure, use the recommended alternative: `if: ${{ !cancelled() }}`";
 - **`continue-on-error` and `outcome`** — `contexts.md`: `steps.<step_id>.outcome` — "The result of a completed step before `continue-on-error` is applied", and "When a `continue-on-error` step fails, the `outcome` is `failure`, but the final `conclusion` is `success`";
 - **re-runs** — `content/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs.md`: "When you re-run failed jobs or a specific job, GitHub also re-runs the jobs that depend on them. Jobs that aren't included keep their outputs from the previous attempt, which the newly run jobs can use";
-- **the storage of artifacts** — `content/billing/concepts/product-billing/github-actions.md`: "For **private repositories**, usage is measured against two parts of your plan:" — "**Compute**" and "**Storage:** Artifact and cache storage have separate allowances"; "**Cache storage:** Actions cache storage is a separate allowance of 10 GB per repository. Cache storage is not shared with artifacts"; "If your account does not have a valid payment method on file, usage is blocked once you consume the included compute usage". `data/reusables/billing/actions-included-quotas.md`: the plan for organizations Free — "Artifact storage" 500 MB. The organization `altnovatrail` is on the plan `free` (`gh api orgs/altnovatrail`, `.plan.name`), and every repository of it is public (R18 spec). Whether the quota of artifact storage holds for a public repository the page does not say in words; what the trial saw — measurements 7.3.
+- **the storage of artifacts** — `content/billing/concepts/product-billing/github-actions.md`: "For **private repositories**, usage is measured against two parts of your plan:" — "**Compute**" and "**Storage:** Artifact and cache storage have separate allowances"; "**Cache storage:** Actions cache storage is a separate allowance of 10 GB per repository. Cache storage is not shared with artifacts"; "If your account does not have a valid payment method on file, usage is blocked once you consume the included compute usage". `data/reusables/billing/actions-included-quotas.md`: the plan for organizations Free — "Artifact storage" 500 MB. The organization `altnovatrail` is on the plan `free` (`gh api orgs/altnovatrail`, `.plan.name`), and every repository of it is public. Whether the quota of artifact storage holds for a public repository the page does not say in words; what the trial saw — measurements 7.3.
 
-Read 2026-11-16 (R43, T62), github/docs at the commit d59b263, as above:
+Read 2026-11-16, github/docs at the commit d59b263, as above:
 - **`always()`** — `content/actions/reference/workflows-and-actions/expressions.md`, "always": "Causes the step to always execute, and returns `true`, even when canceled. The `always` expression is best used at the step level or on tasks that you expect to run even when a job is canceled"; and the warning: "Avoid using `always` for any task that could suffer from a critical failure, for example: getting sources, otherwise the workflow may hang until it times out";
 - **`needs.<job_id>.result`** — `contexts.md`, `needs` context: "The result of a job that the current job depends on. Possible values are `success`, `failure`, `cancelled`, or `skipped`." Neither this page nor the pages of the matrix say how the result of a job with a matrix comes out of the results of its jobs; the trial measured it (measurements 2.7);
 - **`fail-fast`** — `data/reusables/actions/jobs/section-using-a-build-matrix-for-your-jobs-failfast.md`: "If `jobs.<job_id>.strategy.fail-fast` is set to `true` or its expression evaluates to `true`, {% data variables.product.github %} will cancel all in-progress and queued jobs in the matrix if any job in the matrix fails. This property defaults to `true`.";
@@ -176,7 +176,7 @@ Read 2026-11-16 (R43, T62), github/docs at the commit d59b263, as above:
 
 ### 2.12. Composite actions and the self repository reference `$/`
 
-Read 2026-11-16 (R49, T69), github/docs at the commit 91aa429 (2026-11-16):
+Read 2026-11-16, github/docs at the commit 91aa429 (2026-11-16):
 - **the self repository reference** — `content/actions/reference/workflows-and-actions/workflow-syntax.md`, "Example: Using an action in the same repository as the workflow at the running commit (recommended)": "The `$/` prefix is the self repository reference. It references an action stored in the same repository as the workflow or action that is currently running, and resolves to that repository at the running commit (the same SHA as the running workflow or action). You do not need to check out the repository first"; "A `$/` reference must not include an `@{ref}` suffix"; "`$/` always resolves against the repository of the file it appears in, not the repository that called it. For example, if a reusable workflow in one repository is called by a workflow in another repository, a `$/` reference in the called workflow resolves to the called workflow's repository, not the calling workflow's repository"; and `./path/to/action` resolves to "A path in the runner's checked-out workspace, relative to the default working directory". The commit 6a8580f, "Document the $/ self-referencing uses syntax for actions and reusable workflows (#62055)", 2026-07-29, brought it to `metadata-syntax.md` (the GitHub API, the history of the file);
 - **composite actions** — `content/actions/reference/workflows-and-actions/metadata-syntax.md`: `runs.post`, "Allows you to run a script at the end of a job, once the `main:` action has completed", is a key of "`runs` for JavaScript actions", and the section "`runs` for composite actions" names `runs.using` — "You must set this value to `'composite'`" — and `runs.steps`, "These can be either `run` steps or `uses` steps", with no `post`; `runs.steps[*].shell` — "Required if `run` is set"; `runs.steps[*].if` — "You can use any supported context and expression to create a conditional"; and "With composite actions you can use the [`inputs` context] to access action inputs".
 
@@ -184,40 +184,40 @@ Read 2026-11-16 (R49, T69), github/docs at the commit 91aa429 (2026-11-16):
 
 ### 3.1. Rulesets, required checks and merge
 
-Read 2026-10-20 (R09):
+Read 2026-10-20:
 - **the ruleset's rule on findings** — [GitHub Docs, Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), section Require code scanning results: a merge does not pass if "A required tool finds a code scanning alert of a severity that is defined in the ruleset", "A required tool's analysis is still in progress" or "A required tool is not configured for the repository".
 
-Read 2026-10-20 (R10):
+Read 2026-10-20:
 - **the source of a required check** — [GitHub Docs, Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), section Require status checks to pass: "Any person or integration with write permissions to a repository can set the state of any status check in the repository", and so "you can select an app as the expected source of status updates";
 - **the message of a squash merge** — [GitHub Docs, About pull request merges](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/about-pull-request-merges), section Merge message for a squash merge: "GitHub generates a default commit message that you can edit. The default message can include the pull request title, pull request description, or commit information, depending on repository settings".
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **the `code_scanning` rule** — [GitHub Docs, Set code scanning merge protection](https://docs.github.com/en/code-security/how-tos/find-and-fix-code-vulnerabilities/manage-your-configuration/set-merge-protection): a tool has two thresholds. Alerts — "**None**, **Errors**, **Errors and Warnings** or **All**", Security alerts — "**None**, **Critical**, **High or higher**, **Medium or higher**, or **All**". Which results it trusts — [GitHub Docs, REST API endpoints for rules](https://docs.github.com/en/rest/repos/rules), Update a repository ruleset, the rule `code_scanning`: "When configured, code scanning must be enabled and have results for both the commit and the reference being updated";
 - **the ruleset of `.github` after the edit** — the GitHub API, `PUT repos/altnovatrail/.github/rulesets/25477399`, 2026-10-20. The body was put together from `GET`. A comparison before and after showed exactly two edits: the rule `code_scanning` and `allowed_merge_methods: ["merge"]`. `GET repos/altnovatrail/.github/rules/branches/main` names both;
 - **the merge method** — [GitHub Docs, Available rules for rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets), section Require a pull request before merging: "Optionally, you can require a merge type of merge, squash, or rebase. This means the targeted branches may only be merged based on the allowed type. Additionally if the repository has disabled a merge method and the ruleset required a different method, the merge will be blocked". `.github` has `allow_merge_commit` on (the GitHub API, `repos/altnovatrail/.github`).
 
 ### 3.2. Releases and source code archives
 
-Read 2026-10-20 (R10):
+Read 2026-10-20:
 - **immutable releases** — the GitHub API: `PUT repos/altnovatrail/.github/immutable-releases` answered 204, and `GET` of the same path `{"enabled":true,"enforced_by_owner":false}`, as for `spec`. The ruleset `v-tags` — `POST repos/altnovatrail/.github/rulesets` with the rules `update`, `deletion` and `non_fast_forward` on `refs/tags/v*`, with no bypass; the model is the ruleset of `spec` 25426896;
 - **the Releases API's refusal** to a commit that is no longer the tip of `main` — [GitHub Docs, REST API endpoints for releases](https://docs.github.com/en/rest/releases/releases), Create a release: "If the commit identified by target_commitish … adds or modifies any file under .github/workflows/ relative to the repository's default branch, the authenticating token must be authorized to modify workflows. Otherwise, this endpoint returns 404 Not Found; some authentication paths surface 403 Resource not accessible by integration instead", and "The GITHUB_TOKEN available to GitHub Actions cannot be authorized for this". How the release of `spec` lets this refusal pass — sources 12.1.
 
-Read 2026-11-01 (R28, T35):
+Read 2026-11-01:
 - **source code archives** — github/docs at 33b1f4a, `content/repositories/working-with-files/using-files/downloading-source-code-archives.md`, section Stability of source code archives:
   - "The exact compression settings used to generate a zipball or tarball may change over time. The extracted contents won't change if the branch or tag doesn't change, but the outer compressed archive may have a different byte layout";
   - "If you rely on stability of archives for security (for example: to ensure you don't attempt to unzip a maliciously-crafted file), we recommend using releases instead of using source downloads".
 
 ### 3.3. The organization's policy for actions
 
-Read 2026-10-19 (R04):
+Read 2026-10-19:
 - [GitHub Docs, Disabling or limiting GitHub Actions for your organization](https://docs.github.com/en/organizations/managing-organization-settings/disabling-or-limiting-github-actions-for-your-organization), section Managing GitHub Actions permissions for your organization: "When you enable **Require actions to be pinned to a full-length commit SHA**, all actions must be pinned to a full-length commit SHA to be used. This includes actions from your organization and actions authored by GitHub. Reusable workflows can still be referenced by tag".
 
-Read 2026-10-20 (R10):
-- **the actions policy** — the GitHub API, `repos/altnovatrail/<repository>/actions/permissions`, for `.github`, `spec`, `module-kit` and `tutor`: `enabled: true`, `allowed_actions: all`, `sha_pinning_required: true` (`tutor` — read 2026-10-20, T12).
+Read 2026-10-20:
+- **the actions policy** — the GitHub API, `repos/altnovatrail/<repository>/actions/permissions`, for `.github`, `spec`, `module-kit` and `tutor`: `enabled: true`, `allowed_actions: all`, `sha_pinning_required: true` (`tutor` — read 2026-10-20).
 
 ### 3.4. Community health files, issue forms and the pull request template
 
-Read 2026-11-01 (R29, T37):
+Read 2026-11-01:
 - **where GitHub takes them from** — [GitHub Docs, Creating a default community health file](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file):
   - "Store issue templates and their configuration file in `.github/ISSUE_TEMPLATE`", and for the other files the first of the places is "The `.github` folder";
   - "if a repository defines valid issue templates or issue template configuration in its own `.github/ISSUE_TEMPLATE` folder, none of the contents of the default `.github/ISSUE_TEMPLATE` folder will be used".
@@ -231,14 +231,14 @@ Read 2026-11-01 (R29, T37):
 
 ### 3.5. `gh release verify` and `verify-asset`
 
-Read 2026-11-16 (R44, T63):
+Read 2026-11-16:
 - **the `gh` of the runner** — the image `ubuntu-24.04`, version 20261111.370.1: "GitHub CLI 2.103.3" (actions/runner-images at e130079, `images/ubuntu/Ubuntu2404-Readme.md`);
 - **`gh release verify-asset`** — cli/cli at the tag v2.103.3, 63837fb, `pkg/cmd/release/verify-asset/verify_asset.go`: `Use: "verify-asset [<tag>] <file-path>"`, `Args: cobra.MaximumNArgs(2)` — one file a call. Each call works out the file's digest, then `shared.FetchRefSHA(ctx, config.HttpClient, baseRepo, tagName)`, then `config.AttClient.GetByDigest(api.FetchParams{… PredicateType: "release" …})` for the tag's commit, keeps the attestations of the tag, then `shared.FilterAttestationsByFileDigest(filteredAttestations, fileDigest.Digest())` — "attestation for %s does not contain subject %s" when none —, and verifies the one left by `config.AttVerifier.VerifyAttestation(releaseRefDigest, filteredAttestations[0])`. The file's name is not compared: only the digest;
 - **`gh release verify`** — the same tag, `pkg/cmd/release/verify/verify.go`: the same `FetchRefSHA` and `GetByDigest`, "duplicate attestations found for release %s in %s" when the tag has more than one, the same `VerifyAttestation`, and then `if opts.Exporter != nil { return opts.Exporter.Write(config.IO, verified) }` — with `--format json` the result of the verification is printed; without it, `printVerifiedSubjects` reads `statementData.Subject` from the verified envelope and prints each subject that has a name, "Name" and "Digest".
 
 ### 3.6. The rate limits of the REST API
 
-Read 2026-11-16 (R44, T63):
+Read 2026-11-16:
 - [GitHub Docs, Rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api):
   - "The rate limit for `GITHUB_TOKEN` is 1,000 requests per hour per repository. For requests to resources that belong to a GitHub Enterprise Cloud account, the limit is 15,000 requests per hour per repository";
   - the secondary rate limits: "No more than 100 concurrent requests are allowed", no more than 900 points per minute for REST API endpoints, "No more than 90 seconds of CPU time per 60 seconds of real time is allowed", "No more than 80 content-generating requests per minute and no more than 500 content-generating requests per hour are allowed";
@@ -246,29 +246,29 @@ Read 2026-11-16 (R44, T63):
 
 ### 3.7. The names of release assets
 
-Read 2026-11-16 (R44, T63):
+Read 2026-11-16:
 - [GitHub Docs, REST API endpoints for release assets](https://docs.github.com/en/rest/releases/assets), Upload a release asset: "GitHub renames asset filenames that have special characters, non-alphanumeric characters, and leading or trailing periods. The "List release assets" endpoint lists the renamed filenames".
 
 ## 4. Dependabot
 
 ### 4.1. GitHub Docs on Dependabot
 
-Read 2026-10-19 (R04):
+Read 2026-10-19:
 - [GitHub Docs, About Dependabot version updates](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependabot-version-updates), section Updates for actions: "Dependabot also checks workflow files for uses of reusable workflows, and updates the Git reference for these called reusable workflows";
-- [GitHub Docs, Supported ecosystems and repositories](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories), section GitHub Actions: "If the commit you use is not associated with any tag, Dependabot will update the GitHub Actions to the latest commit (which might differ from the latest release)" and "Dependabot will ignore actions or reusable workflows referenced locally (for example, `./.github/actions/foo.yml`)". It updates the version comment if that is on the same line — a quote in R30 spec.
+- [GitHub Docs, Supported ecosystems and repositories](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories), section GitHub Actions: "If the commit you use is not associated with any tag, Dependabot will update the GitHub Actions to the latest commit (which might differ from the latest release)" and "Dependabot will ignore actions or reusable workflows referenced locally (for example, `./.github/actions/foo.yml`)". It updates the version comment if that is on the same line — a quote in the decision log of `spec`.
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **Dependabot's reference** — [GitHub Docs, Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference), section `cooldown`. GitHub Actions is among the package managers where `default-days` works, and with no setting "Apply a **default cooldown period of 3 days** to version updates, even when `cooldown` is not configured".
 
-Read 2026-11-08 (the 2026-11-08 amendment to R04, T45):
+Read 2026-11-08:
 - [GitHub Docs, Dependabot options reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference), section `groups`: "All updates for dependencies that match a rule are combined in a single pull request", "If a dependency matches more than one rule, it's included in the first group that it matches" and "Any outdated dependencies that do not match a rule are updated in individual pull requests". A group's name "must start and end with a letter, and can contain letters, pipes `|`, underscores `_`, or hyphens `-`". Of `patterns`: "Both options support using `*` as a wild card to define matches with dependency names". Whether `*` matches `/` and whether `cooldown` acts on a group, the reference does not say. Section `open-pull-requests-limit`: "If five pull requests with version updates are open, no further pull requests are raised until some of those open requests are merged or closed".
 
-Read 2026-11-16 (R49, T69):
+Read 2026-11-16:
 - github/docs at the commit 91aa429 (2026-11-16), `content/code-security/reference/supply-chain-security/dependabot-options-reference.md`, "`directories` or `directory`": "For GitHub Actions, use the value `/`. Dependabot will search the `/.github/workflows` directory, as well as the `action.yml/action.yaml` file from the root directory", and "Use `directories` to define a list of multiple directories of manifests"; "`group-by` (`groups`)": "When set to `dependency-name`, Dependabot will create a single pull request for each dependency update across all specified directories, rather than separate pull requests per directory", and "All directories must use the same package ecosystem"; `data/features/dependabot-updates-group-by.yml` holds it for `fpt: '*'`.
 
 ### 4.2. dependabot-core
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **the pause for references to a reusable workflow** — [dependabot-core](https://github.com/dependabot/dependabot-core/tree/fda701f49c7d6ba5807e98a06549fdb935e3bd2e), the commit fda701f (`main`, 2026-10-20). By its README, it is "the library at the heart of Dependabot security / version updates". In it:
   - `github_actions/lib/dependabot/github_actions/file_parser.rb` makes a reference to a reusable workflow a dependency, like an action: "For reusable workflows (.github/workflows/*.yml), use the repository name + workflow path to distinguish between different workflow files in the same repository";
   - `update_checker.rb` builds for each dependency a `LatestVersionFinder` with `cooldown_options: update_cooldown`;
@@ -276,53 +276,53 @@ Read 2026-10-20 (R12; the amendment to R10):
   - `creatordate` — by [the documentation of git](https://github.com/git/git/blob/master/Documentation/git-for-each-ref.adoc) (`git-for-each-ref`): "For commit and tag objects, the special `creatordate` and `creator` fields will correspond to the appropriate date or name-email-date tuple from the `committer` or `tagger` fields depending on the object type". The tag `v0.1.0` is lightweight, it points straight at the commit (the GitHub API, `repos/altnovatrail/.github/git/refs/tags/v0.1.0`: the object `commit`). The commit is 2026-10-20T13:17:26Z, the release 13:18:27Z;
   - the pause came to this ecosystem with #12486 (2025-06-20), its flag was removed in #12577 (2025-07-08), and Dependabot has raised reusable workflows since the commit dcf1e27 "Allow updating reusable workflows" (2023-02-17) — by the history of the files in the GitHub API.
 
-Read 2026-10-21 (the amendment to R19):
+Read 2026-10-21:
 - **Dependabot and the Dockerfile** — [`docker/lib/dependabot/docker/file_parser.rb`](https://github.com/dependabot/dependabot-core/blob/fda701f/docker/lib/dependabot/docker/file_parser.rb) of dependabot-core at the commit fda701f, 2026-10-20. `parse` goes through the lines of the Dockerfile and skips each one that does not match `FROM_LINE` — "`next unless FROM_LINE.match?(line)`" — and `FROM_LINE` starts with `^#{FROM}\s+`. It does not read a line `COPY --from`.
 
-Read 2026-11-08 (the 2026-11-08 amendment to R04, T45):
+Read 2026-11-08:
 - **dependabot-core** at the commit [fda701f](https://github.com/dependabot/dependabot-core/tree/fda701f49c7d6ba5807e98a06549fdb935e3bd2e), 2026-10-20:
   - `common/lib/wildcard_matcher.rb` — a pattern is split by `*`, the parts are escaped by `Regexp.quote` and joined by `.*`, and the comparison is `downcase` on both sides. `.*` matches `/` too;
   - `common/lib/dependabot/dependency_group.rb` — `contains?` checks the dependency's name, `dependency.name`, against `patterns` by `WildcardMatcher.match?`;
-  - `github_actions/lib/dependabot/github_actions/file_parser.rb` — "For reusable workflows (.github/workflows/*.yml), use the repository name + workflow path", `name = "#{repo_name}#{path}"`. That is what Dependabot's pull requests in `spec` are called, "Bump altnovatrail/.github/.github/workflows/<file>.yml" (architecture 2.6). It does not parse a reference by a local path: "TODO: Support Docker references and path references";
+  - `github_actions/lib/dependabot/github_actions/file_parser.rb` — "For reusable workflows (.github/workflows/*.yml), use the repository name + workflow path", `name = "#{repo_name}#{path}"`. That is what Dependabot's pull requests in `spec` are called, "Bump altnovatrail/.github/.github/workflows/<file>.yml". It does not parse a reference by a local path: "TODO: Support Docker references and path references";
   - `updater/lib/dependabot/updater/group_update_creation.rb` — a group's update takes for each dependency `update_checker_for` with `update_cooldown: job.cooldown`, as a single update does in `operations/update_all_versions.rb`.
 
 ### 4.3. Dependabot's pull requests in `spec`
 
-Read 2026-11-01 (R25, T31):
+Read 2026-11-01:
 - **Dependabot in `spec`** — the pull requests #40–#42, "Bump altnovatrail/.github/.github/workflows/<file>.yml from 0.1.0 to 0.1.3", opened and merged 2026-10-23, and #49–#51, "from 0.1.3 to 0.1.10", opened 2026-10-26. The commit of #40 has the author `dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>`, the committer `GitHub <noreply@github.com>`, the sign-off `Signed-off-by: dependabot[bot] <support@github.com>`, and "DCO / sign-off" is success. The releases of `.github`: v0.1.3 — 2026-10-21T04:50:54Z, the commit of its tag — 2026-10-20T23:49:54-05:00; v0.1.4 — 2026-10-21T15:30:24Z; v0.1.10 — 2026-10-22T18:09:38Z (`gh release list`, `git log -1 --format=%cI <tag>`).
 
-Read 2026-11-16 (R49, T69):
+Read 2026-11-16:
 - **dependabot-core** at the commit d73abc7 (`main`, 2026-11-16), `github_actions/lib/dependabot/github_actions/file_parser.rb`: `dependency_for_declarations` skips a reference that "`string.start_with?(".", "docker://")`" and one that does not match `GITHUB_REPO_REFERENCE`, `owner/repo[/path]@ref`, so `$/.github/actions/toolchain`, which has no `@`, is no dependency; and `github_dependency` names a reference with a path and a SHA "`elsif path && ref&.match?(/^[0-9a-f]{6,40}$/)`" by "`"#{repo_name}#{path}"`": `altnovatrail/.github/.github/actions/toolchain`, which the pattern `altnovatrail/.github/*` matches (the reading of 2026-11-08 above).
 
 ## 5. CodeQL
 
 ### 5.1. `github/codeql-action`
 
-Read 2026-10-19 (R03):
+Read 2026-10-19:
 - [codeql-action, README](https://github.com/github/codeql-action), section Workflow Permissions: "All advanced setup code scanning workflows must have the `security-events: write` permission".
 
-Read 2026-10-20 (R09):
+Read 2026-10-20:
 - **github/codeql-action** v4.39.0 — the newest tag `v4.*` by `git ls-remote --tags https://github.com/github/codeql-action` (released 2026-10-15, the GitHub API, `repos/github/codeql-action/releases/tags/v4.39.0`). The repository's latest "release" is a CodeQL bundle, not a version of the action. The tag is annotated, 48870fd, and points to the commit `6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee` (`repos/github/codeql-action/git/tags/48870fdd6b42ee6474ec4207209ff87609271a5e`). The inputs of `init` of this version are `languages`, `build-mode`, `queries` (`init/action.yml` at the tag v4.39.0);
 - **the CodeQL bundle** — `init/action.yml` at the commit 6f2ac81, the input `tools`: "A special value `linked` which uses the version of the CodeQL tools that the Action has been bundled with", and without the input "the Action will check in several places until it finds the CodeQL tools". In `src/setup-codeql.ts` of the same commit, without the input `defaultCliVersion.enabledVersions[0]` is taken — the version from GitHub's flags, and with `linked` the version from `src/defaults.json`, `"cliVersion": "2.27.2"`. A trial run confirmed it — measurements 1.1.
 
-Read 2026-10-20 (the amendment to R09, T14):
+Read 2026-10-20:
 - **the `config` input** of `init` — `init/action.yml` at the commit 6f2ac81 (v4.39.0): "Configuration passed as a YAML string in the same format as the config-file input. This takes precedence over the config-file input". An empty input is the same as an absent one: `getOptionalInput` in `src/actions-util.ts` of the same commit returns `undefined` for an empty string, and `src/init-action.ts` parses `config` only if it is set;
 - **the repository property `github-codeql-config-file`** — besides the input `config-file`, `init` can take the configuration file from the repository property `github-codeql-config-file`. It is read by `getConfigFileInput` in `src/config/file.ts` at 6f2ac81, behind the flag `config_file_repository_property`, and the property's name is set in `src/feature-flags/properties.ts`. If a file and `config` come together, `init` takes only `config`: "Both a config file and config input were provided. Ignoring config file." (`src/config-utils.ts`). The organization's schema of properties is empty (the GitHub API, `orgs/altnovatrail/properties/schema`, 2026-10-20), so no repository has such a property.
 
-Read 2026-10-21 (the amendment to R09, T19):
+Read 2026-10-21:
 - **an explicit build mode** — [`src/codeql.ts`](https://github.com/github/codeql-action/blob/6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee/src/codeql.ts) of codeql-action at the commit 6f2ac81, v4.39.0: `extractUsingBuildMode` runs `codeql database trace-command --use-build-mode`, and with `autobuild` and a failure answers "We were unable to automatically build your code". No separate step `autobuild` is needed: [`src/analyze-action.ts`](https://github.com/github/codeql-action/blob/6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee/src/analyze-action.ts) of the same commit skips the old autobuild of Go — "Skipping legacy Go autobuild since a build mode has been specified".
 
 ### 5.2. GitHub Docs on code scanning
 
-Read 2026-10-19 (R03):
+Read 2026-10-19:
 - [GitHub Docs, Workflow configuration options](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options), section Analysis category: "If you don't specify a `category` parameter in your workflow, GitHub will generate a category name for you, based on the name of the workflow file triggering the action, the action name, and any matrix variables". A shared workflow has one file name for all repositories, so `category` is set explicitly;
-- default setup and a repository's own workflow do not work together — a quote in T15 `spec`, «Выяснилось при планировании».
+- default setup and a repository's own workflow do not work together — a quote in a task of the plan of `spec`, its «Выяснилось при планировании».
 
-Read 2026-10-20 (R09):
+Read 2026-10-20:
 - **findings and merge** — [GitHub Docs, Triaging code scanning alerts in pull requests](https://docs.github.com/en/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/triage-alerts-in-pull-requests): "the check that contains the results of code scanning is: Code scanning results" and "If the code scanning results check finds any problems with a severity of `error`, `critical`, or `high`, the check fails". What this check is called on a pull request — measurements 1.1;
 - **building for CodeQL** — [GitHub Docs, CodeQL build options and steps for compiled languages](https://docs.github.com/en/code-security/reference/code-scanning/codeql/build-options-for-compiled-languages), section Building Go: "CodeQL supports build modes `autobuild` or `manual` for Go code" — without a build, `none`, Go is not analysed.
 
-Read 2026-10-20 (the amendment to R09, T14):
+Read 2026-10-20:
 - **`paths-ignore`** — [GitHub Docs, Workflow configuration options](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options):
   - section Specifying directories to scan: "You can use this option when you run the CodeQL actions on an interpreted language (Python, Ruby, and JavaScript/TypeScript) or when you analyze a compiled language without building the code (currently supported for C/C++, C#, Java and Rust)". The documentation does not name the language `actions`, while the Actions extractor takes the paths into account (sources 5.3);
   - on the same page, of patterns: "`**` characters can only be at the start or end of a line, or surrounded by slashes" and "You'll need to quote anything that contains a `*` character";
@@ -330,58 +330,58 @@ Read 2026-10-20 (the amendment to R09, T14):
 
 ### 5.3. `github/codeql` at the tag codeql-cli/v2.27.2
 
-Read 2026-10-20 (the amendment to R09, T14):
+Read 2026-10-20:
 - **`paths-ignore` of the Actions extractor** — [`actions/extractor/tools/autobuild.sh`](https://github.com/github/codeql/blob/codeql-cli/v2.27.2/actions/extractor/tools/autobuild.sh) in github/codeql at the tag codeql-cli/v2.27.2 says: "If the user provided `paths-ignore`, those patterns are excluded". The documentation does not name the language `actions` in the section Specifying directories to scan (sources 5.2); the trial — measurements 1.2.
 
-Read 2026-10-21 (the amendment to R09, T19):
+Read 2026-10-21:
 - **Go's autobuild** — [`go/extractor/autobuilder/autobuilder.go`](https://github.com/github/codeql/blob/codeql-cli/v2.27.2/go/extractor/autobuilder/autobuilder.go) in github/codeql at the tag codeql-cli/v2.27.2: "If a project is accompanied by a build script (such as a makefile), then we try executing such", and the list — `make` for Makefile, makefile and GNUmakefile, `ninja` for build.ninja, `./build` and `./build.sh`.
 
 ## 6. Scorecard
 
 ### 6.1. `scorecard-action` and `scorecard-webapp`
 
-Read 2026-10-19 (R03; architecture 2.2):
-- [scorecard-action v2.5.0, README](https://github.com/ossf/scorecard-action/blob/v2.5.0/README.md), section Workflow Restrictions: "The workflow can't contain top level env vars or defaults", "No workflow level write permissions", "Only the job with `ossf/scorecard-action` can use `id-token: write` permissions", and for its job — "The steps running in this job must belong to this approved list of GitHub actions:" `actions/checkout`, `actions/upload-artifact`, `github/codeql-action/upload-sarif`, `ossf/scorecard-action`, `step-security/harden-runner`. The triggers are `push` and `schedule` on the default branch, a quote in R30 spec;
+Read 2026-10-19:
+- [scorecard-action v2.5.0, README](https://github.com/ossf/scorecard-action/blob/v2.5.0/README.md), section Workflow Restrictions: "The workflow can't contain top level env vars or defaults", "No workflow level write permissions", "Only the job with `ossf/scorecard-action` can use `id-token: write` permissions", and for its job — "The steps running in this job must belong to this approved list of GitHub actions:" `actions/checkout`, `actions/upload-artifact`, `github/codeql-action/upload-sarif`, `ossf/scorecard-action`, `step-security/harden-runner`. The triggers are `push` and `schedule` on the default branch, a quote in the decision log of `spec`;
 - [scorecard-webapp, PR #778](https://github.com/ossf/scorecard-webapp/pull/778) "Fix default branch verification", merged 2025-04-16: "This PR modifies the verification procedure to use the repository of the **calling** workflow instead";
 - that the server rejected the result, v2.5.0 does not count as an error: [`signing/signing.go`](https://github.com/ossf/scorecard-action/blob/fa7117db83c52d787ae5a89f350999701505d78e/signing/signing.go), the function `ProcessSignature`, on a failed publication writes `::warning::Unable to POST scorecard results to webapp` and returns `nil`. The commit fa7117d is the tag v2.5.0; read 2026-10-20;
 - there is no input `fail_on_publish_error` in v2.5.0: neither the README nor `action.yaml` of this tag names it. `main` has it since 2026-10-14 (the commit 1dfaf3539e, #1721): "Fail the step when the Scorecard API rejects published results". It will come with the next release.
 
-Read 2026-11-12 (T55; the comment of `scorecard.yml`):
+Read 2026-11-12, the comment of `scorecard.yml`:
 - [scorecard-action v2.5.0, README](https://github.com/ossf/scorecard-action/blob/v2.5.0/README.md), section Workflow Restrictions: the server sets the rules — "our API enforces certain rules on the producing workflow, which may reject the results and cause the Scorecard Action run to fail", — and the subsection Restrictions on the job containing `ossf/scorecard-action` names three more for the job: "No job level env vars or defaults", "No containers or services" and "The job should run on one of the Ubuntu hosted runners".
 
 ### 6.2. `ossf/scorecard` at the commit 61e8474
 
-Read 2026-10-20 (R10):
+Read 2026-10-20:
 - **Scorecard's Dangerous-Workflow** — [`checks/raw/dangerous_workflow.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/dangerous_workflow.go) at the commit 61e8474, the version of Scorecard, v5.6.0, by which the server scored `.github` (the field `scorecard` in the answer of Scorecard's API). In a workflow with the trigger `pull_request_target` or `workflow_run`, the function `checkJobForUntrustedCodeCheckout` marks a checkout whose `ref` contains `github.event.pull_request` or `github.event.workflow_run`; it does not read the job's `if` condition;
 - **the risk of Dangerous-Workflow** — [`docs/checks.md`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/docs/checks.md) of Scorecard at the same commit: "Risk: `Critical` (vulnerable to repository compromise)".
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **checkout without `ref` in Scorecard** — in [`checks/raw/dangerous_workflow.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/dangerous_workflow.go) at the commit 61e8474, the function `checkJobForUntrustedCodeCheckout` skips a step without the input `ref`: `if !ok || ref.Value == nil { continue }`. The function `validateScriptInjection` looks for an injection only in `run:`, by a list of contexts, and `head_sha` is not in it;
-- **npm in Scorecard** — in [`checks/raw/shell_download_validate.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/shell_download_validate.go) at 61e8474, the function `isNpmUnpinnedDownload` leaves unmarked only `npm ci` — "`npm ci` will verify all hashes are present" — and a package from git pinned by a commit hash. The other install commands of npm it marks. The code scanning finding #2 is line 113 of `.devcontainer/Dockerfile`, Pinned-Dependencies — 8. The archives that the Dockerfile downloads by curl and unpacks by tar it did not mark: `.github` has no other findings of Pinned-Dependencies (В12 RUN.md, now R34 spec).
+- **npm in Scorecard** — in [`checks/raw/shell_download_validate.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/shell_download_validate.go) at 61e8474, the function `isNpmUnpinnedDownload` leaves unmarked only `npm ci` — "`npm ci` will verify all hashes are present" — and a package from git pinned by a commit hash. The other install commands of npm it marks. The code scanning finding #2 is line 113 of `.devcontainer/Dockerfile`, Pinned-Dependencies — 8. The archives that the Dockerfile downloads by curl and unpacks by tar it did not mark: `.github` has no other findings of Pinned-Dependencies (В12 RUN.md, now decided in `spec`).
 
 ### 6.3. Scorecard's API
 
-Read 2026-10-20 (R09):
+Read 2026-10-20:
 - **Scorecard's API** — `https://api.scorecard.dev/projects/github.com/<owner>/<repository>`: an accepted result comes with the date, the repository's commit and the score — the fields `date`, `repo.commit`, `score` in the answer for `ossf/scorecard`; a repository without a published result gets 404, as `spec` does.
 
 ### 6.4. `ossf/scorecard` v5.6.0: the self repository reference
 
-Read 2026-11-16 (R49, T69):
+Read 2026-11-16:
 - `checks/raw/pinned_dependencies.go` at the tag v5.6.0 (2026-10-12): "`func isSameRepositoryReference(uses string) bool { return strings.HasPrefix(uses, "./") || strings.HasPrefix(uses, "$/") }`", which `isActionDependencyPinned` asks first: a reference by `$/` counts as pinned, as one by `./`. It came with the commit bbcee33, ":bug: Recognize self-repository action references (#5191)", 2026-09-28, which v5.6.0 holds (the GitHub API, `compare/v5.6.0...bbcee33`: `behind`). `scorecard-action` v2.5.0, the commit fa7117d that `scorecard.yml` pins, requires `github.com/ossf/scorecard/v5 v5.6.0` in its `go.mod`.
 
 ## 7. Sigstore
 
 ### 7.1. cosign
 
-Read 2026-10-21 (R18):
+Read 2026-10-21:
 - **cosign** v3.1.4 — the latest release, 2026-10-20 (the GitHub API, `repos/sigstore/cosign/releases/latest`); the license is Apache-2.0. The sum of `cosign-linux-amd64` from `cosign_checksums.txt` of the same release is `424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa`, and the downloaded file matched it.
 
-Read 2026-10-22 (the amendments to R10 and R18, T25):
+Read 2026-10-22:
 - **the OIDC token for cosign** — cosign v3.1.4, the commit 8843105, takes the token from them (sources 2.5): `VariableGitHubRequestToken Variable = "ACTIONS_ID_TOKEN_REQUEST_TOKEN"` in `pkg/cosign/env/env.go`, and the request with it is sent by `pkg/providers/github/github.go`. The signing step of the shared release is a plain `run:`, and signing passes: so the steps of a job see these variables.
 
 ### 7.2. Fulcio: signing from a reusable workflow
 
-Read 2026-10-19 (architecture 2.3):
+Read 2026-10-19:
 - [Fulcio, OIDC usage](https://github.com/sigstore/fulcio/blob/main/docs/oidc.md), section Case study: GitHub Actions: "GitHub Actions uses the `job_workflow_ref` as its SAN";
 - [Fulcio, OID information](https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md), section Mapping OIDC token claims to Fulcio OIDs: `job_workflow_ref` is the Build Signer URI, "Reference to specific build instructions that are responsible for signing. Can be the same as Build Config URI. For example a reusable workflow in GitHub Actions or a Circle CI Orbs"; `workflow_ref` is the Build Config URI, "A reference to the initiating build instructions"; `repository` is the Source Repository URI.
 
@@ -389,7 +389,7 @@ So, together with GitHub's `job_workflow_ref` (sources 2.5), the signature of th
 
 ### 7.3. Calls of cosign at once
 
-Read 2026-11-16 (R44, T63):
+Read 2026-11-16:
 - **the limits of Sigstore's public instance** — none in numbers in what was read: [Sigstore FAQ](https://docs.sigstore.dev/about/faq/) and [sigstore/community, ROADMAP.md](https://github.com/sigstore/community/blob/main/ROADMAP.md) have no word of rate limits. cosign 3.1.4 prints on `sign-blob` that the service "is provided pursuant to the Hosted Project Tools Terms of Use" (the log of the trial #127, measurements 5.12). [LF Projects, Hosted Project Tools Terms of Use](https://lfprojects.org/policies/hosted-project-tools-terms-of-use/), last updated 2023-02-21: "Such access and use shall not exceed a reasonable degree of use appropriate to the nature of the particular Hosted Project Tool", and "The Provider may … suspend access to the Hosted Project Tool if the Provider determines that Your use thereof poses a security or other risk";
 - **cosign's TUF cache** — cosign at the tag v3.1.4, commit 0e48502 (the tag object 8843105), `pkg/cosign/tuf.go`: "The cache directory is provided by the user as an environment variable TUF_ROOT, or the default $HOME/.sigstore/root is used", by `opts := tuf.DefaultOptions()` of sigstore-go and `opts.CachePath = tufCacheDir`; its `go.mod` requires `github.com/sigstore/sigstore-go v1.3.0` and `github.com/theupdateframework/go-tuf/v2 v2.4.2`;
 - **sigstore-go** v1.3.0, `pkg/tuf/options.go`: "CacheValidity period in days (default 0)", and `DefaultOptions` sets no other — so every call refreshes the metadata; `pkg/tuf/client.go`: the cache lies in `filepath.Join(opts.CachePath, URLToPath(opts.RepositoryBaseURL))`;
@@ -399,55 +399,55 @@ Read 2026-11-16 (R44, T63):
 
 ### 8.1. npm's documentation
 
-Read 2026-10-20 (R12; the amendment to R10):
+Read 2026-10-20:
 - **integrity in npm** — npm's documentation, [`npm cache`](https://github.com/npm/cli/blob/ae98c62586b6fea44114f72e249e246a2981de70/docs/lib/content/commands/npm-cache.md) on the branch `latest` of npm/cli, the commit ae98c62: "All data that passes through the cache is fully verified for integrity on both insertion and extraction". Which hash npm checks against without a lock file, this page does not say, and the repository has no hash.
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **npm** — Node 24.21.0 comes with npm 11.19.0: [nodejs.org/dist/index.json](https://nodejs.org/dist/index.json), the entry `v24.21.0` — `"npm":"11.19.0"`. npm's documentation site shows v11 in the edition 11.21.0. The definition of `ignore-scripts` below is the same in npm's sources at the tag v11.19.0, the commit bfacd33: `workspaces/config/lib/definitions/definitions.js`;
 - **`npm ci`** — [npm Docs, npm ci](https://docs.npmjs.com/cli/v11/commands/npm-ci): "The project **must** have an existing `package-lock.json` or `npm-shrinkwrap.json`", "If dependencies in the package lock do not match those in `package.json`, `npm ci` will exit with an error, instead of updating the package lock" and "It will never write to `package.json` or any of the package-locks: installs are essentially frozen";
 - **`ignore-scripts`** — the same page, section Configuration: "If true, npm does not run scripts specified in package.json files. Note that commands explicitly intended to run a particular script, such as `npm start`, `npm stop`, `npm restart`, `npm test`, and `npm run` will still run their intended script if `ignore-scripts` is set, but they will *not* run any pre- or post-scripts". An environment variable sets the same — [npm Docs, config](https://docs.npmjs.com/cli/v11/using-npm/config): "Any environment variables that start with `npm_config_` will be interpreted as a configuration parameter";
 - **`npm audit`** — [npm Docs, npm audit](https://docs.npmjs.com/cli/v11/commands/npm-audit): "The audit command submits a description of the dependencies configured in your project to your default registry and asks for a report of known vulnerabilities" — it needs the network. Of `--audit-level`: "This option does not filter the report output, it simply changes the command's failure threshold".
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **trusted publishing** — npm/documentation at the commit 7e98ab4, `content/packages-and-modules/securing-your-code/trusted-publishers.mdx`:
   - "Trusted publishing requires npm CLI version 11.5.1 or later and Node version 22.14.0 or higher";
   - of a reusable workflow: "validation checks the calling workflow's name instead of the workflow that actually contains the publish command", and "The `id-token: write` permission must also be given to both parent and child workflows";
   - "Configurations created after Sep 03, 2026 are automatically set to allow `npm stage publish`, and you can choose whether to also permit direct publishing with `npm publish`", and "A newly created trusted publisher configuration must complete its first successful publish within 2 days";
   - provenance: "npm automatically generates and publishes provenance attestations … you don't need to add the `--provenance` flag", and "your package's `repository.url` field in `package.json` must exactly match your GitHub repository".
 
-Read 2026-11-01 (R25, T31):
+Read 2026-11-01:
 - **trusted publishing and a reusable workflow** — the page [npm Docs, Trusted publishing](https://docs.npmjs.com/trusted-publishers) says the same as npm/documentation at 7e98ab4: "validation checks the calling workflow's name instead of the workflow that actually contains the publish command".
 
-Read 2026-11-01 (the 2026-11-01 amendment to R18, T33):
+Read 2026-11-01:
 - **npm/documentation** — the commit c62df53, 2023-10-23, the last commit of the file `content/policies/unpublish.mdx`:
   - "So if you've ever published a package called "bob" at version 1.1.0, no other package can ever be published with that name at that version. This is true even if that package is unpublished";
   - "Once `package@version` has been used, you can never use it again. You must publish a new version even if you unpublished the old one";
   - "If you entirely unpublish all versions of a package, you may not publish any new versions of that package until 24 hours have passed".
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
+Read 2026-11-02:
 - **trusted publishing** — `content/packages-and-modules/securing-your-code/trusted-publishers.mdx` of npm/documentation, the last commit 5152d27 of 2026-10-06: "validation checks the calling workflow's name instead of the workflow that actually contains the publish command", and "The `id-token: write` permission must also be given to both parent and child workflows". Provenance — "when all of these conditions are met": trusted publishing, a public repository, a public package. Of a reusable workflow of another repository the document says nothing.
 
 ### 8.2. `npm/cli`
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **`npm trust`** — npm/cli v11.19.0, `docs/lib/content/commands/npm-trust.md`: "Package must exist: The package you're configuring must already exist on the npm registry". `lib/trust-cmd.js` allows publishing by the flag `--allow-publish`, and staged publishing by `--allow-stage-publish`;
 - **npm CLI 11.19.1**, the one that comes with Node 24.22.1. It does not differ from 11.19.0 in `lib/utils/oidc.js`, `lib/commands/publish.js`, libnpmpublish and npm-registry-fetch (`gh api repos/npm/cli/compare/v11.19.0...v11.19.1`):
   - `oidc.js` without `ACTIONS_ID_TOKEN_REQUEST_URL` and `_TOKEN` skips the exchange — "Skipped because incorrect permissions for id-token within GitHub workflow", at the level silly. A refusal of the exchange and its success it writes at the level verbose: "Failed token exchange request with body message: …", "Successfully retrieved and set token";
   - `publish.js` calls the exchange before the branch `--dry-run` (line 147). The package's scripts run only when a folder is published. Since npm 11.0.0 it does not publish a version below the highest one without a tag: "Cannot implicitly apply the "latest" tag because previously published version … is higher than the new version";
   - npm's license is Artistic-2.0 (npm's `package.json`), and `spec/tools/licenses/config.mjs` v0.2.21 does not have it.
 
-Read 2026-11-01 (the 2026-11-01 amendment to R18, T33):
+Read 2026-11-01:
 - **npm** — `lib/commands/view.js` of npm 11.19.0 from the devcontainer, lines 151–157: on `pckmnt.time?.unpublished` the command throws an error "Unpublished on ${u.time}" with `statusCode: 404` and `code: 'E404'`. Between v11.19.0 and v11.19.1, 33 files changed. Of the files of `view` and `publish`, only `test/lib/commands/publish.js` is among them (`gh api repos/npm/cli/compare/v11.19.0...v11.19.1`).
 
 ### 8.3. npm's registry
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **the registry's cache** — 2026-10-22. `https://registry.npmjs.org/semver` answers `cf-cache-status: HIT`, `cache-control: public, max-age=300` and `age` over a hundred seconds, even to a request with `Cache-Control: no-cache`. With `?write=true` the answer is `cf-cache-status: DYNAMIC`. npm-registry-fetch, which comes with npm 11.19.1, does not cache such a GET: "do not cache, because this GET is fetching a rev that will be used for a subsequent PUT or DELETE" (`lib/index.js`).
 
-Read 2026-11-01 (R25, T31):
-- **the publication of `spec` to npm** — `https://registry.npmjs.org/@altnovatrail%2fspec`: `latest` is 0.4.1, which came out 2026-10-29T20:31:01Z, with `dist.attestations`, provenance `https://slsa.dev/provenance/v1`; 0.4.0, which the author of `spec` published by hand, has no provenance. The npm steps of `spec`'s `release.yml` are the steps of the shared `release.yml` v0.1.10 with the differences that T51 `spec` names.
+Read 2026-11-01:
+- **the publication of `spec` to npm** — `https://registry.npmjs.org/@altnovatrail%2fspec`: `latest` is 0.4.1, which came out 2026-10-29T20:31:01Z, with `dist.attestations`, provenance `https://slsa.dev/provenance/v1`; 0.4.0, which the author of `spec` published by hand, has no provenance. The npm steps of `spec`'s `release.yml` are the steps of the shared `release.yml` v0.1.10 with the differences that the plan of `spec` names.
 
-Read 2026-11-01 (the 2026-11-01 amendment to R18, T33):
+Read 2026-11-01:
 - **`time` remembers unpublished version numbers** — `https://registry.npmjs.org/<package>?write=true`. In `time`, but not in `versions`, there are:
   - for `ua-parser-js` — 0.7.29, 0.8.0 and 1.0.0;
   - for `coa` — 2.0.3, 2.0.4, 2.1.1, 2.1.3, 3.0.1 and 3.1.3;
@@ -461,34 +461,34 @@ Read 2026-11-01 (the 2026-11-01 amendment to R18, T33):
   - A name that never existed, `dfgdfg`, gets 404 `{"error":"Not found"}`.
   - A package published again has no `time.unpublished`, and `time` keeps the earlier numbers: for `pokemon-assets` — 0.6.0 and 0.7.0, which are not in `versions`.
 
-Read 2026-11-02 (R31, T40):
+Read 2026-11-02:
 - **the documents of packages unpublished whole**, by the step of `spec` (sources 12.7) — `curl https://registry.npmjs.org/<name>?write=true`, 2026-11-02:
   - for `asdasd`, `aaaaaaa` and `test-unpublish`, `versions` is empty, and `time` has `created`, `modified`, `unpublished` and every number the package held: `1.0.0`; `2.0.0`, `1.0.0`, `1.0.1`, `3.0.0`, `4.0.0` and `4.0.1`; `0.0.1` and `0.0.0`;
   - `time.unpublished.versions` has the numbers the package held last: `["1.0.0"]`, `["1.0.0","1.0.1","3.0.0","4.0.0"]` and `["0.0.0"]`. The numbers unpublished earlier — `2.0.0` and `4.0.1` for `aaaaaaa`, `0.0.1` for `test-unpublish` — are only in `time`;
-  - corrected 2026-11-02 in T42: the first reading took from `time` only `created`, `modified` and `unpublished` — a jq filter — and so lost the keys of the numbers. On it stood В34 and the words of the amendment of T40 to R18 that the shared step does not find such a number; that is wrong (the amendment of T42 to R18).
+  - corrected 2026-11-02: the first reading took from `time` only `created`, `modified` and `unpublished` — a jq filter — and so lost the keys of the numbers. On it stood В34 and the claim of the log that the shared step does not find such a number; that claim is wrong, and the log no longer makes it.
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
-- **the documents of packages unpublished whole** — the same as above, in the reading of T40, read whole: `curl https://registry.npmjs.org/<name>?write=true | jq '{keys: keys, versions: (.versions // {} | keys), time: .time}'`. The document's keys are `_id`, `_rev`, `name` and `time`, and `time` has every number the package held. The earlier step `(.time // {}) | has($v)` did find such a number.
+Read 2026-11-02:
+- **the documents of packages unpublished whole** — the same as above, in the first reading, read whole: `curl https://registry.npmjs.org/<name>?write=true | jq '{keys: keys, versions: (.versions // {} | keys), time: .time}'`. The document's keys are `_id`, `_rev`, `name` and `time`, and `time` has every number the package held. The earlier step `(.time // {}) | has($v)` did find such a number.
 
 ### 8.4. The open bugs of `npm/cli`
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **npm's open bugs** — npm/cli#9889: `npm publish` exits with 0 while the version is only staged. npm/cli#9969: OIDC for repositories with GitHub's immutable subject.
 
-Read 2026-11-01 (R25, T31):
+Read 2026-11-01:
 - **the immutable OIDC subject** — the GitHub API, `repos/altnovatrail/<repository>/actions/oidc/customization/sub`: `spec` and `canvas` have `"use_immutable_subject":true`, the prefixes `repo:altnovatrail@344507087/spec@1424771727` and `repo:altnovatrail@344507087/canvas@1425820257`. npm/cli#9969 — "OIDC trusted publishing fails with "package not found" for GitHub repos that use immutable OIDC subject claims" — is open, updated 2026-10-28; npm/cli#9889 is open too (the GitHub API).
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
+Read 2026-11-02:
 - **npm's open bugs** (Д7 in RUN.md) — [npm/cli#9969](https://github.com/npm/cli/issues/9969) — open, updated 2026-10-28; [npm/cli#9889](https://github.com/npm/cli/issues/9889) — open, updated 2026-10-22.
 
 ## 9. Node, browsers and the TypeScript tests
 
 ### 9.1. Node
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **Node** — `https://nodejs.org/dist/index.json`: v24.22.1, 2026-10-20, npm 11.19.1, `security: true`. In the `SHASUMS256.txt` of v24.22.1 — `6c172a9ab6718f7b801fb5a7bd486af2ee5e32758086a04b84fcce2aa77095e6  node-v24.22.1-linux-x64.tar.xz`, and the downloaded archive matched it.
 
-Read 2026-11-13 (R39, T58), the documentation of Node v24.21.0, the version of the `toolchain` stage:
+Read 2026-11-13, the documentation of Node v24.21.0, the version of the `toolchain` stage:
 - **`node:wasi`** — [`api/wasi.md`](https://nodejs.org/docs/v24.21.0/api/wasi.md): "Stability: 1 - Experimental"; the example passes `version: 'preview1'`, `args: argv`, `env` and `preopens`, and runs `wasi.start(instance)`. Of `new WASI([options])`:
   - `args` — "An array of strings that the WebAssembly application will see as command-line arguments. The first argument is the virtual path to the WASI command itself";
   - `env` — "An object similar to `process.env` that the WebAssembly application will see as its environment";
@@ -501,7 +501,7 @@ Read 2026-11-13 (R39, T58), the documentation of Node v24.21.0, the version of t
 
 ### 9.2. Playwright
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **Playwright in Docker** — [`docs/src/docker.md`](https://github.com/microsoft/playwright/blob/66070a1/docs/src/docker.md) at commit 66070a1, section Recommended Docker Configuration: "Using `--init` Docker flag is recommended to avoid special treatment for processes with PID=1. This is a common reason for zombie processes" and "Using `--ipc=host` is recommended when using Chromium. Without it, Chromium can run out of memory and crash". Playwright — v1.64.1, Apache-2.0 (the GitHub API);
   - [`docs/src/browsers.md`](https://github.com/microsoft/playwright/blob/66070a1/docs/src/browsers.md), ibid.: "Each version of Playwright needs specific versions of browser binaries to operate". The browsers lie in "`~/.cache/ms-playwright` on Linux", and `PLAYWRIGHT_BROWSERS_PATH` sets another path;
   - the Playwright image sets `ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright` and installs the browsers there ([`utils/docker/Dockerfile.noble`](https://github.com/microsoft/playwright/blob/66070a1/utils/docker/Dockerfile.noble), ibid.);
@@ -510,44 +510,44 @@ Read 2026-10-21 (R19):
 - **the Playwright image** — `mcr.microsoft.com/playwright:v1.64.1-noble`, the index `sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf`; amd64 — `sha256:bdfda2a8fdf48707c5e50a49bd3e06d8d0c759153dc8ee057d8a81c3450bb3e9`, 986,271,382 bytes compressed, in seven layers (the MCR registry). `utils/docker/Dockerfile.noble` at the tag v1.64.1 installs into `/ms-playwright` chromium with the headless shell and ffmpeg, firefox and webkit, and the system libraries by `install-deps`, outside that folder. [`docs/src/docker.md`](https://github.com/microsoft/playwright/blob/v1.64.1/docs/src/docker.md) at the tag v1.64.1: "This image includes the Playwright browsers and browser system dependencies. The Playwright package/dependency is not included in the image" and "If the Playwright version in your Docker image does not match the version in your project/tests, Playwright will be unable to locate browser executables";
 - **Chromium's system libraries** — [`nativeDeps.ts`](https://github.com/microsoft/playwright/blob/v1.64.1/packages/playwright-core/src/server/registry/nativeDeps.ts) at the tag v1.64.1, the entry `ubuntu24.04-x64`, `chromium`: 21 packages, from `libasound2t64` to `libxrandr2`. `install-deps` installs them by `apt-get install -y --no-install-recommends`, with no versions.
 
-Read 2026-10-21 (the amendment to R19):
+Read 2026-10-21:
 - **Chrome for Testing** — Playwright's [`docs/src/release-notes-js.md`](https://github.com/microsoft/playwright/blob/v1.64.1/docs/src/release-notes-js.md) at the tag v1.64.1, commit cfe490d, section Version 1.57: "Playwright now runs on Chrome for Testing builds rather than Chromium. Headed mode uses `chrome`; headless mode uses `chrome-headless-shell`". In [`registry/index.ts`](https://github.com/microsoft/playwright/blob/v1.64.1/packages/playwright-core/src/server/registry/index.ts) ibid., `chromium` and `chromium-headless-shell` for `ubuntu24.04-x64` have `cftUrl(…)`, the path `builds/cft/${browserVersion}/…` on `https://cdn.playwright.dev`. Firefox, WebKit and FFmpeg have paths of their own — `builds/firefox/…`, `builds/webkit/…` and `builds/ffmpeg/…`;
-- **the folder in the image** — R13 canvas and architecture 4 canvas at 88492c4. In the layer of the v1.64.1 image with `playwright-core install chromium` lie `chromium-1248` with `WidevineCdm/LICENSE`, `chromium_headless_shell-1248` and `ffmpeg-1013`. The `ABOUT` of Chrome Headless Shell: "Google Chrome … Copyright 2026 Google LLC. All rights reserved … See the Terms of Service at chrome://terms". The binary itself calls itself "Google Chrome for Testing 156.0.8078.4", and the folder takes 273 MB.
+- **the folder in the image** — the decision log and `docs/architecture.md` of `canvas` at 88492c4. In the layer of the v1.64.1 image with `playwright-core install chromium` lie `chromium-1248` with `WidevineCdm/LICENSE`, `chromium_headless_shell-1248` and `ffmpeg-1013`. The `ABOUT` of Chrome Headless Shell: "Google Chrome … Copyright 2026 Google LLC. All rights reserved … See the Terms of Service at chrome://terms". The binary itself calls itself "Google Chrome for Testing 156.0.8078.4", and the folder takes 273 MB.
 
 ### 9.3. Vitest and istanbul
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **Vitest in the browser** — [Vitest, Browser Mode](https://vitest.dev/guide/browser): "Vitest always requires a provider to be defined. You can chose either `preview`, `playwright` or `webdriverio`" and "to run tests in CI you need to install either `playwright` or `webdriverio`";
 - **`CI`** — Vitest at commit c8558f1: [`browser.headless`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/browser/headless.md) — "**Default:** `process.env.CI`" and "If you are running Vitest in CI, it will be enabled by default"; [`allowOnly`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/allowonly.md) — "**Default:** `!process.env.CI`" and "By default, Vitest does not permit tests marked with the `only` flag in Continuous Integration (CI) environments". That `CI` is set on the runner: sources 2.2.
 
-Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
+Read 2026-11-01:
 - **Vitest** — vitest-dev/vitest on `main` 2debb4e, the latest release v5.0.5:
   - `docs/guide/coverage.md`: "By default Vitest will show only files that were imported during test run. To include uncovered files in the report, you'll need to configure `coverage.include` with a pattern that will pick your source files";
   - `docs/config/coverage.md`: `coverage.reportsDirectory` has "Default: `'./coverage'`", and "Vitest will delete this directory before running tests if `coverage.clean` is enabled (default value)";
   - the file's name — istanbuljs/istanbuljs on `main` 28ffdbc, `packages/istanbul-reports`: `lcovonly` writes `opts.file || 'lcov.info'`, and `lcov` the same `lcov.info` and HTML in `lcov-report`.
 
-Read 2026-11-16 (the 2026-11-16 amendment to R19, T64):
+Read 2026-11-16:
 - **the V8 coverage** — vitest-dev/vitest at the tag v5.1.0, commit 7a38449, `docs/guide/coverage.md`, V8 Provider: "This provider requires Javascript runtime that's implemented on top of V8 engine, such as NodeJS, Deno or any Chromium based browsers such as Google Chrome";
-- **the engines at the callers** — `ci-test` of `app`, `main` 9e55f30, runs `vitest run --coverage --project node --project '*(chromium)'`, then `vitest run --project '*(webkit)' --project '*(firefox)'`, "without it: Vitest's v8 coverage works in Chromium alone", citing its own `R45` and `sources 2.5`; `ci-test` of `canvas`, `main` 9c75901, the same with `'* chromium'`, `'* webkit'` and `'* firefox'`. `skill-map`, `main` of 2026-11-16, runs `vitest run --coverage` alone.
+- **the engines at the callers** — `ci-test` of `app`, `main` 9e55f30, runs `vitest run --coverage --project node --project '*(chromium)'`, then `vitest run --project '*(webkit)' --project '*(firefox)'`, "without it: Vitest's v8 coverage works in Chromium alone", citing a decision and a record of sources of its own; `ci-test` of `canvas`, `main` 9c75901, the same with `'* chromium'`, `'* webkit'` and `'* firefox'`. `skill-map`, `main` of 2026-11-16, runs `vitest run --coverage` alone.
 
 ### 9.4. OSV-Scanner
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **OSV-Scanner** — v2.7.0, 2026-10-12 (the GitHub API, `repos/google/osv-scanner/releases/latest`), Apache-2.0, the release holds `osv-scanner_SHA256SUMS`. [Offline Mode](https://google.github.io/osv-scanner/usage/offline-mode/): "Offline scanning checks your project against a local database instead of calling the OSV.dev API" and "When a local database is not present, you will get an error message".
 
 ### 9.5. Docker: the build cache
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **the build cache** — [Docker Docs, GitHub Actions cache](https://github.com/docker/docs/blob/773efbb/content/manuals/build/cache/backends/gha.md) at commit 773efbb: "This cache storage backend works with the default `docker` driver only when the containerd image store is enabled" and "If you invoke the `docker buildx` command manually from an inline step, then the variables must be manually exposed. Consider using the `crazy-max/ghaction-github-runtime`, GitHub Action as a helper for exposing the variables". Docker and Buildx on the runner — sources 2.6.
 
 ### 9.6. Ubuntu Snapshot Service
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **the Ubuntu archive at a date** — [Ubuntu Snapshot Service](https://snapshot.ubuntu.com/): "The Ubuntu snapshot service makes it possible to see and use the Ubuntu archive as it was at any specified date and time", "Snapshots of the Ubuntu archive are available for any date and time after 1 March 2023", "We intend to ensure snapshots are available for dates up to at least 2 years in the past" and "The apt included in Ubuntu 24.04 and later automatically detects when snapshots are supported for a repository". An example from there — `apt install hello --update --snapshot 20240301T030400Z`. The Playwright image creates a user of its own, `pwuser` (`adduser pwuser` in `Dockerfile.noble` v1.64.1), while the `devcontainer` stage of spec's repository template runs as `vscode` (`USER vscode`).
 
 ### 9.7. Docker: the Dockerfile and the base image of the template
 
-Read 2026-11-16 (R45, T65):
+Read 2026-11-16:
 - **the Dockerfile** — the Dockerfile reference, [moby/buildkit](https://github.com/moby/buildkit/blob/38b0e2ab2e9bc5fd3f622759ac92ad4b649f3bf4/frontend/dockerfile/docs/reference.md) at commit 38b0e2a, `frontend/dockerfile/docs/reference.md`, the source of Docker Docs' page: "The instruction is not case-sensitive"; "Comment lines are removed before the Dockerfile instructions are executed", with the example `RUN echo hello \` over `# comment`; "If not specified, the default escape character is `\`" — "The escape character is used both to escape characters in a line, and to escape a newline. This allows a Dockerfile instruction to span multiple lines"; `FROM [--platform=<platform>] <image> [AS <name>]` — "The name can be used in subsequent `FROM <name>`"; "An `ARG` declared before a `FROM` is outside of a build stage, so it can't be used in any instruction after a `FROM`. To use the default value of an `ARG` declared before the first `FROM` use an `ARG` instruction without a value inside of a build stage"; "A stage inherits any environment variables that were set using `ENV` by its parent stage or any ancestor"; and "The `ENV` instruction also allows an alternative syntax `ENV <key> <value>`, omitting the `=`".
 - **the parser** — the same commit, `frontend/dockerfile/parser/parser.go`: the line continuation is ``regexp.MustCompile(`([^\` + s + `])\` + s + `[ \t]*$|^\` + s + `[ \t]*$`)`` — the escape character, then blanks, at the end of a line; `trimNewline` is `bytes.TrimRight(src, "\r\n")`; inside a continued instruction a comment line is skipped (`if isComment(scanner.Bytes())`), and so is an empty one, with "[WARNING]: Empty continuation lines will become errors in a future release."; `isComment` — the line, its leading blanks dropped, starts with `#`. `directives.go`: a directive is `^([a-zA-Z][a-zA-Z0-9]*)\s*=\s*(.+?)\s*$` after the `#`, and `keyEscape = "escape"`.
 - **the base image** — the configuration of `mcr.microsoft.com/devcontainers/base:3.0.13-noble` at the digest `sha256:48be4ade…7eae` that the template's Dockerfile pins, for linux/amd64 the manifest `sha256:957c4e15…b910` and its configuration `sha256:be453845…7b15`, by the registry's API without a token: `"Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","LANG=C.UTF-8"]`.
@@ -556,35 +556,35 @@ Read 2026-11-16 (R45, T65):
 
 ### 10.1. Go
 
-Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
+Read 2026-11-01:
 - **Go** — [Go 1.22 Release Notes](https://go.dev/doc/go1.22): "`go test -cover` now prints coverage summaries for covered packages that do not have their own test files" — "functions in the package are treated as uncovered". And also: "if a package contains no executable code at all, we can't report a meaningful coverage percentage; for such packages the `go` tool will continue to report that there are no test files". The trial — measurements 4.1.
 
-Read 2026-11-13 (R39, T58), Go 1.27.3 of the devcontainer, in its `GOROOT`; the four files named below are byte for byte the same at the tag `go1.27.4` of golang/go, the Go of the `toolchain` stage, and so is the line of `AppendPWD`:
+Read 2026-11-13, Go 1.27.3 of the devcontainer, in its `GOROOT`; the four files named below are byte for byte the same at the tag `go1.27.4` of golang/go, the Go of the `toolchain` stage, and so is the line of `AppendPWD`:
 - **the executors of wasm** — `lib/wasm/go_wasip1_wasm_exec` chooses by `GOWASIRUNTIME` among `wasmedge`, `wasmer`, `wazero` and `wasmtime`, the default, and any other value ends with "Unknown Go WASI runtime specified"; wasmtime runs with `--dir=/ --env PWD="$PWD" --env PATH="$PATH" -W max-wasm-stack=8388608`, and wazero with `-mount /:/ -env-inherit`. `lib/wasm/go_js_wasm_exec` ends with `exec node --stack-size=8192 "$DIR/wasm_exec_node.js" "$@"`;
 - **`go test -exec`** — `go help testflag`: "-exec xprog — Run the test binary using xprog. The behavior is the same as in 'go run'", and `go help run`: "If the -exec flag is given, 'go run' invokes the binary using xprog: 'xprog a.out arguments...'". In the source, `src/cmd/go/internal/test/testflag.go` reads the flag as `base.StringsFlag`, a command split into words, and `src/cmd/go/internal/test/test.go` runs the test with `cmd.Dir = a.Package.Dir` and `env = base.AppendPWD(env, cmd.Dir)`: the folder of the package, and `PWD` set to it. The trial — measurements 2.6.
 
-Read 2026-11-16 (R41, T60), Go 1.27.4 of the devcontainer, the Go of the `toolchain` stage, in its `GOROOT`:
+Read 2026-11-16, Go 1.27.4 of the devcontainer, the Go of the `toolchain` stage, in its `GOROOT`:
 - **a module taken from the cache** — `src/cmd/go/internal/modfetch/fetch.go`: `Download` returns the module's folder after `f.checkMod(ctx, mod)`, which reads the module's `ziphash` from the cache and hands it to `checkModSum`: "Check whether mod+h is listed in go.sum already. If so, we're done", and else "Consult checksum database if appropriate" — `if useSumDB(mod)`, `checkSumDB(mod, h)`, which "Calls base.Fatalf if mismatch detected";
 - **`go mod verify`** — `go help mod verify`: "Verify checks that the dependencies of the current module, which are stored in a local downloaded source cache, have not been modified since being downloaded. If all the modules are unmodified, verify prints "all modules verified." Otherwise it reports which modules have been changed and causes 'go mod' to exit with a non-zero status." In `src/cmd/go/internal/modcmd/verify.go` it takes `mg.BuildList()` of the module graph and, for each module, hashes the archive, `dirhash.HashZip`, and the folder, `dirhash.HashDir`, against the `ziphash` — "zip has been modified", "dir has been modified" —, and a module with neither on disk it skips: "Nothing downloaded yet. Nothing to verify.";
 - **the trim of the build cache** — `src/cmd/go/internal/cache/cache.go`: "We set the mtime on a cache file on each use, but at most one per mtimeInterval (1 hour)", "We scan the cache for entries to delete at most once per trimInterval (1 day)"; `mtimeInterval = 1 * time.Hour`, `trimInterval = 24 * time.Hour`, `trimLimit = 5 * 24 * time.Hour`; `Trim` keeps "in dir/trim.txt the time of the last completed cache trim" and, when it is a day old, deletes in `trimSubdir` the files older than `cutoff := now.Add(-trimLimit - mtimeInterval)`;
 - **the cache of tests** — `go help test`: "The rule for a match in the cache is that the run involves the same test binary and the flags on the command line come entirely from a restricted set of 'cacheable' test flags, defined as -benchtime, -coverprofile, -cpu, -failfast, -fullpath, -list, -outputdir, -parallel, -run, -short, -skip, -timeout and -v. If a run of go test has any test or non-test flags outside this set, the result is not cached." And: "The idiomatic way to disable test caching explicitly is to use -count=1. Tests that open files within the package's module or that consult environment variables only match future runs in which the files and environment variables are unchanged."
 
-Read 2026-11-16 (R43, T62), Go 1.27.4 of the devcontainer:
+Read 2026-11-16, Go 1.27.4 of the devcontainer:
 - **the build cache at once** — `go help cache`: "The cache is safe for concurrent invocations of the go command."
 
-Read 2026-11-18 (the 2026-11-18 amendment to R41, T75):
+Read 2026-11-18:
 - **what finds a build** — `src/cmd/go/internal/cache/cache.go` of Go 1.27.4, the Go of the `toolchain` stage, in the devcontainer's `GOROOT`: "An ActionID is a cache action key, the hash of a complete description of a repeatable computation (command line, environment variables, input file contents, executable contents)";
 - **golangci-lint's cache** — golangci-lint v2.15.0, its latest release (the GitHub API, `repos/golangci/golangci-lint/releases/latest`), the commit 25c5369: `internal/go/cache/cache.go` has the comment and the constants of Go's above — `mtimeInterval = 1 * time.Hour`, `trimInterval  = 24 * time.Hour`, `trimLimit     = 5 * 24 * time.Hour` —, `func (c *DiskCache) Close() error { return c.Trim() }` and the same `cutoff := now.Add(-trimLimit - mtimeInterval)`. Where `pkg/commands/run.go` makes its cache, `cache.NewCache`, no call of its `Close` was found. The version a caller's `toolchain` stage installs is the caller's own.
 
 ### 10.2. go-licenses
 
-Read 2026-10-21 (R16):
+Read 2026-10-21:
 - **`--allowed_licenses`** — [README go-licenses v2.0.1](https://github.com/google/go-licenses/blob/v2.0.1/README.md), section Usages, Check: "Allow only specific license names" — `go-licenses check <package> [package...] --allowed_licenses=<comma separated license names>`. The trial — measurements 2.1.
 
 ### 10.3. Codecov
 
-Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
-- **the Codecov app** — `gh api orgs/altnovatrail/installations`: `codecov`, `repository_selection: all`. The Codecov API, `api.codecov.io/api/v2/github/altnovatrail/repos/`, names all 13 repositories. Before T34 only `spec` was active, and after the trial `.github` too;
+Read 2026-11-01:
+- **the Codecov app** — `gh api orgs/altnovatrail/installations`: `codecov`, `repository_selection: all`. The Codecov API, `api.codecov.io/api/v2/github/altnovatrail/repos/`, names all 13 repositories. Before the trial only `spec` was active, and after it `.github` too;
 - **the Codecov CLI** — the releases of codecov/codecov-cli, the license Apache-2.0. v11.3.2 is Latest, came out 2026-10-28: "Clear Dependabot high alert (urllib3)" and "Rebuilt from main so the Linux and Alpine binaries publish".
   - `https://cli.codecov.io/v11.3.2/linux/codecov.SHA256SUM` — `8e1bfb71661378530f6ea21e82b414095899e565cbb4cf555c613064be17b973  codecov`. For v11.3.1 the same file holds `ca1d6419…`, the same sum as in the `ci.yml` of `spec`.
   - gpg 2.4.4 accepted the signature `codecov.SHA256SUM.sig`: "Good signature from "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>"", "Primary key fingerprint: 2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869".
@@ -592,29 +592,29 @@ Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
   - The binary calls itself `codecovcli, version 11.3.2`, and its `sha256sum` agrees with the file of sums;
 - **actions** — `git ls-remote`: `codecov/codecov-action` v7.1.1 — 303a32d, `actions/upload-artifact` v7.0.2 — cf430e0, `actions/download-artifact` v8.0.2 — 9000827. All three are the latest releases. The license of codecov-action is MIT. Its `action.yml` at 303a32d:
   - `core.getIDToken` takes the OIDC token, with the audience `https://codecov.io`, if `use_oidc` and this is not a fork;
-  - a fork is `github.event.pull_request.head.repo.full_name` not equal to `github.repository`, and then the report goes without a token, from the branch `owner:branch`, as for `spec` (R48 spec);
-- **the paths in Codecov** — the default rule for Go's import paths, Codecov, Fixing paths (the 2026-11-01 amendment to R48 spec). The trial — measurements 4.1;
+  - a fork is `github.event.pull_request.head.repo.full_name` not equal to `github.repository`, and then the report goes without a token, from the branch `owner:branch`, as for `spec`;
+- **the paths in Codecov** — the default rule for Go's import paths, Codecov, Fixing paths, as the decision log of `spec` quotes it. The trial — measurements 4.1;
 - **several uploads per commit** — [Codecov, codecov.yml reference](https://docs.codecov.com/docs/codecovyml-reference), updated 2026-07-23. `codecov.notify.wait_for_ci` has "Should Codecov wait for all CI statuses to complete before sending ours", `true` by default. `codecov.notify.after_n_builds` has "How many uploaded reports Codecov should wait to receive before sending statuses", `1` by default.
 
 ## 11. The tools of the checks
 
 ### 11.1. gitleaks
 
-Read 2026-10-19 (R03):
+Read 2026-10-19:
 - **the release and the license** — the GitHub API — `repos/gitleaks/gitleaks/releases/latest`: v8.30.1, 2026-03-21, the files are archives for the platforms and `gitleaks_8.30.1_checksums.txt`, with no signature and no attestation; `repos/gitleaks/gitleaks/license`: MIT.
 
-Read 2026-10-20 (R08):
+Read 2026-10-20:
 - **gitleaks** — [README v8.30.1](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md), section Load Configuration: "The order of precedence is:", and the fourth — "A `.gitleaks.toml` file within the target path". The sum of the archive `gitleaks_8.30.1_linux_x64.tar.gz` is from `gitleaks_8.30.1_checksums.txt` of the same release: `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`.
 
 ### 11.2. actionlint and ShellCheck
 
-Read 2026-10-20 (R08):
+Read 2026-10-20:
 - **actionlint** 1.7.12 — the latest release (the GitHub API, `repos/rhysd/actionlint/releases/latest`, 2026-03-30); the sum of the archive `actionlint_1.7.12_linux_amd64.tar.gz` is from `actionlint_1.7.12_checksums.txt`: `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`;
 - **shellcheck** 0.11.0 — the latest release (the GitHub API, `repos/koalaman/shellcheck/releases/latest`, 2025-08-04), the license is GPL-3.0 (`repos/koalaman/shellcheck/license`); it has no files of sums, so the sum of `shellcheck-v0.11.0.linux.x86_64.tar.xz` was computed from the downloaded archive: `8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198`.
 
 ### 11.3. yq and bats-core
 
-Read 2026-11-01 (R28, T35):
+Read 2026-11-01:
 - **yq** — v4.54.1, the latest release, 2026-09-29 (the GitHub API, `repos/mikefarah/yq/releases/latest`). The license is MIT: "The MIT License (MIT)", `LICENSE` at the tag v4.54.1.
   - Among the release's files are `yq_linux_amd64`, `checksums` and `checksums_hashes_order`. SHA-256 is the eighteenth line of `checksums_hashes_order`, and in the line `yq_linux_amd64` of the file `checksums` the sums follow the name in the same order. The SHA-256 sum is `8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f`.
   - The downloaded file, 14,168,224 bytes, agreed with it, and `--version` gives "yq (https://github.com/mikefarah/yq/) version v4.54.1".
@@ -622,219 +622,219 @@ Read 2026-11-01 (R28, T35):
 
 ### 11.4. just
 
-Read 2026-10-20 (R14):
+Read 2026-10-20:
 - **`just --dry-run`** — the help of just 1.58.0, `just --help`: "Print what just would do without doing it". The trial — measurements 5.1.
 
 ### 11.5. git
 
-Read 2026-10-22 (the amendments to R10 and R18, T28):
+Read 2026-10-22:
 - **git** v2.55.0, commit e9019fc. `Documentation/git-clone.adoc`, `--local`: "The files under `.git/objects/` directory are hardlinked to save space when possible", and "If the repository is specified as a local path (e.g., `/path/to/repo`), this is the default". `Documentation/git-worktree.adoc`, `add`: "The new worktree is linked to the current repository, sharing everything except per-worktree files such as `HEAD`, `index`, etc.".
 
 ## 12. `spec`: tags, recipes and scripts
 
 ### 12.1. `spec` v0.2.11
 
-Read 2026-10-20 (R10):
-- **the Releases API's refusal for a release of `spec`** (sources 3.2) — The `release.yml` of `spec` at v0.2.6 let only a 404 through. From v0.2.7 both a 404 and a 403 are let through, but only when the commit is no longer the tip and adds or changes files of `.github/workflows/` against the tip: `git diff --quiet --diff-filter=AM "$tip" "$TARGET" -- .github/workflows/` (the `release.yml` of `spec` v0.2.9; the amendment to R31 spec). From v0.2.11 this rule is the recipe `release-refusal`, and it also requires the commit to lie in the tip's history (below, in the reading for R14).
+Read 2026-10-20:
+- **the Releases API's refusal for a release of `spec`** (sources 3.2) — The `release.yml` of `spec` at v0.2.6 let only a 404 through. From v0.2.7 both a 404 and a 403 are let through, but only when the commit is no longer the tip and adds or changes files of `.github/workflows/` against the tip: `git diff --quiet --diff-filter=AM "$tip" "$TARGET" -- .github/workflows/` (the `release.yml` of `spec` v0.2.9). From v0.2.11 this rule is the recipe `release-refusal`, and it also requires the commit to lie in the tip's history (the next reading).
 
-Read 2026-10-20 (R14):
+Read 2026-10-20:
 - **`release-version`** in `spec/justfile` v0.2.11 takes a commit and a path to a workflow. The recipe's comment: outside `spec` "the line is RELEASE_LINE as the workflow named second sets it at that commit, a path from the repository's root, whatever the shell sets: a release workflow's own env, the tip's, must not number an older commit. A commit from before that workflow existed takes the checked-out file's line";
 - **`release-refusal <commit> <tip> <error file>`** ibid.: "Exits 0 when the refusal is that one, and 1 with the reason when it is not or when anything cannot be read". The `release.yml` of `spec` v0.2.11 calls both recipes through the launch script `$RUNNER_TEMP/toolchain`: it runs the command in the `toolchain` stage, with the working folder and `$RUNNER_TEMP` mounted, the second read-only;
-- **the sums of the archives** — `.devcontainer/Dockerfile` from the recipe at v0.2.11 (R34 spec). All eight sums — Node 24.21.0, just 1.58.0, gh 2.101.0 and just-lsp 0.10.0, each for amd64 and arm64 — matched the archives that were downloaded 2026-10-20 from the addresses of that Dockerfile and checked by `sha256sum`.
+- **the sums of the archives** — `.devcontainer/Dockerfile` from the recipe at v0.2.11. All eight sums — Node 24.21.0, just 1.58.0, gh 2.101.0 and just-lsp 0.10.0, each for amd64 and arm64 — matched the archives that were downloaded 2026-10-20 from the addresses of that Dockerfile and checked by `sha256sum`.
 
 ### 12.2. `spec` v0.2.12, v0.2.13 and v0.2.17
 
-Read 2026-10-21 (R16):
+Read 2026-10-21:
 - **the list of `spec`** — `spec/tools/licenses/config.mjs` at v0.2.12: `allowed` — 0BSD, Apache-2.0, BlueOak-1.0.0, BSD-2-Clause, BSD-3-Clause, CC0-1.0, ISC, MIT, MIT-0 and Unlicense, one per line. The trial of the step — measurements 2.1.
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **`licenses-check` of `spec`** — `spec/tools/licenses/main.mjs` at v0.2.13: "The lock file is always the one beside this script: no path comes from the command line". It walks the `packages` of the lock file and takes the `license` of each package, and for a lock file without `packages`, version 1, it would check zero packages and answer "ok".
 
-Read 2026-10-22 (the amendments to R10 and R18, T25):
+Read 2026-10-22:
 - **`toolchain.sh`** — `spec/tools/toolchain/toolchain.sh` at v0.2.17, mode 100755. Its modes: `build` — "build the stage as the image novatrail-toolchain", `run <command> [<argument>...]` — "run a command in it" and `spec [--dry-run] <recipe> [<argument>...]` — "run one of spec's recipes, from spec's justfile". On the launch: "The repository is mounted at /work, and RUNNER_TEMP read-only at its own path, where gh leaves the error of a refused release; nothing else of the runner's environment goes in". The script's tests are the recipe `toolchain-test`, with a stub for docker.
 
 ### 12.3. `spec` v0.2.18–v0.2.21
 
-Read 2026-10-22 (R22, the amendments to R16 and R19, T26):
+Read 2026-10-22:
 - **the tags of `spec`** — v0.2.18 04ab0d2, v0.2.19 6462304, v0.2.20 6caf6ff and v0.2.21 14e2a11 (`gh release list -R altnovatrail/spec`), each immutable. `tools/licenses/config.mjs`, `.devcontainer/` and `tools/toolchain/` have not changed since v0.2.17 (`git diff`);
-- **the 2026-10-22 amendment to R39 spec**, v0.2.18 and newer. «Исключение, которое принимает лицензию вне списка, … держит только пакет, который lock-файл помечает `dev`», and «`devOptional` — не `dev`». «То же исключение покрывает пакеты, которые сам инструмент называет в `optionalDependencies`, — так приходят его сборки под платформы, — пока они тоже `dev` и под той же лицензией». An exception for `null` or `SEE LICENSE IN <file>` «поправляет то, что говорит lock-файл, а не принимает лицензию вне списка»;
+- **the license exception in the decision log of `spec`**, v0.2.18 and newer. «Исключение, которое принимает лицензию вне списка, … держит только пакет, который lock-файл помечает `dev`», and «`devOptional` — не `dev`». «То же исключение покрывает пакеты, которые сам инструмент называет в `optionalDependencies`, — так приходят его сборки под платформы, — пока они тоже `dev` и под той же лицензией». An exception for `null` or `SEE LICENSE IN <file>` «поправляет то, что говорит lock-файл, а не принимает лицензию вне списка»;
 - **the recipes** — `spec/justfile` v0.2.21. `licenses-check-repo lock exceptions=""` runs from the folder it is called from: `cd {{quote(invocation_directory())}} && node … --lock=… --exceptions=…`. `licenses-allowed` — `node tools/licenses/main.mjs --allowed`, one identifier per line, in the order of `config.mjs`. Neither calls `_tools`.
 
 ### 12.4. `spec` v0.4.1
 
-Read 2026-11-01 (R25, T31):
+Read 2026-11-01:
 - **the tag** — v0.4.1, commit 23000f3, came out 2026-10-29: `gh release view` — immutable, and `gh release verify v0.4.1 -R altnovatrail/spec` — "Release v0.4.1 verified!", with the files `format-0.1.tar.gz` and `altnovatrail-spec-0.4.1.tgz` and their bundle. Between v0.2.23 and it — 76 commits (`git log --oneline v0.2.23..v0.4.1`). `tools/toolchain/` and `tools/licenses/` have not changed (`git diff --quiet`);
 - **Go in the `toolchain` stage** — `.devcontainer/Dockerfile` from `editDevcontainer` v0.4.1 for `.github`: Go 1.27.3. The sums of the archives match go.dev's list, `https://go.dev/dl/?mode=json&include=all`: `go1.27.3.linux-amd64.tar.gz` — `65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40`, `go1.27.3.linux-arm64.tar.gz` — `a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49`. The recipe gives `devcontainer.json` and `host-network.sh` the same as here. There is no docker in the devcontainer, and the image was not built here: the pull request's CI will build the `toolchain` stage;
 - **the README badges** — each address answered 200 and a value: CI, Release and CodeQL — "passing", the release number — "v0.1.10", Scorecard — 6.8, the license — "Apache-2.0"; for SonarCloud, code smells — 0, reliability, security and maintainability — A, vulnerabilities — 0.
 
 ### 12.5. `spec` v0.5.3
 
-Read 2026-11-01 (R27, T36):
-- **the tag** — v0.5.3, commit 38ce564, came out 2026-11-01 at 17:19 UTC: `gh release view` — immutable, and `gh release verify v0.5.3 -R altnovatrail/spec` — "Release v0.5.3 verified!". Between v0.4.1 and it — v0.5.0, T46 `spec` (R74 spec), and v0.5.1 and v0.5.2, T50 `spec`; v0.5.3 itself is the answer to В28;
+Read 2026-11-01:
+- **the tag** — v0.5.3, commit 38ce564, came out 2026-11-01 at 17:19 UTC: `gh release view` — immutable, and `gh release verify v0.5.3 -R altnovatrail/spec` — "Release v0.5.3 verified!". Between v0.4.1 and it — v0.5.0, with the first contract between components, and v0.5.1 and v0.5.2; v0.5.3 itself is the answer to В28;
 - **what did not change** — `.devcontainer/`, RULES.md, AGENTS.md, `repo-template/`, `tools/toolchain/`, `tools/licenses/`, `tools/new-repo/` and `tools/docs-check/` (`git diff --quiet v0.4.1 v0.5.3`). In `tools/release/` only a test changed. The recipes `_tools`, `docs-check-repo`, `licenses-allowed`, `licenses-check-repo`, `release-version` and `release-refusal` in `justfile` are the same, word for word; the new ones are `ci-lint`, `ci-test`, `ci-vuln` and `ci-licenses` for `go.yml`;
-- **the README of `spec` v0.5.3**, section "Status": "version 0.1 … comes out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0 … The first contract between components, the types of the element `<novatrail-canvas>` between `canvas` and `app`, comes out from v0.5.0", with a link to R74 spec, "and the other contracts come after it";
-- **`spec` calls `go.yml`** — the 2026-11-01 amendment to R30 spec: the job "Go" in the `ci.yml` of `spec` calls the shared `go.yml` v0.1.10, commit f3addb7, by a SHA with the version beside it, and its `ci-licenses` checks by the `ALLOWED_LICENSES` that `go.yml` gives.
+- **the README of `spec` v0.5.3**, section "Status": "version 0.1 … comes out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0 … The first contract between components, the types of the element `<novatrail-canvas>` between `canvas` and `app`, comes out from v0.5.0", with a link to the decision of `spec` on that contract, "and the other contracts come after it";
+- **`spec` calls `go.yml`** — the decision log of `spec`: the job "Go" in the `ci.yml` of `spec` calls the shared `go.yml` v0.1.10, commit f3addb7, by a SHA with the version beside it, and its `ci-licenses` checks by the `ALLOWED_LICENSES` that `go.yml` gives.
 
 ### 12.6. `spec` v0.6.2
 
-Read 2026-11-01 (R30, T38):
-- **the tag** — v0.6.2, commit 49d0fb6, came out 2026-11-01 at 23:54 UTC. `gh release view` — immutable, and `gh release verify v0.6.2 -R altnovatrail/spec` — "Release v0.6.2 verified!". Between v0.5.3 and it — v0.5.4–v0.5.8, v0.6.0 and v0.6.1 (`gh api repos/altnovatrail/spec/releases`). v0.6.2 differs from v0.6.1 only in RUN.md and concepts 16 `spec`;
+Read 2026-11-01:
+- **the tag** — v0.6.2, commit 49d0fb6, came out 2026-11-01 at 23:54 UTC. `gh release view` — immutable, and `gh release verify v0.6.2 -R altnovatrail/spec` — "Release v0.6.2 verified!". Between v0.5.3 and it — v0.5.4–v0.5.8, v0.6.0 and v0.6.1 (`gh api repos/altnovatrail/spec/releases`). v0.6.2 differs from v0.6.1 only in RUN.md and a section of `docs/concepts.md` of `spec`;
 - **what did not change** — `.devcontainer/`, AGENTS.md, `repo-template/`, `tools/toolchain/`, `tools/licenses/`, `tools/new-repo/` and `tools/docs-check/` (`git diff --stat v0.5.3 v0.6.2`).
   - The recipes that the shared and `self-` workflows call — `docs-check-repo`, `licenses-allowed`, `licenses-check-repo`, `release-version`, `release-refusal` and `ci-*` — are the same word for word.
   - The new recipes are `release-verify` and `release-verify-npm`, and `release-version-test` now calls `_tools`.
   - `tools/package.json` got the sigstore-js packages for `release-verify`, and `_tools` installs them for the documents check too;
 - **RULES.md**:
   - a new hard rule "Release files are verified": "A file of a NovaTrail release — a binary, an archive, an index — enters code or CI only once `just -f spec/justfile release-verify` has accepted it …, where it enters NovaTrail";
-  - in the rule on language — "and so is spec's cross-repository plan, COORDINATION.md (R76 spec)";
+  - in the rule on language — "and so is spec's cross-repository plan, COORDINATION.md";
 - **the README of `spec` v0.6.2**, section "Status": "Version 0.1 came out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0; version 0.2, whose digit on a crop is 24 px high unless the module gives it, comes out from v0.6.0. The format is still to be tried on the modules of the first slice";
 - **В29 and В30** — they are not in `spec` v0.6.2: neither RUN.md nor the decision log of `spec` names them.
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T39):
+Read 2026-11-02:
 - **`toolchain.sh` v0.6.2** (the comment at the top of the file): "The repository is mounted at /work, and RUNNER_TEMP read-only at its own path … nothing else of the runner's environment goes in". On `spec --dry-run`: "just's dry run parses the call, prints the recipe and runs nothing".
 
 ### 12.7. `spec` v0.6.3
 
-Read 2026-11-02 (R31, T40):
+Read 2026-11-02:
 - **the tag** — v0.6.3, commit 8460f11, came out 2026-11-02 at 02:30 UTC. `gh release view` — immutable, and `gh release verify v0.6.3 -R altnovatrail/spec` — "Release v0.6.3 verified!". There are no tags between v0.6.2 and it (`gh release list -R altnovatrail/spec`);
-- **what did not change** — `.devcontainer/`, RULES.md, AGENTS.md, README.md, `justfile`, `tools/toolchain/`, `tools/licenses/` and `tools/docs-check/` (`git diff --quiet v0.6.2 v0.6.3`). In `tools/release/` only `test/` changed, and `tools/package.json` and `tools/package-lock.json` did not. The recipes that the shared and `self-` workflows call are the same word for word. `repo-template/` and `tools/new-repo/` (R79 spec) and `tools/types/npm/README.md` changed;
-- **the 2026-11-02 amendment to R63 spec** — «прошлый индекс получает и проверяет шаг общего `release.yml` `.github` на раннере, а рецепт `release-files` `modules` получает уже проверенный файл. Т-35 закрыт — ответ автора 2026-11-02 по строке „в реестр spec“ `.github` В33, вариантом 1′». How the file reaches the recipe, «решает T41 `.github`»;
-- **the 2026-11-02 amendment to R77 spec** — «В пункте „Где проверяется“ слова „в том шаге, который его получает“ у релиза `modules` значат шаг общего `release.yml` на раннере, а не рецепт `release-files`»;
+- **what did not change** — `.devcontainer/`, RULES.md, AGENTS.md, README.md, `justfile`, `tools/toolchain/`, `tools/licenses/` and `tools/docs-check/` (`git diff --quiet v0.6.2 v0.6.3`). In `tools/release/` only `test/` changed, and `tools/package.json` and `tools/package-lock.json` did not. The recipes that the shared and `self-` workflows call are the same word for word. `repo-template/` and `tools/new-repo/` and `tools/types/npm/README.md` changed;
+- **the decision of `spec` on the previous index** — «прошлый индекс получает и проверяет шаг общего `release.yml` `.github` на раннере, а рецепт `release-files` `modules` получает уже проверенный файл». It closes Т-35, by the option 1′ of the row «в реестр spec» В33 of `.github`. How the file reaches the recipe, `.github` decides;
+- **the decision of `spec` on where a release file is checked** — «В пункте „Где проверяется“ слова „в том шаге, который его получает“ у релиза `modules` значат шаг общего `release.yml` на раннере, а не рецепт `release-files`»;
 - **an unpublished version number at `spec`** — the comment of the step "Check the npm package" of the `release.yml` of `spec` v0.6.3: "A version it held lies in its time then, or under time.unpublished.versions once the whole package is gone". The step looks for the number there too: `(.time.unpublished.versions? // []) | index($v) != null`. The documents of such packages in the registry — sources 8.3;
-- **COORDINATION.md of `spec` v0.6.3** — the row 2.2 is marked done 2026-11-02, with the pull requests 85 and 86 of `.github`, the submodule `v0.6.2` and the release `v0.1.13`. The row 2.3 is "E11: T40, T41", and the row 3.7 is «рецепт `release-files` `modules` получает его проверенным от общего релиза, а не скачивает сам», by the 2026-11-02 amendment to R63 spec, and «как именно — T41 `.github`».
+- **COORDINATION.md of `spec` v0.6.3** — the row 2.2 is marked done 2026-11-02, with the pull requests 85 and 86 of `.github`, the submodule `v0.6.2` and the release `v0.1.13`. The row 2.3 is the epic E11 of `.github`, and the row 3.7 is «рецепт `release-files` `modules` получает его проверенным от общего релиза, а не скачивает сам», by the decision of `spec` on the previous index, and how exactly, `.github` decides.
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T41):
+Read 2026-11-02:
 - **`previous` of the step of the version number** — `tools/release/version.mjs` of `spec` v0.6.3: "previous= the newest release before it, where the release notes start", and `nextVersion` puts `newest` in it, the highest release by number. `modules` has no releases, no `release.yml` and no recipe `release-files` yet (the GitHub API).
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
+Read 2026-11-02:
 - **the check of `spec`** — the step "Check the npm package" of the `release.yml` of `spec` v0.6.3: `jq -e --arg v "$version" '((.time // {}) | has($v)) or ((.time.unpublished.versions? // []) | index($v) != null)'`. The shared step's check is now the same: the `diff` of the lines with `jq -e --arg v "$version"` of both files is empty. The second half catches a number from `unpublished.versions` without a key in `time`; none of the three documents has such a number.
 
 ### 12.8. `spec` v0.9.8
 
-Read 2026-11-08 (R32, T43):
+Read 2026-11-08:
 - **the tag** — v0.9.8, commit b1fbc61, came out 2026-11-08 at 01:29 UTC and became the newest release of `spec`. `gh release view` — immutable, and `gh release verify v0.9.8 -R altnovatrail/spec` — "Release v0.9.8 verified!". Between v0.6.3 and it, 29 tags, from v0.6.4 to v0.9.7;
 - **what changed of what `.github` takes** (`git diff v0.6.3 v0.9.8`):
-  - `.devcontainer/Dockerfile`. The base image is `mcr.microsoft.com/devcontainers/base:3.0.12-noble` by digest instead of 3.0.10. buf 1.75.0 was added with sums for amd64 and arm64 (R83 spec), and the comments on Go name any code of the repository. `devcontainer.json` and `host-network.sh` did not change;
-  - RULES.md. The session of `spec` finds the rows «в реестр spec» itself, on `main` (R81 spec). A new hard rule is on production images (R105 spec);
-  - spec's repository template: rule 2 of RUN.md follows R81 spec, and the Environment of CLAUDE.md has buf;
-  - the README of `spec`: format 0.3 comes out from v0.9.0, the admission table from the line 0.8 (R96 spec), the code of the contracts from the line 0.7 (R83 spec);
-  - card 3.11 spec — only the part on `infra` changed (R105, R106 spec);
+  - `.devcontainer/Dockerfile`. The base image is `mcr.microsoft.com/devcontainers/base:3.0.12-noble` by digest instead of 3.0.10. buf 1.75.0 was added with sums for amd64 and arm64, and the comments on Go name any code of the repository. `devcontainer.json` and `host-network.sh` did not change;
+  - RULES.md. The session of `spec` finds the rows «в реестр spec» itself, on `main`. A new hard rule is on production images;
+  - spec's repository template: rule 2 of RUN.md says the same of the rows «в реестр spec», and the Environment of CLAUDE.md has buf;
+  - the README of `spec`: format 0.3 comes out from v0.9.0, the admission table from the line 0.8, the code of the contracts from the line 0.7;
+  - the card of `.github` in `docs/architecture.md` — only the part on `infra` changed;
 - **what did not change for the workflows of `.github`.** The recipes `docs-check-repo`, `licenses-allowed`, `licenses-check-repo`, `release-version`, `release-refusal` and `release-verify` have the same parameters, and `tools/toolchain/` and `tools/docs-check/` did not change. `tools/release/verify.mjs`, beyond what it took before, takes the files of `spec` `admission-<version>.tar.gz` and `altnovatrail-contracts-<version>.tgz`. `tools/licenses/main.mjs` only moved `inRepository` to `tools/shared.mjs`. The recipe on a real file — measurements 5.8;
 - **what `spec` hands to `.github`** (RUN.md of `spec` v0.9.8, table 4):
   - Д69 — the answer to В35: the comment of the step "Check the npm package" of the `release.yml` of `spec` says, as the shared step does, that the number of a package unpublished whole stays a key in `time`;
-  - Д80 — the `paths` list of the kind modules in the template, and in CONTRIBUTING that only the eval-set organizer brings in eval-set samples (the 2026-11-02 amendment to R25 spec; concepts 15 spec). Both «своим переходом»;
+  - Д80 — the `paths` list of the kind modules in the template, and in CONTRIBUTING that only the eval-set organizer brings in eval-set samples. Both «своим переходом»;
   - Д88 — a group `groups` for the references `altnovatrail/.github/*` in the template `dependabot.yml`, «своим релизом»;
-  - Д91 — the step "Publish to npm" waits for the version in the registry for up to 20 minutes, with `timeout-minutes` to fit (the 2026-11-02 amendment to R37 spec), «своей задачей»;
-  - Д114 — the options of the shared `go.yml`: runs on the targets, the difference check `fma-diff`, a job on `ubuntu-24.04-arm`, and then the shared test of the rules of code (R107 spec), «своей задачей»;
+  - Д91 — the step "Publish to npm" waits for the version in the registry for up to 20 minutes, with `timeout-minutes` to fit, «своей задачей»;
+  - Д114 — the options of the shared `go.yml`: runs on the targets, the difference check `fma-diff`, a job on `ubuntu-24.04-arm`, and then the shared test of the rules of code, «своей задачей»;
 - **COORDINATION.md of `spec` v0.9.8.** Item 2 is closed: the row 2.3 is «2026-11-02, pull request 88–91, релизы `v0.1.14` и `v0.1.15`». In «Состоянии», `.github` has the submodule v0.6.3, the release v0.1.15 and «нет: E11 сделан, таблица 2 пуста». Of Д5 it says that it «ждёт теперь одного `infra`».
 
-Read 2026-11-08 (the 2026-11-08 amendment to R18, T44):
-- **the 2026-11-02 amendment to R37 spec** — the limit of 20 minutes. The registry checks a package before serving it: "introduces a short delay between publishing and availability, typically around five minutes. It may take longer, up to 15 minutes or more, at peak times or depending on a package's content and size" ([GitHub Changelog, npm publish-time malware scanning, 2026-07-28](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/), as quoted by the amendment, which read it 2026-11-02);
-- **the second 2026-11-03 amendment to R37 spec** — the archive. «Версия в реестре доступна, когда документ пакета её показал и реестр отдаёт её архив». For the release of `spec` v0.7.2 the document showed 0.7.2 at 04:17:35 UTC, while the archive answered 404 until 04:22:50. Before T44 the shared step downloaded the archive by a single `curl -fsSL --retry 3`, which does not retry a 404 — the same race;
+Read 2026-11-08:
+- **the decision of `spec` on the wait for npm** — the limit of 20 minutes. The registry checks a package before serving it: "introduces a short delay between publishing and availability, typically around five minutes. It may take longer, up to 15 minutes or more, at peak times or depending on a package's content and size" ([GitHub Changelog, npm publish-time malware scanning, 2026-07-28](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/), a quote the log of `spec` took on 2026-11-02);
+- **the same decision, on the archive.** «Версия в реестре доступна, когда документ пакета её показал и реестр отдаёт её архив». For the release of `spec` v0.7.2 the document showed 0.7.2 at 04:17:35 UTC, while the archive answered 404 until 04:22:50. Before then the shared step downloaded the archive by a single `curl -fsSL --retry 3`, which does not retry a 404 — the same race;
 - **the step "Publish to npm" of the `release.yml` of `spec` v0.9.8** — rounds every 10 seconds, `deadline=$((SECONDS + 1200))` and no more than 120 rounds. The document — `curl -sS --proto "=https" --retry 3 --max-time 30`, the archive — `curl -sS --proto "=https" --proto-redir "=https" -L --max-time 60`, without a retry. A package on which npm failed is looked for in three rounds, until the document shows it. The shared step took this for one package, with the same error messages.
 
-Read 2026-11-08 (the 2026-11-08 amendment to R08):
+Read 2026-11-08:
 - **the script** — `spec/tools/toolchain/toolchain.sh` v0.9.8: "toolchain.sh build" — "build the stage as the image novatrail-toolchain", "toolchain.sh spec [--dry-run] <recipe>" — "run one of spec's recipes, from spec's justfile". The command runs as the runner's user, with its home in `/tmp`, the repository's root in `/work`, and `RUNNER_TEMP` read-only.
 
 ### 12.9. `spec` v0.9.9
 
-Read 2026-11-08 (R34, T51):
+Read 2026-11-08:
 - **the tag** — v0.9.9, commit fa5da0b, came out 2026-11-08 at 16:03 UTC and became the newest release of `spec`. `gh release view` — immutable, and `gh release verify v0.9.9 -R altnovatrail/spec` — "Release v0.9.9 verified!";
 - **what changed** (`git diff --stat v0.9.8 v0.9.9`) — 13 files: COORDINATION.md, RUN.md, `docs/`, `format/README.md` and the example of traps, `tools/contracts/report.mjs` and `tools/docs-check/citations.mjs` with their tests. `.devcontainer/`, RULES.md, `justfile` and `tools/toolchain/` did not change;
-- **card 3.11 spec** — the item «для кода» names the input `same-bits` of the Go wrapper: runs on the targets, `fma-diff`, a run on arm64 and the test of the rules of code by the tool of `.github` with the caller's lists in `.github/coderules.json`. Table 5 of RUN.md `spec` recorded the answer to В36 `.github` — card 3.11 spec and Д116;
+- **the card of `.github`** — the item «для кода» names the input `same-bits` of the Go wrapper: runs on the targets, `fma-diff`, a run on arm64 and the test of the rules of code by the tool of `.github` with the caller's lists in `.github/coderules.json`. Table 5 of the RUN.md of `spec` recorded the answer to В36 `.github` — the card and Д116;
 - **COORDINATION.md of `spec` v0.9.9** — in «Состоянии», `.github` has the submodule v0.9.8, the release v0.1.21 and «нет: E12–E15 сделаны, таблица 2 пуста».
 
 ### 12.10. `spec` v0.12.0
 
-Read 2026-11-09 (R35):
+Read 2026-11-09:
 - **the tag** — v0.12.0, commit 5b4640a, came out 2026-11-09 at 19:38 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.12.0 -R altnovatrail/spec` — "Release v0.12.0 verified!";
 - **what changed** (`git diff --stat v0.9.9 v0.12.0`) — 56 commits, 756 files: format 0.4 (v0.10.0), the part `deployment/` (v0.11.0), the admission table 0.2 (v0.12.0), the contracts, the types, `repo-template/` and `tools/new-repo/`, `justfile` and `tools/release/`. `.devcontainer/`, RULES.md, `tools/toolchain/`, `tools/docs-check/` and `tools/licenses/` did not change;
-- **COORDINATION.md of `spec` v0.12.0** — in «Состоянии», `.github` has the submodule v0.9.9, the release v0.1.21 and «нет: таблица 2 пуста»; the row 2.4 is «задачи ещё нет»: the cache of the image of the `toolchain` stage in `go.yml`, `typescript.yml` and `documents.yml`, with no cache in the shared `release.yml`, and a release of `.github` (the 2026-11-09 amendment to R31 spec; Д146 in RUN.md `spec`). T104 `spec`, the cache in `toolchain.sh`, is not yet done at v0.12.0.
+- **COORDINATION.md of `spec` v0.12.0** — in «Состоянии», `.github` has the submodule v0.9.9, the release v0.1.21 and «нет: таблица 2 пуста»; the row 2.4 is «задачи ещё нет»: the cache of the image of the `toolchain` stage in `go.yml`, `typescript.yml` and `documents.yml`, with no cache in the shared `release.yml`, and a release of `.github` (Д146 in the RUN.md of `spec`). The cache in `toolchain.sh` is not yet in `spec` at v0.12.0.
 
 ### 12.11. `spec` v0.13.0
 
-Read 2026-11-10 (R37):
+Read 2026-11-10:
 - **the tag** — v0.13.0, commit 59fd14f, came out 2026-11-10 at 00:27 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.13.0 -R altnovatrail/spec` — "Release v0.13.0 verified!";
-- **T104 `spec`** (RUN.md `spec`, «Сделано (2026-11-09)»; commit 82411a5) — `tools/toolchain/toolchain.sh`: "The image may come from a file of docker save, which the caller keeps in the cache of GitHub Actions by the sha256 of the Dockerfile (R31): TOOLCHAIN_IMAGE_FILE names it, its whole path. Unset or empty, build builds the stage, as ever". The docker calls — "load --quiet --input <file>, image inspect novatrail-toolchain, build as above, save --output <file> novatrail-toolchain". The warning is a line `::warning::toolchain.sh: …` in stdout without the path, and the path is a line in stderr;
+- **the cache in `toolchain.sh`** (commit 82411a5) — `tools/toolchain/toolchain.sh`: "The image may come from a file of docker save, which the caller keeps in the cache of GitHub Actions by the sha256 of the Dockerfile …: TOOLCHAIN_IMAGE_FILE names it, its whole path. Unset or empty, build builds the stage, as ever". The docker calls — "load --quiet --input <file>, image inspect novatrail-toolchain, build as above, save --output <file> novatrail-toolchain". The warning is a line `::warning::toolchain.sh: …` in stdout without the path, and the path is a line in stderr;
 - **what else changed** (`git diff --stat v0.12.0 v0.13.0`) — 102 files: the legal texts (`legal/`), the DPIA, the `ci.yml` and `release.yml` of `spec`, `justfile`, `tools/docs-check/config.mjs` — the document `docs/dpia.md`. `.devcontainer/`, RULES.md and `tools/licenses/` did not change;
-- **COORDINATION.md of `spec` v0.13.0** — the row 2.4: «E17: T52 сделана, T53 ждёт; ветка `e17`, черновой pull request 109».
+- **COORDINATION.md of `spec` v0.13.0** — the row 2.4: the epic E17 of `.github` half done, on the branch `e17`, the draft pull request 109.
 
-Read 2026-11-10 (the 2026-11-10 amendment to R36, T53):
+Read 2026-11-10:
 - **the script** — `spec/tools/toolchain/toolchain.sh` v0.13.0: "TOOLCHAIN_IMAGE_FILE names it, its whole path. Unset or empty, build builds the stage, as ever"; the warning about a file that did not give the image — "::warning::toolchain.sh: the file of TOOLCHAIN_IMAGE_FILE did not give the image novatrail-toolchain, so it is built. The cache entry that held the file is broken and stays: delete it, or it is hit again";
-- **the path** — the `ci.yml` of `spec` v0.13.0 keeps the file in `${{ runner.temp }}/novatrail-toolchain.tar` under the same key as `go.yml` (RUN.md `spec`, T104, «Сделано»).
+- **the path** — the `ci.yml` of `spec` v0.13.0 keeps the file in `${{ runner.temp }}/novatrail-toolchain.tar` under the same key as `go.yml`.
 
 ### 12.12. `spec` v0.16.3
 
-Read 2026-11-12 (R38, T54):
+Read 2026-11-12:
 - **the tag** — v0.16.3, commit 664398e, the merge of pull request 138 of `spec`, came out 2026-11-12 at 20:17 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.16.3 -R altnovatrail/spec` — "Release v0.16.3 verified!";
 - **what changed** (`git diff --stat v0.13.0 v0.16.3`) — 77 commits, 302 files: RULES.md, CLAUDE.md and the rules `.claude/rules/` of `spec`, `docs/` in English with `docs/sources.md` and `docs/measurements.md`, `DEBT.md`, the parts `consent-age/` and `export/`, `legal/` of version 2, the contracts, `repo-template/`, `tools/docs-check/`, `tools/session/`, `tools/tokens/`, `tools/translation/`, `tools/release/` and `.devcontainer/Dockerfile` — Go 1.27.4. `tools/toolchain/` did not change;
 - **Go 1.27.4** — the sums of the archives by `https://go.dev/dl/?mode=json`: `linux-amd64` — `7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840`, `linux-arm64` — `3392582988a273a87ab5043ee1b2c9c17a2c3c00580bf9326c47a2e0aaaeac92`, the same as in the Dockerfile of `spec` v0.16.3.
 
 ### 12.13. `spec` v0.18.3
 
-Read 2026-11-16 (T59):
+Read 2026-11-16:
 - **the tag** — v0.18.3, commit 922886a, the merge of pull request 162 of `spec`, came out 2026-11-16 at 00:42 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.3 -R altnovatrail/spec` — "Release v0.18.3 verified!";
 - **what changed** (`git log --oneline v0.16.3..v0.18.3`, `git diff --stat v0.16.3 v0.18.3`) — 77 commits, 258 files: RULES.md, `repo-template/` — RUN.md in English, the tables in `run/`, the alias in the network —, `run/` of `spec` itself, `.devcontainer/` — the base image `devcontainers/base:3.0.13-noble` and the stage `orchestrator` —, `tools/docs-check/` — the layout of `run/` and the key `entries` —, `tools/session/`, `tools/new-repo/` and the new `tools/orchestrator/` and `tools/mockup/`. `tools/toolchain/` adds a test alone, and `tools/licenses/` did not change;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag: Д88, Д134, Д146, Д195, Д213, Д217, Д236 and Д250; table 5 of `run/INBOX.md` answers В37 and В38 by T149; row 7.13 of COORDINATION.md is `.github`'s, «задачи нет».
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag: Д88, Д134, Д146, Д195, Д213, Д217, Д236 and Д250; table 5 of `run/INBOX.md` answers В37 and В38; row 7.13 of COORDINATION.md is `.github`'s, «задачи нет».
 
 ### 12.14. `spec` v0.18.4
 
-Read 2026-11-16 (R46, T67):
-- **the tag** — v0.18.4, commit 5867a6c, the merge of pull request 163 of `spec` (T166 `spec`), came out 2026-11-16 at 07:08 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.4 -R altnovatrail/spec` — "Release v0.18.4 verified!";
-- **what changed** (`git log --oneline v0.18.3..v0.18.4`, `git diff --stat v0.18.3 v0.18.4`) — 4 commits, 29 files: `.devcontainer/Dockerfile` — the stage `toolchain-core`, Node, just, Go and buf, and `toolchain` built `FROM toolchain-core` —, `repo-template/kinds/typescript.Dockerfile` — apt from a source of the snapshot alone —, `tools/toolchain/toolchain.sh` — the variable `TOOLCHAIN_STAGE` —, `tools/coverage/`, the recipe `coverage-part`, `ci.yml` and `release.yml` of `spec` itself, `run/TASKS.md`, COORDINATION.md and four amendments in `docs/decisions.md`, to R30 spec, R31 spec, R40 spec and R48 spec. RULES.md, `run/DEBT.md`, `docs/architecture.md` and `repo-template/files/` did not change;
-- **the 2026-11-16 amendment to R31 spec** — "the release builds the stage `toolchain-core` of `.devcontainer/Dockerfile` — Node, just, Go and buf —, from the Dockerfile and with no cache, as before. The stage `toolchain` is built over it with what the repository's tests need […] `toolchain.sh build` takes the stage from the environment variable `TOOLCHAIN_STAGE`: unset, empty or `toolchain` — `toolchain`, as before; `toolchain-core` — that stage, and a Dockerfile that has no such stage gets `toolchain`, with a notice; any other value stops the script.";
-- **the rows of `.github`** — COORDINATION.md: row 7.13, «задачи нет; текст — в T166 `spec`», with «Зависит от» «—», and «Строку 7.14 `spec` закрыла T166»; ``grep -n '`.github`' run/DEBT.md`` of the tag gives the same rows as v0.18.3 (sources 12.13).
+Read 2026-11-16:
+- **the tag** — v0.18.4, commit 5867a6c, the merge of pull request 163 of `spec`, came out 2026-11-16 at 07:08 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.4 -R altnovatrail/spec` — "Release v0.18.4 verified!";
+- **what changed** (`git log --oneline v0.18.3..v0.18.4`, `git diff --stat v0.18.3 v0.18.4`) — 4 commits, 29 files: `.devcontainer/Dockerfile` — the stage `toolchain-core`, Node, just, Go and buf, and `toolchain` built `FROM toolchain-core` —, `repo-template/kinds/typescript.Dockerfile` — apt from a source of the snapshot alone —, `tools/toolchain/toolchain.sh` — the variable `TOOLCHAIN_STAGE` —, `tools/coverage/`, the recipe `coverage-part`, `ci.yml` and `release.yml` of `spec` itself, `run/TASKS.md`, COORDINATION.md and four decisions changed in `docs/decisions.md`. RULES.md, `run/DEBT.md`, `docs/architecture.md` and `repo-template/files/` did not change;
+- **the decision of `spec` on the stage the release builds** — "the release builds the stage `toolchain-core` of `.devcontainer/Dockerfile` — Node, just, Go and buf —, from the Dockerfile and with no cache, as before. The stage `toolchain` is built over it with what the repository's tests need […] `toolchain.sh build` takes the stage from the environment variable `TOOLCHAIN_STAGE`: unset, empty or `toolchain` — `toolchain`, as before; `toolchain-core` — that stage, and a Dockerfile that has no such stage gets `toolchain`, with a notice; any other value stops the script.";
+- **the rows of `.github`** — COORDINATION.md: row 7.13, «задачи нет», with «Зависит от» «—», and the row 7.14 closed by `spec`; ``grep -n '`.github`' run/DEBT.md`` of the tag gives the same rows as v0.18.3 (sources 12.13).
 
 ### 12.15. `spec` v0.18.6
 
-Read 2026-11-16 (R48, T68):
-- **the tag** — v0.18.6, commit bf3dce9, the merge of pull request 167 of `spec` (T172–T177 `spec`), came out 2026-11-16 at 21:26 UTC, and v0.18.5, the merge of pull request 166 (T171 `spec`), at 18:46 UTC; `gh release list` calls v0.18.6 "Latest", and `gh release verify v0.18.6 -R altnovatrail/spec` — "Release v0.18.6 verified!";
+Read 2026-11-16:
+- **the tag** — v0.18.6, commit bf3dce9, the merge of pull request 167 of `spec`, came out 2026-11-16 at 21:26 UTC, and v0.18.5, the merge of pull request 166, at 18:46 UTC; `gh release list` calls v0.18.6 "Latest", and `gh release verify v0.18.6 -R altnovatrail/spec` — "Release v0.18.6 verified!";
 - **what changed** (`git log --oneline v0.18.4..v0.18.6`, `git diff --stat v0.18.4 v0.18.6`) — 14 commits, 59 files, among them `.devcontainer/Dockerfile` — the comment of the stage `toolchain` —, `.devcontainer/devcontainer.json` — `shutdownAction` —, `tools/session/`, `tools/orchestrator/`, `tools/docs-check/`, `tools/inbox/`, `tools/new-repo/devcontainer.mjs`, `repo-template/kinds/go/Dockerfile` — a comment —, RULES.md, `run/DEBT.md`, `run/INBOX.md`, COORDINATION.md and `docs/decisions.md`; the others are `spec`'s own plan, documents and tools — its RUN.md, CLAUDE.md, `.claude/rules/tools.md`, `docs/`, `tools/tokens/` and the tests. `repo-template/files/`, `tools/toolchain/toolchain.sh` and `tools/licenses/` did not change, and the justfile changed comments alone;
-- **the 2026-11-16 amendment of T175 to R156 spec** — "spec's `.devcontainer/devcontainer.json`, which every repository's copies, sets `"shutdownAction": "none"`: closing a window of VS Code no longer stops a container under a running executor (sources 9.4), and `docker stop` ends one; a repository takes it with its move to a tag.";
-- **the 2026-11-16 amendment of T175 to R143 spec** — "the hook of `tools/session/` counts the numbers of `NOVATRAIL_RUN_TASKS` as one task […] A repository runs the hook from its `spec/` submodule, so this holds there from its move to a tag that has it.";
-- **the comment of the stage `toolchain`** (T176 `spec`) — "What the repository's tests need beyond the core: in spec, nothing; in a copy, the lines its kind adds at the end of this stage, if it adds any. What they install, a release never builds, and neither do the checks that run no browser: what the release and those ci- recipes call belongs in toolchain-core.";
-- **table 5 of `spec`**, `run/INBOX.md` — "| `.github` | В39 | `0bdd5bea10d9` | T176 `run/TASKS.md`: one sentence for spec and every copy (author 2026-11-16, T172) |" and "| `.github` | В40 | `10c52b8885da` | T176: the heading of `toolchain` says the core holds what the release and the `ci-` recipes run; rows 7.15–7.25 are closed, every caller moved green (T171) |";
-- **the rows of `.github`** — COORDINATION.md, point 2: «Следующая — 2.6», and row 2.5, «задачи нет: по тексту T172», «составное действие (composite action) `.github` — образ `toolchain` и кеши Go из кеша и их сохранение на `main`, шаги job `arm64` общего `go.yml`, — которым пользуется и сам `go.yml`»; point 7: «Открытых строк нет: строки скорости CI, 7.13–7.25, сделаны — 7.14 в T166, остальные в T171»; the 2026-11-16 amendment of T171 to R156 spec — "the repositories took it with their moves to that tag, v0.1.31". ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.4 but for Д250, which T177 `spec` closed.
+- **the decision of `spec` on its orchestrator**, on the devcontainer — "spec's `.devcontainer/devcontainer.json`, which every repository's copies, sets `"shutdownAction": "none"`: closing a window of VS Code no longer stops a container under a running executor (sources 9.4), and `docker stop` ends one; a repository takes it with its move to a tag.";
+- **the decision of `spec` on one task a session** — "the hook of `tools/session/` counts the numbers of `NOVATRAIL_RUN_TASKS` as one task […] A repository runs the hook from its `spec/` submodule, so this holds there from its move to a tag that has it.";
+- **the comment of the stage `toolchain`** — "What the repository's tests need beyond the core: in spec, nothing; in a copy, the lines its kind adds at the end of this stage, if it adds any. What they install, a release never builds, and neither do the checks that run no browser: what the release and those ci- recipes call belongs in toolchain-core.";
+- **table 5 of `spec`**, `run/INBOX.md` — the rows of `.github` В39, `0bdd5bea10d9`, "one sentence for spec and every copy", and В40, `10c52b8885da`, "the heading of `toolchain` says the core holds what the release and the `ci-` recipes run; rows 7.15–7.25 are closed, every caller moved green";
+- **the rows of `.github`** — COORDINATION.md, point 2: «Следующая — 2.6», and row 2.5, «задачи нет», «составное действие (composite action) `.github` — образ `toolchain` и кеши Go из кеша и их сохранение на `main`, шаги job `arm64` общего `go.yml`, — которым пользуется и сам `go.yml`»; point 7: «Открытых строк нет: строки скорости CI, 7.13–7.25, сделаны»; the decision of `spec` on its orchestrator — "the repositories took it with their moves to that tag, v0.1.31". ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.4 but for Д250, which `spec` closed.
 
 ### 12.16. `spec` v0.18.14
 
-Read 2026-11-17 (R50, T71):
-- **the tag** — v0.18.14, commit 20e6384, the merge of pull request 175 of `spec` (T185 `spec`), came out 2026-11-17 at 06:02 UTC, after v0.18.7–v0.18.13 of the same night; `gh release list` calls it "Latest", `gh release view` — immutable, and `gh release verify v0.18.14 -R altnovatrail/spec` — "Release v0.18.14 verified!";
+Read 2026-11-17:
+- **the tag** — v0.18.14, commit 20e6384, the merge of pull request 175 of `spec`, came out 2026-11-17 at 06:02 UTC, after v0.18.7–v0.18.13 of the same night; `gh release list` calls it "Latest", `gh release view` — immutable, and `gh release verify v0.18.14 -R altnovatrail/spec` — "Release v0.18.14 verified!";
 - **what changed** (`git log --oneline v0.18.6..v0.18.14`, `git diff --stat v0.18.6 v0.18.14`) — 25 commits, 36 files, among them RULES.md — a phrase of Language —, `repo-template/files/README.md` and `RUN.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md`, `docs/architecture.md` and the contracts of `ProgressService` and `cause.proto`. `.devcontainer/`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/`, `tools/toolchain/` and `tools/licenses/` did not change;
-- **RULES.md, Language** — "Commit messages and a pull request's title and description are in English and terse, for the session that reads them, and reports to the author are in Russian (the 2026-11-17 amendment to R14 spec).";
+- **RULES.md, Language** — "Commit messages and a pull request's title and description are in English and terse, for the session that reads them, and reports to the author are in Russian.";
 - **the template's RUN.md, rule 10** — "commit messages and a pull request's title and description in English and terse, for the session, never a copy of the report.";
-- **the 2026-11-17 amendment of T184 to R14 spec** — "commit messages and a pull request's title and description are in English and terse, in every NovaTrail repository, and the report to the author stays in Russian. […] Every other repository takes the rule with its next move to a tag of `spec`.";
-- **R22 spec, Languages** — "Issues and pull requests are written in English or in Russian: R14 speaks of files, not of correspondence.", with no amendment of 2026-11-17;
-- **the card 3.11 spec** — one line changed, of `infra`: "and the reading mode as `API_READING_MODE` — on `novatrail` `single`, one reader";
+- **the decision of `spec` on language** — "commit messages and a pull request's title and description are in English and terse, in every NovaTrail repository, and the report to the author stays in Russian. […] Every other repository takes the rule with its next move to a tag of `spec`.";
+- **the decision of `spec` on the languages of correspondence** — "Issues and pull requests are written in English or in Russian", unchanged that day;
+- **the card of `.github`** — one line changed, of `infra`: "and the reading mode as `API_READING_MODE` — on `novatrail` `single`, one reader";
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.6: Д88, Д134, Д146, Д195, Д213, Д217 and Д236; COORDINATION.md, point 2: «Следующая — 2.6», its rows unchanged.
 
 ### 12.17. `spec` v0.18.27
 
-Read 2026-11-18 (R51, T76):
-- **the tag** — v0.18.27, commit 49686e7, the merge of pull request 188 of `spec` (T199 `spec`), came out 2026-11-18 at 01:16 UTC; the API's latest release is v0.18.27, `gh release view` calls it immutable, and `gh release verify v0.18.27 -R altnovatrail/spec` — "Release v0.18.27 verified!";
-- **what changed** (`git log --oneline v0.18.14..v0.18.27`, `git diff --stat v0.18.14 v0.18.27`) — 38 commits, 56 files, T187–T199 `spec`; among them RULES.md — a rule of How we work and the phrase of Language —, `repo-template/files/README.md`, `files/docs/README.md`, new, and `files/CLAUDE.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, `tools/tokens/`, `.devcontainer/Dockerfile` — the stage `orchestrator` and the heading's comment on it —, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md` and `docs/architecture.md`. `repo-template/files/RUN.md`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/main.mjs`, `tools/toolchain/toolchain.sh` and `tools/licenses/` did not change;
-- **RULES.md, How we work** — "A run longer than a few minutes — tests, a simulation, a build, CI — goes to the background, and the session waits for its notification or a Monitor of its condition, never a `sleep` loop in the foreground: each call that polls rereads the whole context (R143 spec).";
-- **RULES.md, Language** — "Commit messages, issues and a pull request's title and description are in English, a person's too, and a session's are terse, for the session that reads them; reports to the author are in Russian (the 2026-11-17 amendments to R14 spec).";
-- **the second 2026-11-17 amendment to R21 spec** — "the README of a repository — spec's, the template's and so every copy's — is its title, its badges (R48) and a description alone: one to three paragraphs of what the component is and why, and its place in NovaTrail's architecture […] It has no other section and no command, code block or instruction, and names no status, version, date, number or language. What it held before goes to `docs/README.md`, the index of `docs/` […]", and "Each of `module-kit`, `learner-model`, `engine`, `tutor`, `canvas`, `app`, `api` and `skill-map` does its part in a task of its own in the same run; the author named no other repository.";
-- **the second 2026-11-17 amendment to R14 spec and the 2026-11-17 amendment to R22 spec** — the same text as at v0.18.26, commit fdb0072: `git diff fdb0072 v0.18.27 -- docs/decisions.md` adds one amendment, to `tokens-report`;
+Read 2026-11-18:
+- **the tag** — v0.18.27, commit 49686e7, the merge of pull request 188 of `spec`, came out 2026-11-18 at 01:16 UTC; the API's latest release is v0.18.27, `gh release view` calls it immutable, and `gh release verify v0.18.27 -R altnovatrail/spec` — "Release v0.18.27 verified!";
+- **what changed** (`git log --oneline v0.18.14..v0.18.27`, `git diff --stat v0.18.14 v0.18.27`) — 38 commits, 56 files; among them RULES.md — a rule of How we work and the phrase of Language —, `repo-template/files/README.md`, `files/docs/README.md`, new, and `files/CLAUDE.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, `tools/tokens/`, `.devcontainer/Dockerfile` — the stage `orchestrator` and the heading's comment on it —, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md` and `docs/architecture.md`. `repo-template/files/RUN.md`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/main.mjs`, `tools/toolchain/toolchain.sh` and `tools/licenses/` did not change;
+- **RULES.md, How we work** — "A run longer than a few minutes — tests, a simulation, a build, CI — goes to the background, and the session waits for its notification or a Monitor of its condition, never a `sleep` loop in the foreground: each call that polls rereads the whole context.";
+- **RULES.md, Language** — "Commit messages, issues and a pull request's title and description are in English, a person's too, and a session's are terse, for the session that reads them; reports to the author are in Russian.";
+- **the decision of `spec` on the README** — "the README of a repository — spec's, the template's and so every copy's — is its title, its badges … and a description alone: one to three paragraphs of what the component is and why, and its place in NovaTrail's architecture […] It has no other section and no command, code block or instruction, and names no status, version, date, number or language. What it held before goes to `docs/README.md`, the index of `docs/` […]", and "Each of `module-kit`, `learner-model`, `engine`, `tutor`, `canvas`, `app`, `api` and `skill-map` does its part in a task of its own in the same run; the author named no other repository.";
+- **the decisions of `spec` on language and on the languages of correspondence** — the same text as at v0.18.26, commit fdb0072: `git diff fdb0072 v0.18.27 -- docs/decisions.md` changes one decision more, on `tokens-report`;
 - **`tokens-report --row`** — an eighth column, "Context of a main call among its session's first 80, k", the header of measurements 1.9 spec;
-- **the card 3.11 spec** — one line added under the shared workflows: "beside them, the shared composite action `toolchain`, `.github/actions/toolchain` […] (R49 .github)";
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217; Д134, Д195 and Д236 are deleted. Table 5, `run/INBOX.md`: `.github` В41 — option 1, the card `.github` of `architecture 3.11` in `spec` — "the composite action `toolchain` (R49 .github)", В43 — "T194 (В45), option 1: Д134, Д195 and Д236 closed — done in every repository they named, checked on `main` 2026-11-17". COORDINATION.md, point 2: «Следующая — 2.8», rows 2.6 and 2.7 still `[ ]` with «задачи нет».
+- **the card of `.github`** — one line added under the shared workflows: "beside them, the shared composite action `toolchain`, `.github/actions/toolchain` […]";
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217; Д134, Д195 and Д236 are deleted. Table 5, `run/INBOX.md`: `.github` В41 — option 1, the card of `.github` in `spec` names "the composite action `toolchain`", В43 — option 1, "Д134, Д195 and Д236 closed — done in every repository they named, checked on `main` 2026-11-17". COORDINATION.md, point 2: «Следующая — 2.8», rows 2.6 and 2.7 still `[ ]` with «задачи нет».
 
 ### 12.18. `spec` v0.19.4
 
-Read 2026-11-20 (T82):
+Read 2026-11-20:
 - **the tag** — v0.19.4, commit 2dad96a, the merge of pull request 210 of `spec` (E18 `spec`), came out 2026-11-20 at 20:54 UTC; the API's latest release is v0.19.4, `gh release view` calls it immutable, and `gh release verify v0.19.4 -R altnovatrail/spec` — "Release v0.19.4 verified!";
-- **what changed** (`git log --oneline v0.18.34..v0.19.4`, `git diff --stat v0.18.34 v0.19.4`) — 90 commits, 330 files, T207–T243 `spec`; for a copy: `.devcontainer/devcontainer.json` — the mount `"source=${localWorkspaceFolder}/../.epics,target=/workspaces/.epics,type=bind"` "(R166 spec)" and `"initializeCommand": "bash .devcontainer/host-network.sh && mkdir -p ../.epics"`, "since Docker refuses a missing bind source" (T242 `spec`); `.devcontainer/Dockerfile` — shorter comments; `repo-template/files/docs-budgets.json` — `{}`, "the block holds `entry` 12 and `"comments": true`" (`repo-template/README.md`); RULES.md, How we work — "Plan for the fewest pull requests and rounds of CI (R159 spec)" and "a task across repositories pushes each change and ships on the author's «да» (R166 spec)"; `repo-template/files/RUN.md` — the tag alone;
-- **the card 3.11 spec** — citations of amendments become citations of their entries, as "(R22)" for "(the 2026-11-01 amendment to R22)"; nothing of what `.github` does changes;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217. Д217 names "Pending: `skill-map`", and its column "When to return" still "`skill-map` and `.github` moves to a tag with T141". Table 5, `run/INBOX.md`: `.github` В44 — "T218 (В73), option (1): `.github` leaves Д217, which keeps `skill-map` alone".
+- **what changed** (`git log --oneline v0.18.34..v0.19.4`, `git diff --stat v0.18.34 v0.19.4`) — 90 commits, 330 files; for a copy: `.devcontainer/devcontainer.json` — the mount `"source=${localWorkspaceFolder}/../.epics,target=/workspaces/.epics,type=bind"` and `"initializeCommand": "bash .devcontainer/host-network.sh && mkdir -p ../.epics"`, "since Docker refuses a missing bind source"; `.devcontainer/Dockerfile` — shorter comments; `repo-template/files/docs-budgets.json` — `{}`, "the block holds `entry` 12 and `"comments": true`" (`repo-template/README.md`); RULES.md, How we work — "Plan for the fewest pull requests and rounds of CI" and "a task across repositories pushes each change and ships on the author's «да»"; `repo-template/files/RUN.md` — the tag alone;
+- **the card of `.github`** — citations of amendments become citations of their entries; nothing of what `.github` does changes;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217. Д217 names "Pending: `skill-map`", and its column "When to return" still "`skill-map` and `.github` moves to a tag …". Table 5, `run/INBOX.md`: `.github` В44 — option (1), "`.github` leaves Д217, which keeps `skill-map` alone".
 
 ### 12.19. `spec` v0.19.11
 
 Read 2026-11-23:
 - **the tag** — v0.19.11, commit 3ad433a, the merge of pull request 217 of `spec` (E22 `spec`), came out 2026-11-23 at 05:38 UTC; the API's latest release is v0.19.11, `gh release view` calls it immutable, and `gh release verify v0.19.11 -R altnovatrail/spec` — "Release v0.19.11 verified!";
-- **what changed** (`git log --oneline v0.19.4..v0.19.11`, `git diff --stat v0.19.4 v0.19.11`) — 65 commits, 97 files; for a copy: RULES.md, Citations — "A citation stands only where its reader will follow it to act, one to a claim … Task numbers and dated amendments stand only in RUN.md, `run/` and `docs/plan/` (R171 spec)", and How we work — "no dated amendment is written (R160 spec)"; `repo-template/files/docs-budgets.json` — `"citations": true`, "the rule of citations checked" (`repo-template/README.md`; R171 spec); the template's CLAUDE.md, RUN.md (rule 10, «Citations»), `docs/README.md`, the openings of `docs/decisions.md`, `docs/sources.md` and `run/QUESTIONS.md` — the same rule; `.devcontainer/` and `.claude/` — no change; row 7.38 of COORDINATION.md — `.github`, no task there yet, the citations by R171 spec, on a tag of `spec` with T258 or newer;
-- **the card 3.11 spec** — no change;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories; Д217's column "When to return" reads "`skill-map` moves to a tag with T141". Table 5, `run/INBOX.md`: `.github` В45 — "T246, option (1): Д217's «When to return» names `skill-map` alone".
+- **what changed** (`git log --oneline v0.19.4..v0.19.11`, `git diff --stat v0.19.4 v0.19.11`) — 65 commits, 97 files; for a copy: RULES.md, Citations — "A citation stands only where its reader will follow it to act, one to a claim … Task numbers and dated amendments stand only in RUN.md, `run/` and `docs/plan/`", and How we work — "no dated amendment is written"; `repo-template/files/docs-budgets.json` — `"citations": true`, "the rule of citations checked" (`repo-template/README.md`); the template's CLAUDE.md, RUN.md (rule 10, «Citations»), `docs/README.md`, the openings of `docs/decisions.md`, `docs/sources.md` and `run/QUESTIONS.md` — the same rule; `.devcontainer/` and `.claude/` — no change; row 7.38 of COORDINATION.md — `.github`, no task there yet, the citations by the new rule, on a tag of `spec` that checks it or newer;
+- **the card of `.github`** — no change;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories; Д217's column "When to return" reads "`skill-map` moves to a tag …". Table 5, `run/INBOX.md`: `.github` В45 — option (1), "Д217's «When to return» names `skill-map` alone".
 
 ### 12.20. `spec` v0.19.12
 
@@ -848,44 +848,44 @@ Read 2026-11-23:
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
 
-Read 2026-11-01 (R25, T31):
+Read 2026-11-01:
 - **the callers of `documents.yml`** (Д5 in RUN.md) — `ci.yml` and the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` — v0.2.9; `module-kit` — v0.2.13; `canvas` — v0.2.42; `tutor` — v0.3.3. They call `documents.yml` by the SHA of v0.1.0, and `tutor` by that of v0.1.5 and `canvas` of v0.1.10.
 
-Read 2026-11-02 (R30, T38):
+Read 2026-11-02:
 - **the callers of `documents.yml`** (Д5 in RUN.md; 2026-11-02) — the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `canvas` v0.4.1, `tutor` v0.5.4. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
+Read 2026-11-02:
 - **the callers of `documents.yml`** (Д5 in RUN.md) — the `spec` submodule on the `main` of each, the GitHub API: `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `api`, `app`, `canvas` and `tutor` v0.6.2. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
 
-Read 2026-11-08 (R32, T43):
+Read 2026-11-08:
 - **the callers of `documents.yml`** (Д5 in RUN.md) — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, `canvas` — v0.6.5, `app` — v0.6.6, `module-kit` — v0.9.3, `api` — v0.9.4, `learner-model`, `modules` and `tutor` — v0.9.5, and `engine`, `sim` and `skill-map` — v0.9.8. The tag is named by the submodule's commit: the tags `vX.Y.Z` and `contracts/vX.Y.Z` stand on one commit.
 
-Read 2026-11-08 (the 2026-11-08 amendment to R08):
+Read 2026-11-08:
 - **the callers** — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, and the other ten — v0.6.6 or newer: `app` — v0.6.6, `api` — v0.9.4, `learner-model` and `tutor` — v0.9.5, `canvas`, `engine`, `module-kit`, `modules`, `sim` and `skill-map` — v0.9.8. `infra` calls `documents.yml` by the SHA of `v0.1.0`, ff2a359, and its latest commit is of 2026-10-21.
 
-Read 2026-11-12 (R38, T54):
-- **`module-kit`** — the `spec` submodule on `main` is commit 58d3f46, `v0.15.0` (the GitHub API, `repos/altnovatrail/module-kit/contents/spec`): the row 7.1 of COORDINATION.md `spec` is not done yet.
+Read 2026-11-12:
+- **`module-kit`** — the `spec` submodule on `main` is commit 58d3f46, `v0.15.0` (the GitHub API, `repos/altnovatrail/module-kit/contents/spec`): the row 7.1 of the COORDINATION.md of `spec` is not done yet.
 
 ### 13.2. `canvas` and npm
 
-Read 2026-10-22 (the amendment to R18, T27):
+Read 2026-10-22:
 - **the registry and `canvas`** — `https://registry.npmjs.org/@altnovatrail%2fcanvas` answers 404 "Not found", and `-/org/altnovatrail/package` 200. `canvas` has no `release.yml`, no releases, no immutable releases and no ruleset of tags (the GitHub API).
 
-Read 2026-11-01 (R25, T31):
-- **`canvas` and npm** (Д7 in RUN.md) — `canvas` has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404 "Not found". Its T24 is in the epic E5, which stands in table 2 of RUN.md `canvas`, among the epics for later, and its current epic E7 carries no release: «первый релиз — T24 в E5 или своя задача» (RUN.md `canvas`, `main`).
+Read 2026-11-01:
+- **`canvas` and npm** (Д7 in RUN.md) — `canvas` has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404 "Not found". Its first release is a task of the epic E5, which stands in table 2 of the RUN.md of `canvas`, among the epics for later, and its current epic E7 carries no release (the RUN.md of `canvas`, `main`).
 
-Read 2026-11-02 (R30, T38):
+Read 2026-11-02:
 - **`canvas` and npm** (Д7 in RUN.md; 2026-11-02) — `canvas` still has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404. Its current epic is E8 «Первый релиз» (RUN.md `canvas`, `main`):
-  - T67 moves `canvas` to a tag of the line 0.6;
-  - T70 brings out v0.1.0 and puts the same archive in npm;
-  - T71 — the next versions by the step of the shared release, through trusted publishing.
+  - a task moves `canvas` to a tag of the line 0.6;
+  - the next brings out v0.1.0 and puts the same archive in npm;
+  - the last — the next versions by the step of the shared release, through trusted publishing.
 
-Read 2026-11-02 (the 2026-11-02 amendment to R18, T42):
+Read 2026-11-02:
 - **`canvas` and npm** (Д7 in RUN.md):
-  - `canvas` has `.github/workflows/release.yml` — commit bc60d93, "Do T66: the release build and its trial run", 2026-11-02. It calls the shared `release.yml` v0.1.12 by the SHA 4225639, with `publish: false` and `npm-package: "@altnovatrail/canvas"`, and its runs of 2026-11-02 — `pull_request` and `workflow_run` — passed (the GitHub API);
-  - `canvas` has no releases, `@altnovatrail/canvas` in the registry is 404, and T70 «Первый релиз: пакет» and T71 «Публикация шагом npm» in RUN.md `canvas` are `[ ]`.
+  - `canvas` has `.github/workflows/release.yml` — commit bc60d93, "…: the release build and its trial run", 2026-11-02. It calls the shared `release.yml` v0.1.12 by the SHA 4225639, with `publish: false` and `npm-package: "@altnovatrail/canvas"`, and its runs of 2026-11-02 — `pull_request` and `workflow_run` — passed (the GitHub API);
+  - `canvas` has no releases, `@altnovatrail/canvas` in the registry is 404, and the tasks «Первый релиз: пакет» and «Публикация шагом npm» in the RUN.md of `canvas` are `[ ]`.
 
-Read 2026-11-08 (R32, T43):
+Read 2026-11-08:
 - **`canvas` and npm** (Д7 in RUN.md):
   - `canvas` has the releases v0.1.0, v0.1.1 and v0.1.2, all of 2026-11-02. In the registry, `@altnovatrail/canvas` has the versions `0.0.0-stage` and 0.1.0 without provenance, and then 0.1.1, at 05:39 UTC, and 0.1.2, at 16:36 UTC, with the provenance `https://slsa.dev/provenance/v1`;
   - the provenance of 0.1.1 (`registry.npmjs.org/-/npm/v1/attestations/@altnovatrail%2fcanvas@0.1.1`): the workflow is `.github/workflows/release.yml` of the repository `altnovatrail/canvas` on `refs/heads/main`, the run 41395016624. The run is `workflow_run`, "success", and its `referenced_workflows` is `altnovatrail/.github/.github/workflows/release.yml@09443e1027ef24197439dfe60a072d14c3626cc3`, v0.1.13. Its job is "Release / release";
@@ -893,10 +893,10 @@ Read 2026-11-08 (R32, T43):
 
 ### 13.3. Who calls the shared workflows for code
 
-Read 2026-10-22 (the amendment to R19, T29):
+Read 2026-10-22:
 - **the callers** — `.github/workflows/` and `justfile` of the twelve other repositories of the organization — `canvas` and the eleven others — through the GitHub API. Only `canvas` calls `typescript.yml`. `ALLOWED_LICENSES` is read by the `ci-licenses` of `module-kit` and `tutor`, but that is go-licenses with the list from `go.yml`. GitHub's code search `org:altnovatrail ALLOWED_LICENSES` answered empty, so the files were read one by one.
 
-Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
+Read 2026-11-01:
 - **who calls the wrappers** — `ci.yml` on the `main` of each repository of the organization, the GitHub API:
   - `canvas` — `typescript.yml` v0.1.10;
   - `spec` — `go.yml` v0.1.10;
@@ -908,53 +908,53 @@ Read 2026-11-01 (the 2026-11-01 amendments to R16 and R19, T34):
 
 ### 13.4. `canvas`
 
-Read 2026-10-21 (the amendment to R19):
+Read 2026-10-21:
 - **`headless`** — `vitest.config.ts` of `canvas` at 88492c4: `headless: true`, with the comment "Headless whatever CI says: there is no display in the container or on the runner. CI still keeps test.only out of CI, as Vitest's allowOnly does by default";
-- **`npm` from a script** — `scripts/package.ts` of `canvas` at 88492c4 runs `execFileSync(process.execPath, [npm, "pack", …])`, where `npm` is `../lib/node_modules/npm/bin/npm-cli.js` from the folder of `process.execPath`: "no program is looked up in PATH". The finding `typescript:S4036` and the red quality gate are named by RUN.md `canvas`, T08;
+- **`npm` from a script** — `scripts/package.ts` of `canvas` at 88492c4 runs `execFileSync(process.execPath, [npm, "pack", …])`, where `npm` is `../lib/node_modules/npm/bin/npm-cli.js` from the folder of `process.execPath`: "no program is looked up in PATH". The finding `typescript:S4036` and the red quality gate are named by a task in the RUN.md of `canvas`;
 - **the ruleset of `canvas`** — `repos/altnovatrail/canvas/rulesets/25506234/history` (the GitHub API): the version 54216848 is of 2026-10-21T23:13:18Z. It differs from the previous version, 54024579, only by five new checks in `required_status_checks`, all with `integration_id` 15368. For pull request #19 of `canvas`, `gh pr checks 19 --required` names ten checks, and all are "pass".
 
-Read 2026-10-22 (R22, the amendments to R16 and R19, T26):
-- **`canvas`** — the GitHub API, `main` 7163904. The `spec` submodule is 04ab0d2, v0.2.18. `ci.yml` calls `typescript.yml@c772cc8… # v0.1.5`, and `ci-licenses` is `node scripts/licenses.ts`, which reads `ALLOWED_LICENSES`. Its T32 moves `ci-licenses` to the recipe of `spec` once a wrapper comes out with the submodule in the job `licenses`.
+Read 2026-10-22:
+- **`canvas`** — the GitHub API, `main` 7163904. The `spec` submodule is 04ab0d2, v0.2.18. `ci.yml` calls `typescript.yml@c772cc8… # v0.1.5`, and `ci-licenses` is `node scripts/licenses.ts`, which reads `ALLOWED_LICENSES`. A task of its plan moves `ci-licenses` to the recipe of `spec` once a wrapper comes out with the submodule in the job `licenses`.
 
-Read 2026-10-22 (the amendment to R19, T29):
+Read 2026-10-22:
 - **`canvas`** — the GitHub API and a clone outside the repository. `main` is 379c774, the merge commit of pull request #25, merged at 16:08 UTC, and `scripts/licenses.ts` went by commit 1a335a9. `ci-licenses` is `{{ quote(just_executable()) }} -f spec/justfile licenses-check-repo package-lock.json licenses.json` (`justfile`, line 48). `git grep ALLOWED_LICENSES` at 379c774 finds the variable only in the documents and in the header of `justfile`: "Nothing here reads ALLOWED_LICENSES, which .github keeps for older checks until its Д6". The `spec` submodule is 04ab0d2, v0.2.18, and `ci.yml` calls `typescript.yml@0ab2799… # v0.1.8`. All four "TypeScript / …" are green both on the head of #25, 1a335a9, and on 379c774.
 
-Read 2026-11-08 (the 2026-11-08 amendment to R04, T45):
-- **the `release.yml` of `canvas`** on `main`, bdb9e6d, 2026-11-08 — the `paths` list as in the template of architecture 3.3, with `npm-package: "@altnovatrail/canvas"`. Its rule is the 2026-11-02 amendment to R08 canvas, and `NOTICE` in the archive is R46 canvas (the decision log of `canvas` on `main`).
+Read 2026-11-08:
+- **the `release.yml` of `canvas`** on `main`, bdb9e6d, 2026-11-08 — the `paths` list as in the template of the caller's `release.yml` in `docs/architecture.md`, with `npm-package: "@altnovatrail/canvas"`. Its rule and the `NOTICE` in the archive are decisions of the log of `canvas` on `main`.
 
-Read 2026-11-09 (R36, T52):
-- **the pattern** — R57 canvas (`docs/decisions.md` of `canvas`, `main` 66266e1) and its steps in `page.yml`: `actions/cache/restore` with the key `toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}`, `emulators/toolchain.sh` — `docker load` of the file or a build with `docker save` —, and `actions/cache/save` when `steps.toolchain.outputs.cache-hit != 'true'` with the key `cache-primary-key`.
+Read 2026-11-09:
+- **the pattern** — a decision of `canvas` (`docs/decisions.md` of `canvas`, `main` 66266e1) and its steps in `page.yml`: `actions/cache/restore` with the key `toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}`, `emulators/toolchain.sh` — `docker load` of the file or a build with `docker save` —, and `actions/cache/save` when `steps.toolchain.outputs.cache-hit != 'true'` with the key `cache-primary-key`.
 
 ### 13.5. `learner-model` and `engine`
 
-Read 2026-11-08 (the 2026-11-08 amendment to R16, T46):
+Read 2026-11-08:
 - **the recipes** `test-targets` and `fma-diff` of the `justfile` of `learner-model` (`main` 50f1b51) and of `engine` (`main` 33500ea) are the same, but for the comments and the number of the decision in the message of `fma-diff`. The scripts of the job are these recipes, with the control `testdata/fma/control.go` of `learner-model` inside `go.yml`.
 
-Read 2026-11-08 (the 2026-11-08 amendment to R16, T47):
+Read 2026-11-08:
 - **the job "Go arm64"** of `learner-model` and `engine` — `ubuntu-24.04-arm`, the `toolchain` stage, `just ci-test`, to which the recipe added `test-targets` and `fma-diff`. The job `arm64` of `go.yml` does the same, but for `fma-diff`: its output does not depend on the host — so the recipe's comment says —, and it already runs in "Go / fma-diff".
 
-Read 2026-11-08 (R33, T48):
+Read 2026-11-08:
 - **two copies of the test** — the `rules_test.go` of `learner-model` (`main` 50f1b51, 677 lines) and of `engine` (`main` 28cbde9, 721 lines, "a port of learner-model's rules_test.go, with the engine's lists"). `diff`: `engine` has an allowed module in `require`, a rule for `replace`, the parsing of `go.mod` blocks, the importer `importer.ForCompiler(fset, "source", nil)` and a check of the external tests with the same set of `*types.Package`; the copies have different `codeImports`, `testImports` and `mathTestFuncs`, and the messages name the repository. In both, the check of nested modules exempts `.devcontainer/gopls/go.mod`. Each copy has its own `testdata/coderules`: each is fitted to its own lists.
 
 ### 13.6. Rulesets and the `spec` submodules of other repositories
 
-The readings of the record stood in the text of architecture 2.9 and 3.3, with no record, and T55 moved them here 2026-11-12, as they were: the record does not hold the API's answers.
+The readings of the record stood in the text of `docs/architecture.md`, with no record, and moved here 2026-11-12, as they were: the record does not hold the API's answers.
 
-Read 2026-10-20 (the amendment to R30 spec; T17 and T16 `spec`):
-- **the rulesets of `spec`, `module-kit` and `tutor`** — the GitHub API: the rule `code_scanning` and merge only stand at `spec` and `module-kit` since T17 `spec`, and at `tutor` since T16 `spec`.
+Read 2026-10-20:
+- **the rulesets of `spec`, `module-kit` and `tutor`** — the GitHub API: the rule `code_scanning` and merge only stand at `spec`, `module-kit` and `tutor`.
 
-Read 2026-10-21 (the amendment to R32 spec; T21 `spec`):
+Read 2026-10-21:
 - **the submodule of `engine`** — the GitHub API: commit 5eafb1a, v0.2.9.
 
 ### 13.7. The callers of CodeQL's Go and their Dockerfiles
 
-Read 2026-11-16 (R45, T65), `.github/workflows/codeql.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
+Read 2026-11-16, `.github/workflows/codeql.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
 - **who names `go`** — `languages: go` at `api`, `engine`, `learner-model`, `module-kit`, `sim` and `tutor`, `javascript-typescript go` at `modules` and `spec`, and `.github` itself by `self-codeql.yml`; `canvas`, `app`, `infra` and `skill-map` name `javascript-typescript` alone. All call `codeql.yml` of `v0.1.24`, `spec` of `v0.1.22`;
 - **how they pin Go** — each of the nine has `ARG GO_VERSION=1.27.4`, `ARG GO_SHA256_AMD64=7226736c…4840` and `ARG GO_SHA256_ARM64=33925829…ac92` once, in the stage `toolchain`, and `spec` in `toolchain-core`, which `FROM toolchain-core AS toolchain` builds on; the stage downloads `https://go.dev/dl/go${GO_VERSION}.linux-${arch}.tar.gz` and checks it against the sum. Their only `ENV` in those stages, the lines joined, is `ENV PATH="/usr/local/node/bin:/usr/local/go/bin:/home/vscode/.local/bin:${PATH}" GOTOOLCHAIN=local`.
 
 ### 13.8. The callers of the stage `toolchain-core`
 
-Read 2026-11-16 (R47, T66), `justfile`, `.github/workflows/ci.yml`, `.github/workflows/release.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
+Read 2026-11-16, `justfile`, `.github/workflows/ci.yml`, `.github/workflows/release.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
 - **who calls which wrapper** — `go.yml`: `api`, `engine`, `learner-model`, `module-kit`, `modules`, `sim`, `tutor` and `spec`; `typescript.yml`: `app`, `canvas` and `skill-map`; no repository calls both. All but `spec` call `documents.yml`, `infra` that alone. The shared `release.yml` is called by `api`, `engine`, `module-kit`, `modules`, `sim`, `tutor`, `canvas` and `skill-map` at `v0.1.30`, and by `learner-model` and `app` at `v0.1.24`;
 - **the stage** — no `.devcontainer/Dockerfile` of a caller has a line `FROM … AS toolchain-core`; `spec`'s has it, under `FROM toolchain-core AS toolchain`;
 - **what `release-files` runs** — `app`: `node scripts/release.ts`, after `build`; `canvas`: `node scripts/package.ts`, `npm pack`, `node scripts/release.ts`, `just synthetic`, `node scripts/archive.ts`, `scripts/page.ts` and `scripts/generator.ts`, after `build`, `tsc -p tsconfig.build.json`; `skill-map`: `node scripts/package.ts`, `npm pack` and `node scripts/consumer.ts --release`, whose comment reads "tsc checks scripts/consumer/main.ts there twice, as NodeNext and as Bundler resolve modules"; `api` and `module-kit`: `go build -trimpath` for their platforms; `modules`: its `_modules-check` over the modules' files.
@@ -964,22 +964,22 @@ Read 2026-11-16 (R47, T66), `justfile`, `.github/workflows/ci.yml`, `.github/wor
 
 ### 14.1. canvas-api
 
-Read 2026-10-19 (R03):
-- **the workflows of canvas-api** — `.github/workflows/` at commit [0901af0](https://github.com/MathTrail/canvas-api/tree/0901af0439280334b3da33ffc4cc5c853e4403ff/.github/workflows) — `ci.yml`, `codeql.yml`, `scorecard.yml`, `release.yml` and `deploy.yml`. The only reusable workflow is `deploy.yml`, and only the `release.yml` of the same repository calls it; canvas-api calls no workflow of other repositories. The license check — R48 canvas-api, the signature — R52 canvas-api, CI in the toolchain's image — R49 canvas-api.
+Read 2026-10-19:
+- **the workflows of canvas-api** — `.github/workflows/` at commit [0901af0](https://github.com/MathTrail/canvas-api/tree/0901af0439280334b3da33ffc4cc5c853e4403ff/.github/workflows) — `ci.yml`, `codeql.yml`, `scorecard.yml`, `release.yml` and `deploy.yml`. The only reusable workflow is `deploy.yml`, and only the `release.yml` of the same repository calls it; canvas-api calls no workflow of other repositories. The license check, the signature and CI in the toolchain's image are decisions of the log of canvas-api.
 
-Read 2026-10-20 (R09):
+Read 2026-10-20:
 - **the ruleset of canvas-api** — canvas-api has the rule `code_scanning` (sources 3.1) with the tool CodeQL and the thresholds `errors` and `high_or_higher` (the GitHub API, `repos/mathtrail/canvas-api/rulesets/25036747`).
 
-Read 2026-10-21 (R16):
-- **the names of the recipes** — the `justfile` of canvas-api at commit 0901af0: `ci-lint`, `ci-test`, `ci-vuln` and `ci-licenses`; govulncheck and go-licenses run there through `go run` at the exact version of the module, and CI calls the same recipes in the toolchain's image (R49 canvas-api).
+Read 2026-10-21:
+- **the names of the recipes** — the `justfile` of canvas-api at commit 0901af0: `ci-lint`, `ci-test`, `ci-vuln` and `ci-licenses`; govulncheck and go-licenses run there through `go run` at the exact version of the module, and CI calls the same recipes in the toolchain's image.
 
-Read 2026-10-21 (R19):
+Read 2026-10-21:
 - **canvas-api** at commit 0901af0, through the GitHub API:
   - `web/.npmrc` — `save-exact=true` and `ignore-scripts=true`, with the comment "No package runs code of its own while it is being installed: nothing in the tree needs to, and what it would run is code nobody here has read"; the recipe `web-install` — `npm ci --no-audit --no-fund`;
-  - `ci-vuln` — `npm audit --prefix web --omit=dev --audit-level=high`, without installing packages. `ci-licenses` — `node web/scripts/licenses.ts check --allowed … --except lightningcss=MPL-2.0` by `web/package-lock.json` of version 3 (R48 canvas-api);
-  - format and lint — Biome 2.5.15, types — `tsc --noEmit`, tests — Vitest 5.0.3 with happy-dom (R47 canvas-api). There are no tests in a browser there.
+  - `ci-vuln` — `npm audit --prefix web --omit=dev --audit-level=high`, without installing packages. `ci-licenses` — `node web/scripts/licenses.ts check --allowed … --except lightningcss=MPL-2.0` by `web/package-lock.json` of version 3;
+  - format and lint — Biome 2.5.15, types — `tsc --noEmit`, tests — Vitest 5.0.3 with happy-dom. There are no tests in a browser there.
 
 ### 14.2. `nodenv/.github`
 
-Read 2026-10-19 (R03):
-- **a repository named `.github`** — the documentation does not name it as a place of shared workflows. That is how [nodenv/.github](https://github.com/nodenv/.github) is built (commit 01e040a): `nodenv/nodenv` calls `uses: nodenv/.github/.github/workflows/release.yml@bd27009d5f178c0a88d42f7b07e6a3c7623ed768 # v7.0.8`, and the README explains: "GitHub doesn't allow them to live in any other directory, so the reusable workflows are all in the same location as the workflows _for this repository. To distinguish them, the workflows for this repository are prefixed with `.github_`". That Dependabot bumps such a reference was shown by a maintainer of dependabot-core in [issue #12489](https://github.com/dependabot/dependabot-core/issues/12489), 2025-12-29: "issue is not reproducible. Attaching screenshots below for a bump PR to version 7.0.5". T17 `spec` confirmed the call (architecture 2.8); whether Dependabot bumps the reference, `v0.1.1` will show (T14).
+Read 2026-10-19:
+- **a repository named `.github`** — the documentation does not name it as a place of shared workflows. That is how [nodenv/.github](https://github.com/nodenv/.github) is built (commit 01e040a): `nodenv/nodenv` calls `uses: nodenv/.github/.github/workflows/release.yml@bd27009d5f178c0a88d42f7b07e6a3c7623ed768 # v7.0.8`, and the README explains: "GitHub doesn't allow them to live in any other directory, so the reusable workflows are all in the same location as the workflows _for this repository. To distinguish them, the workflows for this repository are prefixed with `.github_`". That Dependabot bumps such a reference was shown by a maintainer of dependabot-core in [issue #12489](https://github.com/dependabot/dependabot-core/issues/12489), 2025-12-29: "issue is not reproducible. Attaching screenshots below for a bump PR to version 7.0.5". `spec` confirmed the call; whether Dependabot bumps the reference, `v0.1.1` will show.

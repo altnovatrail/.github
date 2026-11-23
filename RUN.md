@@ -63,7 +63,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T88 | Ссылки по R171 spec: журнал, R30–R41 (часть 5) | Claude | — | T87 |
 | [x] | T89 | Ссылки по R171 spec: журнал, R42–R51 (часть 6) | Claude | — | T88 |
 | [x] | T90 | Ссылки по R171 spec: `docs/architecture.md` и `docs/README.md` (часть 7) | Claude | — | T89 |
-| [ ] | T91 | Ссылки по R171 spec: `docs/sources.md` (часть 8) | Claude | — | T90 |
+| [x] | T91 | Ссылки по R171 spec: `docs/sources.md` (часть 8) | Claude | — | T90 |
 | [ ] | T92 | Ссылки по R171 spec: `docs/measurements.md` и ключ `"citations": true` (часть 9) | Claude | — | T91 |
 
 ## Epic E29. Теги `spec` v0.19.11 и v0.19.12, ссылки по R171 spec
@@ -73,17 +73,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Не входит в переходы:** правки заготовки `spec/repo-template/` v0.19.11 и v0.19.12 по R171 spec — строки CLAUDE.md и RUN.md о ссылках, вводные `docs/decisions.md`, `docs/sources.md` и таблиц `run/`, `docs-budgets.json` с `"citations": true`: их берут задачи ссылок.
 
 **Части T84.** T85–T92 — остальные части задачи T84, разбитой по её шагу 9 (правило 11): её тело и «Решено при планировании» — в [docs/plan/E29.md](docs/plan/E29.md), `grep -n '^#### T84\.' docs/plan/E29.md`. Каждая часть правит ссылки по шагам 4–8 T84 и только в своём месте; пока ключа нет, она проверяет себя ключом, включённым на время прогона, по строкам своего места.
-
-#### T91. Ссылки по R171 spec: `docs/sources.md`
-
-- **Цель:** `docs/sources.md` ссылается по R171 spec: заголовок записи называет тему и дату, не задачу; без номеров задач и ссылок на поправки; не больше двух ссылок в скобке.
-- **Почему:** часть 8 задачи T84 (её шаг 9).
-- **Сделать:**
-  1. Вводная — по `spec/repo-template/files/docs/sources.md`.
-  2. Номер задачи в заголовке и тексте записи — убрать, дату оставить; ссылки — по шагу 4 T84. Цитаты источников — как есть.
-  3. Ссылки других документов на записи не меняются: номера записей остаются.
-- **Как проверить:** `docs-check-repo` с ключом, включённым на время, — ни одной находки в `docs/sources.md`; без ключа — зелёный; `/code-review high`, один круг; в отчёте — ссылок было и стало.
-- **Разделы:** T84; R171 spec; RULES.md spec — Citations; `spec/repo-template/files/docs/sources.md`; свой `docs/sources.md`.
 
 #### T92. Ссылки по R171 spec: `docs/measurements.md` и ключ `"citations": true`
 
