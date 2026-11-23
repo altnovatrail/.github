@@ -61,7 +61,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T86 | Ссылки по R171 spec: журнал, R13–R18 (часть 3) | Claude | — | T85 |
 | [x] | T87 | Ссылки по R171 spec: журнал, R19–R29 (часть 4) | Claude | — | T86 |
 | [x] | T88 | Ссылки по R171 spec: журнал, R30–R41 (часть 5) | Claude | — | T87 |
-| [ ] | T89 | Ссылки по R171 spec: журнал, R42–R51 (часть 6) | Claude | — | T88 |
+| [x] | T89 | Ссылки по R171 spec: журнал, R42–R51 (часть 6) | Claude | — | T88 |
 | [ ] | T90 | Ссылки по R171 spec: `docs/architecture.md` и `docs/README.md` (часть 7) | Claude | — | T89 |
 | [ ] | T91 | Ссылки по R171 spec: `docs/sources.md` (часть 8) | Claude | — | T90 |
 | [ ] | T92 | Ссылки по R171 spec: `docs/measurements.md` и ключ `"citations": true` (часть 9) | Claude | — | T91 |
@@ -73,14 +73,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Не входит в переходы:** правки заготовки `spec/repo-template/` v0.19.11 и v0.19.12 по R171 spec — строки CLAUDE.md и RUN.md о ссылках, вводные `docs/decisions.md`, `docs/sources.md` и таблиц `run/`, `docs-budgets.json` с `"citations": true`: их берут задачи ссылок.
 
 **Части T84.** T85–T92 — остальные части задачи T84, разбитой по её шагу 9 (правило 11): её тело и «Решено при планировании» — в [docs/plan/E29.md](docs/plan/E29.md), `grep -n '^#### T84\.' docs/plan/E29.md`. Каждая часть правит ссылки по шагам 4–8 T84 и только в своём месте; пока ключа нет, она проверяет себя ключом, включённым на время прогона, по строкам своего места.
-
-#### T89. Ссылки по R171 spec: журнал, R42–R51
-
-- **Цель:** записи R42–R51 — разделы `##` от «One file of the image of the `toolchain` stage» до конца журнала — ссылаются по R171 spec, без датированных поправок; во всём `docs/decisions.md` не остаётся находок проверки.
-- **Почему:** часть 6 задачи T84 (её шаг 9).
-- **Сделать:** как пункты 2–4 T85, для R42–R51; запись, добавленная в журнал после T84, — тоже.
-- **Как проверить:** как T85, по всему `docs/decisions.md`.
-- **Разделы:** T84, T85; R171 spec, R160 spec; RULES.md spec — Citations; свой `docs/decisions.md`, R42 и дальше.
 
 #### T90. Ссылки по R171 spec: `docs/architecture.md` и `docs/README.md`
 
