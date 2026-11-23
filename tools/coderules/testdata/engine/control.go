@@ -1,7 +1,6 @@
 // Package coderules breaks every rule of code that coderules holds a module to by engine's lists,
 // coderules.json here, each line marked "// want" with the rules it breaks, and keeps beside each
-// break what the rules allow, so that the check is held to finding no more than it should either
-// (R107 spec).
+// break what the rules allow, so that the check is held to finding no more than it should either.
 package coderules
 
 import "C" // want cgo

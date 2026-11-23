@@ -1,10 +1,10 @@
-# .github's own release (R04, R10, R12), as spec's (R31 spec): what a green main produces when a
+# .github's own release, as spec's: what a green main produces when a
 # shared workflow, a shared action or the tool a shared workflow builds of its own version has
-# changed since the release before (R33, R49); the first release comes out always. A release of
+# changed since the release before; the first release comes out always. A release of
 # anything else would only bring every caller a pull request for a workflow that did not change.
 # Nobody tags by hand: the tag is created with the release, which is immutable, and GitHub attests
 # its tag and commit. The callers pin a shared workflow or action by the SHA of a release, with its
-# version beside it (R04).
+# version beside it.
 #
 # The button releases the tip of main, after a release run that failed, say: on main alone, and
 # only once CI has passed on that commit.
@@ -86,7 +86,7 @@ jobs:
           fi
 
       # The tip of main the event saw, GITHUB_SHA: this file was read from it too, so the steps,
-      # the toolchain stage and spec's recipes all come from one commit (R31 spec). TARGET, in its
+      # the toolchain stage and spec's recipes all come from one commit. TARGET, in its
       # history, which main's ruleset keeps from being rewritten, is named by its SHA alone: git
       # diff reads its tree from the history, and a checkout by a ref of the workflow_run event is
       # what Scorecard's Dangerous-Workflow flags (R12).
@@ -97,14 +97,14 @@ jobs:
           persist-credentials: false
 
       # spec's recipe release-version numbers the release, run by spec's script in the toolchain
-      # stage, as spec's release runs it, with nothing of the step's environment (R31 spec). It
+      # stage, as spec's release runs it, with nothing of the step's environment. It
       # takes RELEASE_LINE as this file sets it at TARGET, the line the commit was made in; a commit
       # older than this file takes the tip's. TARGET has to be a full SHA in the history of the
-      # checkout, which spec's recipe does not ask (R12). A tag with no release behind it was pushed
+      # checkout, which spec's recipe does not ask. A tag with no release behind it was pushed
       # by hand: as TARGET's release, the release before or the newest off main's history, it would
       # stop releases quietly, so the run stops on it instead.
       #
-      # The core stage is all a release needs, and .github's toolchain adds nothing to it (R47).
+      # The core stage is all a release needs, and .github's toolchain adds nothing to it.
       - id: version
         name: Work out the version
         env:
@@ -167,7 +167,7 @@ jobs:
               fi
           done
           # What a release carries: the shared workflows, the shared actions, which callers pin as
-          # they pin the workflows, and the tool go.yml builds of its own version (R33, R49). git
+          # they pin the workflows, and the tool go.yml builds of its own version. git
           # diff --quiet exits 1 on a change and 0 on none; anything else is its own failure.
           if [ -n "$version" ] && [ -n "$previous" ]; then
               changed=0
@@ -213,8 +213,8 @@ jobs:
               --latest \
               --generate-notes "${start[@]}" 2> "$RUNNER_TEMP/release-create.err"; then
               cat "$RUNNER_TEMP/release-create.err" >&2
-              # Only the documented refusal is let pass, as spec's release-refusal reads it
-              # (R31 spec). main is fetched again: a commit merged meanwhile is what makes this one
+              # Only the documented refusal is let pass, as spec's release-refusal reads it.
+              # main is fetched again: a commit merged meanwhile is what makes this one
               # older. The recipe runs in a new copy of the checkout, taken after the fetch: the
               # version step's copy has no new tip, and a fetch there would read a .git/config a
               # container may have changed. No container has had the checkout, so the new copy's

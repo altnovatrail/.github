@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of release.yml's steps (R18), each group under its heading; first the step "Check the
+# The tests of release.yml's steps, each group under its heading; first the step "Check the
 # npm package", which holds the archive a release would publish to npm before the GitHub release,
 # which is immutable, exists. The registry is the stand-in curl, the dry run the stand-in
 # npm-isolated; the archives are made here with tar, laid out as npm pack lays one out, and their
@@ -574,7 +574,7 @@ test_npm_a_dry_run_that_reads_another_file_or_integrity_stops_the_release() {
 }
 
 # The tests of the identity the signature will carry and of spec's release-verify, asked ahead and
-# on a run again (R77 spec). The recipe runs by the real toolchain.sh of the spec submodule, which
+# on a run again. The recipe runs by the real toolchain.sh of the spec submodule, which
 # starts the stand-in docker: what a case holds is the call that would reach the container.
 
 shared_pin=altnovatrail/.github/.github/workflows/release.yml@c1b848779d9f1d73817ca078a7cba3664632f03b
@@ -773,7 +773,7 @@ test_npm_again_of_an_archive_whose_attestation_fails_stops_before_the_signature(
 }
 
 # The tests of previous-file: its name, the previous release's file checked by release-verify, and
-# the build it is handed to (R63 spec). The recipe runs by the real toolchain.sh, as above. The
+# the build it is handed to. The recipe runs by the real toolchain.sh, as above. The
 # build gets a git repository of its own, whose archive is what it builds, and the stand-in docker
 # writes into dist/ what stub/docker-dist holds.
 
@@ -981,7 +981,7 @@ test_build_without_previous_file_hands_release_files_the_version_alone() {
 }
 
 # The tree's Dockerfile with the stage toolchain-core, by the FROM line spec's toolchain.sh finds it
-# by, in any case: the release builds that stage alone (R47).
+# by, in any case: the release builds that stage alone.
 test_build_builds_the_core_of_the_tree_where_its_dockerfile_has_one() {
     local dockerfile
     for dockerfile in 'FROM scratch AS toolchain-core\nFROM toolchain-core AS toolchain\nRUN true\n' \
@@ -1013,7 +1013,7 @@ test_build_builds_toolchain_where_the_dockerfile_has_no_core() {
     assert_built -- v0.1.9
 }
 
-# spec's script builds the core for the steps that run spec's recipes (R31 spec, R47).
+# spec's script builds the core for the steps that run spec's recipes.
 test_release_works_the_version_out_in_the_core() {
     use_workflow release.yml
     assert_eq "$(wf_raw '.jobs.release.steps[] | select(.id == "version") | .env.TOOLCHAIN_STAGE')" toolchain-core "the stage of spec's script"
@@ -1063,7 +1063,7 @@ test_build_that_writes_nothing_stops_the_release() {
     assert_line "::error::release-files wrote nothing into dist/, or dist/ is a link."
 }
 
-# The tests of "Publish to npm", which waits for the registry in rounds (R37 spec). The registry is
+# The tests of "Publish to npm", which waits for the registry in rounds. The registry is
 # the stand-in curl, with answers of its own for the packument and for the archive, and sleep a
 # stand-in that only writes its calls down: the rounds run in no time, and the twenty minutes of
 # the clock are the 120 rounds here, since a stand-in cannot move SECONDS.
@@ -1334,7 +1334,7 @@ test_publish_a_version_without_provenance_passes_with_a_warning() {
     assert_line "::warning::@altnovatrail/canvas@0.1.9 has no provenance in the registry."
 }
 
-# The releases take no cache (R31 spec, R36): the image of the job that signs is built from the
+# The releases take no cache: the image of the job that signs is built from the
 # Dockerfile, as the cache of the checks is not.
 test_release_and_self_release_take_no_cache() {
     local file
@@ -1344,7 +1344,7 @@ test_release_and_self_release_take_no_cache() {
     done
 }
 
-# The tests of "Sign every file" and "Verify the release" (R18). cosign and gh are the stand-ins;
+# The tests of "Sign every file" and "Verify the release". cosign and gh are the stand-ins;
 # the certificate is made here by openssl, self-signed.
 
 sign_identity=https://github.com/$shared_pin

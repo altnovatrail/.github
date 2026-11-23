@@ -828,6 +828,14 @@ Read 2026-11-20 (T82):
 - **the card 3.11 spec** — citations of amendments become citations of their entries, as "(R22)" for "(the 2026-11-01 amendment to R22)"; nothing of what `.github` does changes;
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217. Д217 names "Pending: `skill-map`", and its column "When to return" still "`skill-map` and `.github` moves to a tag with T141". Table 5, `run/INBOX.md`: `.github` В44 — "T218 (В73), option (1): `.github` leaves Д217, which keeps `skill-map` alone".
 
+### 12.19. `spec` v0.19.11
+
+Read 2026-11-23:
+- **the tag** — v0.19.11, commit 3ad433a, the merge of pull request 217 of `spec` (E22 `spec`), came out 2026-11-23 at 05:38 UTC; the API's latest release is v0.19.11, `gh release view` calls it immutable, and `gh release verify v0.19.11 -R altnovatrail/spec` — "Release v0.19.11 verified!";
+- **what changed** (`git log --oneline v0.19.4..v0.19.11`, `git diff --stat v0.19.4 v0.19.11`) — 65 commits, 97 files; for a copy: RULES.md, Citations — "A citation stands only where its reader will follow it to act, one to a claim … Task numbers and dated amendments stand only in RUN.md, `run/` and `docs/plan/` (R171 spec)", and How we work — "no dated amendment is written (R160 spec)"; `repo-template/files/docs-budgets.json` — `"citations": true`, "the rule of citations checked" (`repo-template/README.md`; R171 spec); the template's CLAUDE.md, RUN.md (rule 10, «Citations»), `docs/README.md`, the openings of `docs/decisions.md`, `docs/sources.md` and `run/QUESTIONS.md` — the same rule; `.devcontainer/` and `.claude/` — no change; row 7.38 of COORDINATION.md — `.github`, no task there yet, the citations by R171 spec, on a tag of `spec` with T258 or newer;
+- **the card 3.11 spec** — no change;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories; Д217's column "When to return" reads "`skill-map` moves to a tag with T141". Table 5, `run/INBOX.md`: `.github` В45 — "T246, option (1): Д217's «When to return» names `skill-map` alone".
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories

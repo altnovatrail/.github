@@ -1,6 +1,6 @@
-# Shared check (R03): every commit of a pull request, merge commits aside, carries a
+# Shared check: every commit of a pull request, merge commits aside, carries a
 # Signed-off-by line of its author, the Developer Certificate of Origin that every contribution
-# certifies (R22 spec, R30 spec). The commits come from git, so the check needs no API and nothing
+# certifies. The commits come from git, so the check needs no API and nothing
 # beyond `contents: read`.
 #
 # The range is the two parents of the merge checkout, not the event's payload, so a run again
@@ -12,7 +12,7 @@
 # line counts only when the commit's author is Dependabot, its committer GitHub and the pull
 # request's author dependabot[bot], since an author is a string anyone can set and the pull
 # request's author is not. Commits made on github.com carry their sign-off because the
-# organization requires it for web-based commits (R22 spec).
+# organization requires it for web-based commits.
 #
 # Called from a job that runs on pull_request only: on any other event there are no commits of a
 # pull request to read, and the check fails rather than pass with nothing checked.

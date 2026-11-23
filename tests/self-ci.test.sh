@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of self-ci.yml's own steps for the composite actions (R28, R49): "Lint the actions",
+# The tests of self-ci.yml's own steps for the composite actions: "Lint the actions",
 # which hands shellcheck the run script of each step of each action of .github/actions/, and the job
 # Toolchain action, which runs .github/actions/toolchain as a caller's own job does.
 # shellcheck source=tests/lib.sh

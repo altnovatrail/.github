@@ -1,6 +1,6 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
 # The tests of self-release.yml's step "Work out the version": which commits get a release of
-# .github (R10, R33, R49). The step runs on a repository of the case's own, with git as it is,
+# .github. The step runs on a repository of the case's own, with git as it is,
 # and with a stand-in for spec's toolchain.sh in it, which prints what release-version would.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
@@ -67,7 +67,7 @@ test_self_release_releases_a_change_of_a_shared_workflow() {
     release_repository .github/workflows/go.yml
     run_version_step
     assert_released
-    # The stage of spec's recipes is the core, all a release needs (R47).
+    # The stage of spec's recipes is the core, all a release needs.
     assert_eq "$(cat "$step_temp/built-stage")" toolchain-core "the stage spec's script builds"
 }
 
@@ -77,7 +77,7 @@ test_self_release_releases_a_change_of_the_tool_of_the_rules_of_code() {
     assert_released
 }
 
-# A shared action, which callers pin by the SHA of a release as they pin the workflows (R49).
+# A shared action, which callers pin by the SHA of a release as they pin the workflows.
 test_self_release_releases_a_change_of_a_shared_action() {
     release_repository .github/actions/toolchain/action.yml
     run_version_step

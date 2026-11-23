@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of typescript.yml (R19). Its steps that are go.yml's, the toolchain image and the upload
+# The tests of typescript.yml. Its steps that are go.yml's, the toolchain image and the upload
 # of the coverage, run in go.yml's cases, and the cases here hold the two files alike. The
 # checkout, which takes the spec submodule for the licenses job alone, is an action, and the
 # harness runs no action: its input is read as text.
@@ -51,7 +51,7 @@ test_typescript_hands_its_lcov_report_on_by_an_artifact_of_its_own() {
 test_typescript_uploads_its_coverage_as_go_does_but_for_its_artifact_and_report() {
     local go="$state/go.json" typescript
     use_workflow go.yml
-    # go.yml saves its Go caches after the report (R41), which typescript.yml has none of.
+    # go.yml saves its Go caches after the report, which typescript.yml has none of.
     wf '{report: [.jobs.check.steps[] | select(.name == "ci-${{ matrix.check }}" or .name == "Coverage report")], coverage: .jobs.coverage}' > "$go"
     use_workflow typescript.yml
     # The ci- step differs by --init and --ipc, which cases of their own hold; here only its name
@@ -67,7 +67,7 @@ test_typescript_runs_each_check_as_a_job_named_after_it() {
     assert_eq "$(wf '.jobs.check.name')" '"${{ matrix.check }}"' "the job's name"
 }
 
-# Without the input the callers' rulesets name the four checks they named before (R19); with it
+# Without the input the callers' rulesets name the four checks they named before; with it
 # "TypeScript / engines" comes beside "TypeScript / test", and nothing else changes.
 test_typescript_runs_the_check_engines_with_the_input_alone() {
     use_workflow typescript.yml
@@ -83,7 +83,7 @@ test_typescript_checks_the_submodule_out_for_the_licenses_job_alone() {
 
 # The stages, their cache and the job toolchain are go.yml's, step for step, but for the names of
 # the artifacts: the cases of go.yml run them, and the tests there hold the jobs of both files to the
-# same steps (R36, R42).
+# same steps.
 test_typescript_builds_the_toolchain_stage_and_caches_it_as_go_does() {
     local go typescript
     use_workflow go.yml

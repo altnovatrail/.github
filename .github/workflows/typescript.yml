@@ -1,35 +1,35 @@
-# Shared check (R03, R19): the caller's TypeScript code by four recipes of its own — ci-lint,
+# Shared check: the caller's TypeScript code by four recipes of its own — ci-lint,
 # ci-test, ci-vuln and ci-licenses —, a job each, in the toolchain stage of its
 # .devcontainer/Dockerfile, where the caller pins its Node and the browsers its tests run in; the
 # recipes pin the tools they run and install the packages of the lock file themselves. What the
-# checks do is the caller's; how they are run is the same everywhere (R30 spec). With the calling
+# checks do is the caller's; how they are run is the same everywhere. With the calling
 # job named TypeScript, the checks of the caller's ruleset are "TypeScript / lint",
 # "TypeScript / test", "TypeScript / vuln" and "TypeScript / licenses".
 #
 # With engines, a fifth job runs the caller's recipe ci-engines, the tests in WebKit and Firefox,
 # as the check "TypeScript / engines", while ci-test runs them in Node and Chromium with the
 # coverage, so that the two take their time side by side. The three browsers are those of the
-# toolchain stage of spec's kind typescript (R79 spec; R19).
+# toolchain stage of spec's kind typescript.
 #
 # ci-test writes its coverage to coverage/lcov.info, which the job coverage sends to Codecov by
-# OIDC, with no secret (R48 spec). "TypeScript / coverage" is no check of the ruleset:
+# OIDC, with no secret. "TypeScript / coverage" is no check of the ruleset:
 # codecov/patch, which Codecov sets from the upload, is.
 #
 # ci-licenses checks every package of the lock file by spec's recipe licenses-check-repo from the
 # caller's spec submodule, with the caller's own exceptions, each with its decision: the list and
-# the rule of an exception are spec's, at the tag the caller pins (R39 spec). So the licenses job
+# the rule of an exception are spec's, at the tag the caller pins. So the licenses job
 # alone checks the submodule out, as the tool of its check, and this file carries no copy of the
 # list; go.yml keeps one, since spec has no recipe to check Go by.
 #
 # The image of the toolchain stage comes from the caller's cache of GitHub Actions, so that an
-# outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the same
-# (R36): on a miss the job toolchain alone builds it and hands it on by an artifact of the run, and
-# a push to main alone saves it (R42). lint, vuln and licenses, which start no browser and run no
-# test, run in the smaller stage toolchain-core where the Dockerfile has one (R47).
+# outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the same:
+# on a miss the job toolchain alone builds it and hands it on by an artifact of the run, and
+# a push to main alone saves it. lint, vuln and licenses, which start no browser and run no
+# test, run in the smaller stage toolchain-core where the Dockerfile has one.
 #
 # .github has no TypeScript code, so a change here is tried before its release by a trial pull
 # request of .github that calls this file by local path and is never merged; refs/pull/40/head
-# keeps the commits of the first trial to start from (R19).
+# keeps the commits of the first trial to start from.
 #
 # Called from a job that gives it `contents: read` and `id-token: write`: the job coverage alone
 # asks for the token, and a called workflow can only lower what its caller gives.
@@ -49,9 +49,9 @@ permissions:
 
 jobs:
   # The image of the caller's toolchain stage, built at most once for the jobs of this file on
-  # amd64 (R36, R42): a file of docker save in the caller's cache of GitHub Actions, by the key of
-  # the runner's OS and architecture and the hash of the Dockerfile (R31 spec). The Dockerfile pins
-  # all it installs by version and sum (R34 spec, R40 spec), so the image from the cache is the one
+  # amd64: a file of docker save in the caller's cache of GitHub Actions, by the key of
+  # the runner's OS and architecture and the hash of the Dockerfile. The Dockerfile pins
+  # all it installs by version and sum, so the image from the cache is the one
   # it would build, and a hit asks nothing of nodejs.org, GitHub or Ubuntu's snapshot. On a hit this
   # job only looks the entry up, and each job after it restores the file; on a miss it builds the
   # image and hands the file on as an artifact of the run, kept a day. Only a push to main saves: a
@@ -63,7 +63,7 @@ jobs:
   # check: the jobs after this one build the image themselves.
   #
   # lint, vuln and licenses run in the stage toolchain-core where the Dockerfile has one that holds
-  # less than toolchain (R47), with a file, an entry and an artifact of its own,
+  # less than toolchain, with a file, an entry and an artifact of its own,
   # novatrail-toolchain-core.tar by the key toolchain-core-…; on a miss of both this job builds and
   # hands on both.
   toolchain:
@@ -87,8 +87,8 @@ jobs:
 
       # toolchain-core where the Dockerfile has that stage, as spec's toolchain.sh finds it, and its
       # stage toolchain holds more: an instruction but SHELL, or another base. Else toolchain, which
-      # holds all the core does, since a second entry of the same files would cost space alone
-      # (R47). A continued line counts as one instruction, so a reading that errs gives the core a
+      # holds all the core does, since a second entry of the same files would cost space alone.
+      # A continued line counts as one instruction, so a reading that errs gives the core a
       # file of its own, which costs an entry and no verdict.
       - name: Toolchain stages
         id: stages
@@ -138,7 +138,7 @@ jobs:
           STAGES: ${{ steps.toolchain.outputs.cache-hit != 'true' && 'toolchain' || '' }} ${{ steps.stages.outputs.core == 'toolchain-core' && steps.core.outputs.cache-hit != 'true' && 'toolchain-core' || '' }}
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -225,15 +225,15 @@ jobs:
         check: ${{ fromJSON(inputs.engines && '["lint", "test", "engines", "vuln", "licenses"]' || '["lint", "test", "vuln", "licenses"]') }}
     steps:
       # Without the spec submodule, but for the licenses job: code takes spec's files from spec's
-      # releases, not from the submodule (R21 spec), so a check that reads spec/ fails here as it
+      # releases, not from the submodule, so a check that reads spec/ fails here as it
       # would for a user. The licenses job gets the submodule at the commit the caller pins, for
-      # ci-licenses to run spec's recipe from it (R39 spec).
+      # ci-licenses to run spec's recipe from it.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: ${{ matrix.check == 'licenses' }}
           persist-credentials: false
 
-      # The stage of this check (R47): lint, vuln and licenses, which start no browser and run no
+      # The stage of this check: lint, vuln and licenses, which start no browser and run no
       # test, take the one the job toolchain names for them, and the rest toolchain. Without a name
       # from that job, which then failed before it had one, toolchain, which holds all the core does.
       - name: Toolchain stage
@@ -250,11 +250,11 @@ jobs:
           echo "stage=${stage}" >> "$GITHUB_OUTPUT"
 
       # The image of that stage, from the caller's cache of GitHub Actions, or on a miss
-      # from the job toolchain, which built it once for the jobs of this run (R36, R42). With
+      # from the job toolchain, which built it once for the jobs of this run. With
       # neither, or with a file that does not load as the image novatrail-toolchain, the step builds
       # the image itself, so that what failed there costs the run its speed, not its verdict. It
       # writes no file: the job toolchain saves the image. The browsers for the tests come with the
-      # stage toolchain (R19).
+      # stage toolchain.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -276,7 +276,7 @@ jobs:
           STAGES: ${{ steps.stage.outputs.stage }}
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -328,7 +328,7 @@ jobs:
 
       # The test job hands the report its recipe wrote to the coverage job, the one job that may ask
       # for an OIDC token: this one runs the code under test. A recipe that wrote none fails
-      # "TypeScript / test", as it owes one (R19). The report is kept a week, so that the coverage
+      # "TypeScript / test", as it owes one. The report is kept a week, so that the coverage
       # job can be run again after an outage of Codecov. The name is the wrapper's own: an
       # artifact's name is unique in a run, and the caller's own jobs may upload one called
       # coverage, as spec's do.
@@ -341,7 +341,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-  # Codecov takes the report by OIDC, with no secret (R48 spec). This job alone may ask GitHub for
+  # Codecov takes the report by OIDC, with no secret. This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
   # none of the repository's code. A pull request from a fork gets no token: the action then sends
   # the report without one, as Codecov takes it from a fork's branch. The job waits for every check,
@@ -373,7 +373,7 @@ jobs:
           path: coverage
 
       # The Codecov CLI at an exact version, checked against its SHA-256 here, as the tools of
-      # self-ci.yml are (R08), rather than against a key the action would fetch during the run. The
+      # self-ci.yml are, rather than against a key the action would fetch during the run. The
       # sum is the one the release's codecov.SHA256SUM gives, whose signature checks against the key
       # Codecov's docs name by its fingerprint. Dependabot moves the actions' SHAs alone: the
       # version and its sum are raised by hand, together, and in go.yml too.

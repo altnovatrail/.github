@@ -1,37 +1,37 @@
-# Shared check (R03, R16): the caller's Go code by four recipes of its own — ci-lint, ci-test,
+# Shared check: the caller's Go code by four recipes of its own — ci-lint, ci-test,
 # ci-vuln and ci-licenses —, a job each, in the toolchain stage of its .devcontainer/Dockerfile,
 # where the caller pins its Go; the recipes pin the tools they run. What the checks do is the
-# caller's; how they are run is the same everywhere (R30 spec). With the calling job named Go,
+# caller's; how they are run is the same everywhere. With the calling job named Go,
 # the checks of the caller's ruleset are "Go / lint", "Go / test", "Go / vuln" and "Go / licenses".
 #
 # ci-test writes its coverage to coverage/go.out, which the job coverage sends to Codecov by OIDC,
-# with no secret (R48 spec). "Go / coverage" is no check of the ruleset: codecov/patch, which
+# with no secret. "Go / coverage" is no check of the ruleset: codecov/patch, which
 # Codecov sets from the upload, is.
 #
 # ci-licenses is handed the licenses a NovaTrail repository may build from, the ASF's Category A as
-# SPDX identifiers, the list spec checks its own tools against (R12 spec). It lives here, so that a
-# change to it is a release, and self-ci.yml holds it to spec's list at the tag .github is on
-# (R16). A repository's exceptions are its recipe's, each with its decision.
+# SPDX identifiers, the list spec checks its own tools against. It lives here, so that a
+# change to it is a release, and self-ci.yml holds it to spec's list at the tag .github is on.
+# A repository's exceptions are its recipe's, each with its decision.
 #
 # The image of the toolchain stage comes from the caller's cache of GitHub Actions, so that an
-# outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the same
-# (R36): on a miss the job toolchain alone builds it and hands it on by an artifact of the run, and
-# a push to main alone saves it (R42). lint, vuln and licenses, which start no browser and run no
-# test, run in the smaller stage toolchain-core where the Dockerfile has one (R47). The caches of
-# Go come from the same cache, an entry a check, saved by a push to main alone (R41).
+# outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the
+# same (R36): on a miss the job toolchain alone builds it and hands it on by an artifact of the
+# run, and a push to main alone saves it. lint, vuln and licenses, which start no browser and run no
+# test, run in the smaller stage toolchain-core where the Dockerfile has one. The caches of
+# Go come from the same cache, an entry a check, saved by a push to main alone.
 #
-# With same-bits, four more jobs hold the caller's bits the same on every build (R107 spec):
+# With same-bits, four more jobs hold the caller's bits the same on every build:
 # "Go / targets", the tests on the builds where the bits are most at risk, a job
-# "Go / target (<target>)" each (R39, R43); "Go / fma-diff", the assembler of each package with
+# "Go / target (<target>)" each; "Go / fma-diff", the assembler of each package with
 # fusion and without it; "Go / arm64", ci-test and the targets on an arm64 runner, by the composite
-# action .github/actions/toolchain (R49); "Go / rules", the rules of code by .github's tool
-# tools/coderules and the caller's lists, .github/coderules.json (R33). Without the input none of
+# action .github/actions/toolchain; "Go / rules", the rules of code by .github's tool
+# tools/coderules and the caller's lists, .github/coderules.json. Without the input none of
 # them runs.
 #
 # self-ci.yml checks .github's own Go code by this workflow without same-bits: a change here is
 # tried before its release from a Go repository's pull request that calls this file by the SHA of
 # the branch, or from a trial pull request of .github that calls it by local path and is never
-# merged (R16).
+# merged.
 #
 # Called from a job that gives it `contents: read` and `id-token: write`: the job coverage alone
 # asks for the token, and a called workflow can only lower what its caller gives.
@@ -51,9 +51,9 @@ permissions:
 
 jobs:
   # The image of the caller's toolchain stage, built at most once for the jobs of this file on
-  # amd64 (R36, R42): a file of docker save in the caller's cache of GitHub Actions, by the key of
-  # the runner's OS and architecture and the hash of the Dockerfile (R31 spec). The Dockerfile pins
-  # all it installs by version and sum (R34 spec, R40 spec), so the image from the cache is the one
+  # amd64: a file of docker save in the caller's cache of GitHub Actions, by the key of
+  # the runner's OS and architecture and the hash of the Dockerfile. The Dockerfile pins
+  # all it installs by version and sum, so the image from the cache is the one
   # it would build, and a hit asks nothing of nodejs.org, GitHub or Ubuntu's snapshot. On a hit this
   # job only looks the entry up, and each job after it restores the file; on a miss it builds the
   # image and hands the file on as an artifact of the run, kept a day. Only a push to main saves: a
@@ -65,7 +65,7 @@ jobs:
   # check: the jobs after this one build the image themselves.
   #
   # lint, vuln and licenses run in the stage toolchain-core where the Dockerfile has one that holds
-  # less than toolchain (R47), with a file, an entry and an artifact of its own,
+  # less than toolchain, with a file, an entry and an artifact of its own,
   # novatrail-toolchain-core.tar by the key toolchain-core-…; on a miss of both this job builds and
   # hands on both.
   toolchain:
@@ -89,8 +89,8 @@ jobs:
 
       # toolchain-core where the Dockerfile has that stage, as spec's toolchain.sh finds it, and its
       # stage toolchain holds more: an instruction but SHELL, or another base. Else toolchain, which
-      # holds all the core does, since a second entry of the same files would cost space alone
-      # (R47). A continued line counts as one instruction, so a reading that errs gives the core a
+      # holds all the core does, since a second entry of the same files would cost space alone.
+      # A continued line counts as one instruction, so a reading that errs gives the core a
       # file of its own, which costs an entry and no verdict.
       - name: Toolchain stages
         id: stages
@@ -140,7 +140,7 @@ jobs:
           STAGES: ${{ steps.toolchain.outputs.cache-hit != 'true' && 'toolchain' || '' }} ${{ steps.stages.outputs.core == 'toolchain-core' && steps.core.outputs.cache-hit != 'true' && 'toolchain-core' || '' }}
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -226,12 +226,12 @@ jobs:
         check: [lint, test, vuln, licenses]
     steps:
       # Without the spec submodule: code takes spec's files from spec's releases, not from the
-      # submodule (R21 spec), so a check that reads spec/ fails here as it would for a user.
+      # submodule, so a check that reads spec/ fails here as it would for a user.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # The stage of this check (R47): lint, vuln and licenses, which start no browser and run no
+      # The stage of this check: lint, vuln and licenses, which start no browser and run no
       # test, take the one the job toolchain names for them, and the rest toolchain. Without a name
       # from that job, which then failed before it had one, toolchain, which holds all the core does.
       - name: Toolchain stage
@@ -248,7 +248,7 @@ jobs:
           echo "stage=${stage}" >> "$GITHUB_OUTPUT"
 
       # The image of that stage, from the caller's cache of GitHub Actions, or on a miss
-      # from the job toolchain, which built it once for the jobs of this run (R36, R42). With
+      # from the job toolchain, which built it once for the jobs of this run. With
       # neither, or with a file that does not load as the image novatrail-toolchain, the step builds
       # the image itself, so that what failed there costs the run its speed, not its verdict. It
       # writes no file: the job toolchain saves the image.
@@ -273,7 +273,7 @@ jobs:
           STAGES: ${{ steps.stage.outputs.stage }}
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -306,7 +306,7 @@ jobs:
 
       # The caches of Go come from the caller's cache of GitHub Actions too, as one folder outside
       # the checkout: the modules, GOMODCACHE, the builds, GOCACHE, and golangci-lint's,
-      # GOLANGCI_LINT_CACHE (R41). Each docker run of the job mounts it at /go-cache and points the
+      # GOLANGCI_LINT_CACHE. Each docker run of the job mounts it at /go-cache and points the
       # three variables into it. The key is the runner's OS and architecture, the check, the
       # Dockerfile, which pins the Go, and the go.sum files, which pin the modules; on a miss the
       # newest entry of the same check and Dockerfile comes by the prefix without go.sum, whose
@@ -331,7 +331,7 @@ jobs:
       # ./... leaves out —, which hashes each module again against the hash go held to go.sum when it
       # downloaded it. The folder of a tool run by go run <module>@<version> no verify hashes: main's
       # scope holds it, as it holds GOCACHE. A check that fails or cannot run costs the run its
-      # caches, deleted with a warning, and not its verdict (R41).
+      # caches, deleted with a warning, and not its verdict.
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -398,7 +398,7 @@ jobs:
 
       # The test job hands the report its recipe wrote to the coverage job, the one job that may ask
       # for an OIDC token: this one runs the code under test. A recipe that wrote none fails
-      # "Go / test", as it owes one (R16). The report is kept a week, so that the coverage job can
+      # "Go / test", as it owes one. The report is kept a week, so that the coverage job can
       # be run again after an outage of Codecov. The name is the wrapper's own: an artifact's name
       # is unique in a run, and the caller's own jobs may upload one called coverage, as spec's do.
       - name: Coverage report
@@ -421,7 +421,7 @@ jobs:
           path: ${{ runner.temp }}/go-cache
           key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
-  # Codecov takes the report by OIDC, with no secret (R48 spec). This job alone may ask GitHub for
+  # Codecov takes the report by OIDC, with no secret. This job alone may ask GitHub for
   # the token, which only Codecov accepts and which grants nothing in the repository, and it runs
   # none of the repository's code. A pull request from a fork gets no token: the action then sends
   # the report without one, as Codecov takes it from a fork's branch. The job waits for the four
@@ -454,7 +454,7 @@ jobs:
           path: coverage
 
       # The Codecov CLI at an exact version, checked against its SHA-256 here, as the tools of
-      # self-ci.yml are (R08), rather than against a key the action would fetch during the run. The
+      # self-ci.yml are, rather than against a key the action would fetch during the run. The
       # sum is the one the release's codecov.SHA256SUM gives, whose signature checks against the key
       # Codecov's docs name by its fingerprint. Dependabot moves the actions' SHAs alone: the
       # version and its sum are raised by hand, together, and in typescript.yml too.
@@ -486,12 +486,12 @@ jobs:
   # GODEBUG=cpu.all=off, with no processor extension for the runtime and the standard library to
   # pick their path by; on 386; in js/wasm, in the Node of the toolchain stage; and in wasip1, in
   # node:wasi of the same Node, by an executor the script writes, since Go's go_wasip1_wasm_exec
-  # knows only runtimes the stage does not have; wasip1 is vetted too (R39). A host other than
+  # knows only runtimes the stage does not have; wasip1 is vetted too. A host other than
   # amd64 runs no amd64 build and none for 386, and runs its own build with cpu.all=off. Each target
   # is a job of the matrix, so that they run at once, and the job targets after them is the one
-  # check of the caller's ruleset (R43). The script is one for the matrix and arm64: it runs the
+  # check of the caller's ruleset. The script is one for the matrix and arm64: it runs the
   # targets TARGETS names, in order, in one container on stdin, so that arm64's three keep one
-  # build cache (R107 spec).
+  # build cache.
   target:
     # GitHub adds the target to the name, "Go / target (amd64-v3)": none of these is a check of the
     # ruleset, "Go / targets" is. A name with the matrix in it would be shown unexpanded on every
@@ -511,7 +511,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # The toolchain stage from the cache or the job toolchain, as in the job check (R36, R42).
+      # The toolchain stage from the cache or the job toolchain, as in the job check.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -533,7 +533,7 @@ jobs:
           STAGES: toolchain
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -564,7 +564,7 @@ jobs:
               fi
           done
 
-      # The Go caches from the cache, as in the job check (R41), an entry for each target (R43).
+      # The Go caches from the cache, as in the job check, an entry for each target.
       - name: Go caches from the cache
         id: go-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -573,7 +573,7 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-target-${{ matrix.target }}-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, as in the job check (R41).
+      # The three folders, as in the job check.
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -688,7 +688,7 @@ jobs:
           done
           SCRIPT
 
-      # The Go caches into the cache, as in the job check (R41).
+      # The Go caches into the cache, as in the job check.
       - name: Go caches into the cache
         if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -697,9 +697,9 @@ jobs:
           key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
   # "Go / targets", the one check of the targets in the caller's ruleset: green when every job of
-  # the matrix target passed, red otherwise — a target that failed, was cancelled or did not run
-  # (R43). It runs whatever came before it, a cancelled run too, which a skipped check would pass
-  # as "Success"; it checks nothing out and only reads the result, so nothing in it can hang.
+  # the matrix target passed, red otherwise — a target that failed, was cancelled or did not run.
+  # It runs whatever came before it, a cancelled run too, which a skipped check would pass
+  # as "Success" (R43); it checks nothing out and only reads the result, so nothing in it can hang.
   targets:
     name: targets
     needs: target
@@ -724,7 +724,7 @@ jobs:
   # report no place where a rule would have fired, "fmahash triggered". A control of three shapes
   # the compiler fuses, one at least on every target, must differ on every target, or the check
   # has stopped seeing fusion; it is a module of its own, written here, so that a caller keeps
-  # none. The output does not depend on the host (R107 spec).
+  # none. The output does not depend on the host.
   fma-diff:
     name: fma-diff
     needs: toolchain
@@ -736,7 +736,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # The toolchain stage from the cache or the job toolchain, as in the job check (R36, R42).
+      # The toolchain stage from the cache or the job toolchain, as in the job check.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -758,7 +758,7 @@ jobs:
           STAGES: toolchain
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -789,7 +789,7 @@ jobs:
               fi
           done
 
-      # The Go caches from the cache, as in the job check (R41).
+      # The Go caches from the cache, as in the job check.
       - name: Go caches from the cache
         id: go-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -798,7 +798,7 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-fma-diff-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, as in the job check (R41).
+      # The three folders, as in the job check.
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -916,7 +916,7 @@ jobs:
               if [ "$ok" = 1 ]; then echo "fma-diff: $target: ok" >&2; else return 1; fi
           }
           # The targets at once, each in the background with its output in a file of its own; then
-          # each target's output, whole, in the order of the targets, as soon as it has ended (R43).
+          # each target's output, whole, in the order of the targets, as soon as it has ended.
           # Each stops at 25 minutes, inside the job's 30: a job that times out has its processes
           # killed, and the files of the targets that ended before the one that hangs would never
           # be printed.
@@ -940,7 +940,7 @@ jobs:
           exit "$status"
           SCRIPT
 
-      # The Go caches into the cache, as in the job check (R41).
+      # The Go caches into the cache, as in the job check.
       - name: Go caches into the cache
         if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -952,7 +952,7 @@ jobs:
   # repository: the caller's tests with the race detector and coverage, whose report goes nowhere —
   # the test job sends the one report —, then the script of targets, which on a host other than
   # amd64 runs its own build with cpu.all=off, js/wasm and wasip1. fma-diff does not depend on the
-  # host and does not run again (R107 spec).
+  # host and does not run again.
   arm64:
     name: arm64
     if: inputs.same-bits
@@ -967,11 +967,11 @@ jobs:
 
       # The toolchain stage and the Go caches by the composite action of .github of the commit this
       # workflow file comes from, $/, the action a caller's own job takes by the SHA of a release,
-      # so that the steps are one file in both (R49). The image comes from the cache on its own, as
+      # so that the steps are one file in both. The image comes from the cache on its own, as
       # in no other job here: the image of an arm64 runner is no amd64 image, and the job toolchain
       # builds none for it. On a miss the action builds the image, and only a push to main writes
-      # and saves its file (R36, R42); the Go caches come by the key of the check arm64 and are
-      # checked by go mod verify, as in the job check (R41).
+      # and saves its file; the Go caches come by the key of the check arm64 and are
+      # checked by go mod verify, as in the job check.
       - name: Toolchain image and Go caches
         uses: $/.github/actions/toolchain
         with:
@@ -1049,7 +1049,7 @@ jobs:
           SCRIPT
 
       # The Go caches into the cache by the same action, as in the job check: only a push to main,
-      # after the work passed, and only on a miss of the exact key (R41, R49).
+      # after the work passed, and only on a miss of the exact key.
       - name: Go caches into the cache
         uses: $/.github/actions/toolchain
         with:
@@ -1059,7 +1059,7 @@ jobs:
   # The rules of code that keep the bits the same on every build — float64() round every * and /,
   # math and the imports by the lists, no cgo, assembler, linkname or build constraint, no map
   # range or goroutine in code, no require the lists do not name, no replace, no nested module —,
-  # held by .github's tool tools/coderules (R107 spec; R33). The tool is .github's of the commit
+  # held by .github's tool tools/coderules. The tool is .github's of the commit
   # this workflow file comes from, job.workflow_sha, so that a caller pinned to a release runs the
   # tool of that release; it is built by the Go of the caller's toolchain stage, as the caller's
   # code is, and reads the caller's lists, .github/coderules.json. actions/checkout puts it in the
@@ -1083,7 +1083,7 @@ jobs:
           path: .shared-github
           persist-credentials: false
 
-      # The toolchain stage from the cache or the job toolchain, as in the job check (R36, R42).
+      # The toolchain stage from the cache or the job toolchain, as in the job check.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -1105,7 +1105,7 @@ jobs:
           STAGES: toolchain
         run: |
           # Each stage STAGES names, from its own file, novatrail-<stage>.tar, and as the one image
-          # novatrail-toolchain, as spec's toolchain.sh names either stage (R47): the job toolchain
+          # novatrail-toolchain, as spec's toolchain.sh names either stage: the job toolchain
           # builds and saves one, then the other, and every other job takes one.
           for stage in $STAGES; do
               case $stage in
@@ -1136,7 +1136,7 @@ jobs:
               fi
           done
 
-      # The Go caches from the cache, as in the job check (R41).
+      # The Go caches from the cache, as in the job check.
       - name: Go caches from the cache
         id: go-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -1145,7 +1145,7 @@ jobs:
           key: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-${{ runner.os }}-${{ runner.arch }}-rules-${{ hashFiles('.devcontainer/Dockerfile') }}-
 
-      # The three folders, as in the job check (R41).
+      # The three folders, as in the job check.
       - name: Go caches
         env:
           RESTORED: ${{ steps.go-cache.outputs.cache-matched-key }}
@@ -1210,7 +1210,7 @@ jobs:
               --volume "$RUNNER_TEMP/shared-github/tools/coderules:/tool:ro" \
               novatrail-toolchain bash -c 'go -C /tool build -o /tmp/coderules . && /tmp/coderules -lists .github/coderules.json .'
 
-      # The Go caches into the cache, as in the job check (R41).
+      # The Go caches into the cache, as in the job check.
       - name: Go caches into the cache
         if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

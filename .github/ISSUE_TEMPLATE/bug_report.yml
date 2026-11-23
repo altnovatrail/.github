@@ -1,6 +1,6 @@
 # A default issue form: GitHub offers it in every repository of altnovatrail with no issue
 # templates of its own, and a form or config.yml in a repository's own .github/ISSUE_TEMPLATE
-# drops all of these (the 2026-11-01 amendment to R22 spec; R29). Links are absolute, since the
+# drops all of these. Links are absolute, since the
 # form is shown outside this repository, and only in markdown and checkbox labels, where GitHub
 # documents Markdown links.
 name: Bug report

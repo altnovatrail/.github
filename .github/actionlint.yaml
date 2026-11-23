@@ -1,8 +1,8 @@
 # What GitHub documents and actionlint does not know yet: concurrency's key queue; the
 # properties job.workflow_ref, which release.yml signs under, and job.workflow_sha and
 # job.workflow_repository, by which go.yml checks out the tool of its own version; and the self
-# repository reference $/, by which go.yml takes the composite action of its own version (R18,
-# R33, R49). Only those complaints, only in the workflows that use them, are waived.
+# repository reference $/, by which go.yml takes the composite action of its own version.
+# Only those complaints, only in the workflows that use them, are waived.
 paths:
   .github/workflows/self-release.yml:
     ignore:

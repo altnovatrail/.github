@@ -1,6 +1,6 @@
 # A default issue form: GitHub offers it in every repository of altnovatrail with no issue
 # templates of its own, and a form or config.yml in a repository's own .github/ISSUE_TEMPLATE
-# drops all of these (the 2026-11-01 amendment to R22 spec; R29). Its required fields ask for
+# drops all of these. Its required fields ask for
 # no detail of a vulnerability, so the fallback of SECURITY.md, an issue that asks for a
 # security contact, comes through this form.
 name: Change proposal

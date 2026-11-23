@@ -1,6 +1,6 @@
-# CodeQL over .github itself (R03): the shared codeql.yml, called by local path, so that a pull
+# CodeQL over .github itself: the shared codeql.yml, called by local path, so that a pull
 # request checks the version it changes. The checks CodeQL / analyze (actions) and CodeQL / analyze
-# (go) hold the merge into main through main's ruleset (R11).
+# (go) hold the merge into main through main's ruleset.
 #
 # No weekly run: the CodeQL bundle comes with the pinned action (tools: linked), so a run on
 # unchanged code would find what the last one found. New queries come with the pull request
@@ -27,6 +27,6 @@ jobs:
       contents: read
       security-events: write
     uses: ./.github/workflows/codeql.yml
-    # Beside the workflows, the Go code of tools/coderules (R33).
+    # Beside the workflows, the Go code of tools/coderules.
     with:
       languages: go

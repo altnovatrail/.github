@@ -15,8 +15,8 @@ import (
 )
 
 // The rules a finding names. A caller's lists say what its code and tests may take; the rules
-// themselves, and what they allow of math, strings and strconv, are the same for every caller
-// (R107 spec). Each rule is named by a word, as the comments "// want <rule>" of the controls in
+// themselves, and what they allow of math, strings and strconv, are the same for every caller.
+// Each rule is named by a word, as the comments "// want <rule>" of the controls in
 // testdata/ name them; a repository numbers its rules in its own documents.
 var allRules = []string{
 	"import",    // a package outside the lists, of code or of tests
@@ -25,7 +25,7 @@ var allRules = []string{
 	"linkname",  // a //go:linkname directive
 	"buildtag",  // a //go:build or +build line, or a file name the go command reads as one
 	"require",   // a require directive in go.mod for a module the lists do not name
-	"replace",   // a replace directive in go.mod: a module as no release gave it (R77 spec)
+	"replace",   // a replace directive in go.mod: a module as no release gave it
 	"nested",    // a go.mod below the root, which the module's zip leaves out
 	"math",      // a function of math whose result is not defined exactly
 	"fused",     // a float * or / whose result does not go straight into float64()

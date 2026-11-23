@@ -1,5 +1,5 @@
-# Shared check (R03): OpenSSF Scorecard over the caller, its results published to the Scorecard
-# server and uploaded to code scanning. It holds no merge (R30 spec): it runs on main and on a
+# Shared check: OpenSSF Scorecard over the caller, its results published to the Scorecard
+# server and uploaded to code scanning. It holds no merge: it runs on main and on a
 # schedule, as the action supports, and a pull request has no result of it.
 #
 # Publishing holds this workflow to the Scorecard server's rules: no `env` or `defaults` at the

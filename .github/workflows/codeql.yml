@@ -1,5 +1,5 @@
-# Shared check (R03): CodeQL, as advanced setup, over the caller's workflows — language actions,
-# always — and over the languages it names (R30 spec). The default setup of code scanning stays
+# Shared check: CodeQL, as advanced setup, over the caller's workflows — language actions,
+# always — and over the languages it names. The default setup of code scanning stays
 # off: with it on, GitHub disables a workflow like this one.
 #
 # The caller's job gives it `contents: read` and `security-events: write`: a called workflow
@@ -8,7 +8,7 @@
 # up under the category /language:<language>, the same whatever the caller's file or job is called.
 #
 # Go is analysed from a build, with the Go of the caller's toolchain stage, which its Go checks run
-# with too (R16), taken without building the stage (R45). The build runs on the runner with the
+# with too, taken without building the stage. The build runs on the runner with the
 # step's token, like any code a pull request brings into its own checks.
 
 name: CodeQL (shared)
@@ -40,7 +40,7 @@ permissions:
 
 jobs:
   # Besides actions, javascript-typescript and go are taken: the platform's code is Go and
-  # TypeScript (R03). Any other name stops the check with its reason. The job also turns
+  # TypeScript. Any other name stops the check with its reason. The job also turns
   # paths-ignore into the configuration the analyses of the caller's languages take. It is a check
   # of its own and need not be required: when it fails, the matrix never expands, the one check
   # GitHub reports for it is a skipped "analyze (${{ matrix.language }})", the required analyses
@@ -113,9 +113,9 @@ jobs:
 
   # Go takes autobuild: CodeQL reads Go only from a build. tools: linked takes the bundle this
   # commit of the action ships with; without it, GitHub's flags choose the bundle at run time. Only
-  # javascript-typescript takes paths-ignore: actions reads every workflow (R09), and go what the
+  # javascript-typescript takes paths-ignore: actions reads every workflow, and go what the
   # build compiled. A green analysis says that CodeQL ran, not that it found nothing: what it found
-  # holds a merge through the ruleset. The queries are security-extended (R50 canvas-api).
+  # holds a merge through the ruleset.
   analyze:
     name: analyze (${{ matrix.language }})
     needs: languages

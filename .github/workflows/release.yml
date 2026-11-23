@@ -1,9 +1,9 @@
-# Shared release (R03, R18): what a green main of a repository with code produces — the files its
+# Shared release: what a green main of a repository with code produces — the files its
 # own recipe builds, each signed without a key, and the tag created with the release, as spec's
-# release creates its own (R31 spec). Nobody tags by hand: the version is the next patch of the
+# release creates its own. Nobody tags by hand: the version is the next patch of the
 # line the caller's release workflow sets, RELEASE_LINE, worked out by spec's own recipe, as
-# .github's release works out its own (R10). Module packages are files like any other and are
-# signed the same way (R17 spec).
+# .github's release works out its own. Module packages are files like any other and are
+# signed the same way.
 #
 # A commit gets a release only when a path the caller names in paths has changed since the
 # release before it; the first release comes out always. A library would otherwise bring every
@@ -13,19 +13,19 @@
 # pins, as what signed, and the caller's repository and workflow as the run that signed. spec's
 # release-verify lets a file in by it only from this workflow at the SHA of a release of .github,
 # v0.1.7 or newer, at the call of the caller's .github/workflows/release.yml on main, of the commit
-# of the tag (R77 spec). A run that publishes stops before anything else when the caller's
+# of the tag. A run that publishes stops before anything else when the caller's
 # workflow is not that file on main, or when it pins this workflow by anything but a commit's SHA;
 # whether that SHA is a release of .github, the consumer's check asks.
 #
 # With npm-package, the release also publishes that package to npm, in the @altnovatrail scope:
 # the archive npm pack names for it, one of the files the run signs and puts in the release, the
-# same bytes (R37 spec). npm takes it by trusted publishing, with no token kept anywhere: the
+# same bytes. npm takes it by trusted publishing, with no token kept anywhere: the
 # registry trusts the caller's release workflow by its file name, as the package's trusted
 # publisher names it, and npm gets a short-lived token by the job's OIDC. The first version of a
 # package is published by hand, since a trusted publisher is set on a package the registry has.
 #
 # With previous-file, the caller's release-files recipe also gets a file of the release before
-# this one — module-index.json, say, the cumulative index of modules (R63 spec) —, downloaded with
+# this one — module-index.json, say, the cumulative index of modules —, downloaded with
 # its bundle from the newest release and checked before anything is built: the release's
 # attestation here on the runner, the signature by spec's release-verify. The recipe gets the
 # version and, as its second argument, the path of the checked file, mounted read-only, or an
@@ -36,7 +36,7 @@
 # its CI and on the button, pins this workflow by the SHA of a release, gives this job contents:
 # write, id-token: write and actions: read, and sets RELEASE_LINE in its own env. Its repository
 # keeps its releases immutable and its tags v* under a ruleset, and its spec submodule is at
-# v0.2.17 or newer, whose script tools/toolchain/toolchain.sh runs spec's recipes (R31 spec) — at
+# v0.2.17 or newer, whose script tools/toolchain/toolchain.sh runs spec's recipes — at
 # v0.6.0 or newer with npm-package or previous-file, whose release-verify checks the file a run
 # takes from a release. With publish: false a run builds, signs and checks the signatures and
 # publishes nothing, which lets a pull request try a change here.
@@ -111,7 +111,7 @@ jobs:
         shell: bash
     # The commit the checks ran on, which this run releases: the commit of the CI run, or the
     # commit of the event otherwise. The checkout below is the tip, and TARGET is named by its SHA
-    # alone (R12).
+    # alone.
     env:
       TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
     permissions:
@@ -123,7 +123,7 @@ jobs:
       actions: read
     steps:
       # The npm package the caller names is checked on every run, whether or not it releases: a
-      # name of the @altnovatrail scope and no other (R37 spec). Its archive is named as npm pack
+      # name of the @altnovatrail scope and no other. Its archive is named as npm pack
       # names it, the scope and the name joined by a dash, then the version: the steps below take
       # that stem from here.
       - id: npm-name
@@ -175,10 +175,10 @@ jobs:
       # What the certificate of this run's signature will name, asked before anything else when the
       # run publishes. spec's release-verify lets in no file whose certificate names another
       # workflow of the caller than its .github/workflows/release.yml on main, or this workflow at
-      # anything but a commit's SHA, and a release's files are immutable (R77 spec). The job's
+      # anything but a commit's SHA, and a release's files are immutable. The job's
       # condition and the step above keep the run on main; the file and the pin nothing else holds.
       # Whether the SHA is a release of .github, v0.1.7 or newer, the consumer's release-verify
-      # asks, and Dependabot offers the SHAs of releases alone (R04).
+      # asks, and Dependabot offers the SHAs of releases alone.
       - name: The identity the signature will carry
         if: inputs.publish
         env:
@@ -204,7 +204,7 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      # As .github's own release works it out (R10): spec's release-version, run in the toolchain
+      # As .github's own release works it out: spec's release-version, run in the toolchain
       # stage, handed TARGET and the caller's release workflow — the file github.workflow_ref
       # names, since the github context of a called workflow is the caller's — whose RELEASE_LINE
       # at TARGET is the line. release-refusal runs only after a refusal, so just's dry run asks
@@ -213,11 +213,11 @@ jobs:
       # release behind it was pushed by hand and stops the run.
       #
       # The recipes run by spec's own script, tools/toolchain/toolchain.sh in the caller's spec
-      # submodule, at the tag it pins (R31 spec). The script itself runs on the runner, in this
+      # submodule, at the tag it pins. The script itself runs on the runner, in this
       # step's environment and the job's, where the caller's own code runs in a container with no
       # token (R18). So the run first asks that spec/ be a submodule of altnovatrail/spec, checked
       # out at the commit the caller pins and at a tag of spec, as every NovaTrail repository pins
-      # it (R21 spec), and that the tag hold the script, which spec ships from v0.2.17; anything
+      # it, and that the tag hold the script, which spec ships from v0.2.17; anything
       # else stops it before anything is built, with the reason. A run of a commit older than the
       # tip leaves before that, without a release.
       #
@@ -230,7 +230,7 @@ jobs:
       # tag holds.
       #
       # The script builds the stage toolchain-core, Node, just, Go and buf, which every recipe of a
-      # release needs and no more, by TOOLCHAIN_STAGE (R31 spec; R47): a Dockerfile without it, or
+      # release needs and no more, by TOOLCHAIN_STAGE: a Dockerfile without it, or
       # a script of an older spec, gets toolchain. Either is the image the steps after this one run
       # spec's recipes in.
       - id: version
@@ -379,15 +379,15 @@ jobs:
 
       # The file of the release before this one that the caller names by previous-file, which its
       # release-files recipe builds on, as the cumulative index of modules builds on the index of
-      # the release before it (R63 spec). The recipe runs with no network, token or spec/, so the
+      # the release before it. The recipe runs with no network, token or spec/, so the
       # file is downloaded and checked here, before anything is built: from the newest release,
       # which the number step names as the previous one, with its bundle. The release's
       # attestation is checked on the runner, and the signature by spec's release-verify, the one
-      # way a file of a NovaTrail release enters CI (R77 spec), as a run again checks its archive
+      # way a file of a NovaTrail release enters CI, as a run again checks its archive
       # (below): from a new copy of spec/ alone, and without the token. The checked file alone goes
       # into a folder of its own, which the build mounts read-only. A file the previous release
-      # lacks, or one a check refuses, stops the run: an index that cannot be read is a refusal
-      # (R63 spec). The first release has no previous one, and just's dry run asks for the recipe
+      # lacks, or one a check refuses, stops the run: an index that cannot be read is a refusal.
+      # The first release has no previous one, and just's dry run asks for the recipe
       # all the same, with the arguments the release after it will give it: a caller on a tag of
       # spec without it stops at its first release, not at its second. The output handed says what
       # the build gets, file or none, and the build goes by it.
@@ -445,11 +445,11 @@ jobs:
       # hold a file of that name, which the release after this one takes. Nothing of the step's
       # environment, no token among it, goes into the container. The step builds and runs the stage
       # itself rather than by spec's script: the caller's own code sees its tree alone and no token,
-      # whatever a later tag of the script comes to mount or hand in (R18).
+      # whatever a later tag of the script comes to mount or hand in.
       #
       # The stage is toolchain-core where the tree's Dockerfile has it, by the FROM line spec's
       # toolchain.sh finds it by, and toolchain otherwise: what the recipe needs is in the core, and
-      # a release builds no browser (R47).
+      # a release builds no browser.
       - name: Build the files
         if: steps.version.outputs.version != ''
         env:
@@ -505,7 +505,7 @@ jobs:
           ls -l "$RUNNER_TEMP/dist"
 
       # cosign at an exact version, checked against the sum in cosign_checksums.txt of its
-      # release, as gitleaks is (R08). Signing needs it; a run again checks a signature by spec's
+      # release, as gitleaks is. Signing needs it; a run again checks a signature by spec's
       # release-verify instead.
       - name: cosign
         if: steps.version.outputs.version != ''
@@ -521,9 +521,9 @@ jobs:
           chmod +x "$cosign"
 
       # Node at an exact version, with the npm it ships, checked against the sum in SHASUMS256.txt
-      # of its release, as cosign is (R08). Trusted publishing takes npm 11.5.1 and Node 22.14.0 or
-      # newer (R37 spec). npm runs on the runner, not in the caller's toolchain stage, which gets no
-      # token (R18).
+      # of its release, as cosign is. Trusted publishing takes npm 11.5.1 and Node 22.14.0 or
+      # newer. npm runs on the runner, not in the caller's toolchain stage, which gets no
+      # token.
       #
       # npm-isolated, which the check and the publish below both run, is npm kept from every
       # setting this workflow did not choose: from an empty folder, so no package.json or .npmrc
@@ -569,7 +569,7 @@ jobs:
       # A run again of a commit released already publishes the archive its release holds, not one
       # built anew. It downloads that file with its bundle, and checks both before npm sees them:
       # the release's attestation here on the runner, the signature by spec's release-verify, the
-      # one way a file of a NovaTrail release enters CI (R77 spec). That wants this workflow at the
+      # one way a file of a NovaTrail release enters CI. That wants this workflow at the
       # SHA of a release of .github, v0.1.7 or newer — whichever the run that released pinned, since
       # the button may run with another —, at the call of this repository's release.yml on main, of
       # the commit of the tag. The recipe runs in the caller's toolchain stage, as the number does,
@@ -752,8 +752,8 @@ jobs:
       # workflow made it, and every bundle is checked before anything is published: the identity
       # is this workflow at the ref the caller pins, job.workflow_ref, issued to GitHub Actions, in
       # the caller's repository, at TARGET. The certificate of the first file is printed, its
-      # extensions among it, for whoever checks the signatures later, as spec's release-verify does
-      # (R77 spec); a print that fails says so and holds nothing up.
+      # extensions among it, for whoever checks the signatures later, as spec's release-verify does;
+      # a print that fails says so and holds nothing up.
       #
       # The files are signed AT_ONCE at a time, by xargs -P, since one after another a release of a
       # hundred files takes minutes (R44). Each file is signed and checked with a TUF cache of its
@@ -825,7 +825,7 @@ jobs:
       # Every release is marked Latest: its number is the highest so far, and the tip of main may
       # get no release of its own when it changes nothing the release is built from. The notes run
       # from the release before this one. A refusal of the Releases API is let pass only as
-      # spec's release-refusal decides, as in .github's own release (R10). The recipe runs in a
+      # spec's release-refusal decides, as in .github's own release. The recipe runs in a
       # new copy of the checkout, taken after main is fetched again: the version step's copy has
       # no new tip, and a fetch there would read a .git/config a container may have changed. No
       # container has had the checkout, so the new copy's script is the one the tag holds.
@@ -869,7 +869,7 @@ jobs:
       # a release of hundreds of files that takes minutes, and run at once the calls would spend the
       # GITHUB_TOKEN's limits of requests. A file whose bytes the statement does not name is named
       # by ::error::, every one, and the step fails; a statement that names no file by its sha256
-      # fails it with a message of its own: gh may have printed another shape (R44).
+      # fails it with a message of its own: gh may have printed another shape.
       - name: Verify the release
         if: steps.publish.outputs.published == 'true' || (steps.version.outputs.released != '' && inputs.publish)
         env:
@@ -919,8 +919,8 @@ jobs:
       # variables. The registry is the verdict, not npm's exit status: npm may end well with a
       # version only staged, or fail on a version that went out (npm/cli#9889). The registry scans
       # a package before it serves it, typically for five minutes and at peak times for fifteen or
-      # more, and an archive may answer 404 for minutes after the packument shows its version (R37
-      # spec). So the step asks the packument, with write=true, until the version is there, and then
+      # more, and an archive may answer 404 for minutes after the packument shows its version.
+      # So the step asks the packument, with write=true, until the version is there, and then
       # the archive, until the registry serves it — a round every ten seconds, for twenty minutes,
       # as spec's step does, or three rounds while npm failed and the packument does not show the
       # version — and the archive has to be this file, byte for byte. A version npm holds already is

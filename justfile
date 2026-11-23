@@ -1,5 +1,5 @@
 # The recipes of .github's one Go module, tools/coderules, which the shared go.yml checks from
-# self-ci.yml as it checks every Go repository's (R16, R33). The tools of the checks run straight
+# self-ci.yml as it checks every Go repository's. The tools of the checks run straight
 # from their modules at exact versions, so nothing is installed for them and go.mod gains no
 # require; Dependabot does not see them, so they are raised by hand.
 GOVULNCHECK := "golang.org/x/vuln/cmd/govulncheck@v1.9.0"
@@ -28,7 +28,7 @@ ci-lint:
     fi
     go -C {{ MODULE }} vet ./...
 
-# coverage/go.out is the report go.yml's coverage job sends to Codecov (R48 spec).
+# coverage/go.out is the report go.yml's coverage job sends to Codecov.
 # Run the tests, with the race detector, and write their coverage.
 ci-test:
     mkdir -p coverage

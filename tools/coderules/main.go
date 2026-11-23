@@ -1,5 +1,5 @@
 // Command coderules holds the code of a Go module to the rules that keep its bits the same on
-// every build, by the lists a caller gives it (R107 spec; R33). The shared go.yml runs it with
+// every build, by the lists a caller gives it. The shared go.yml runs it with
 // same-bits:
 //
 //	coderules -lists .github/coderules.json .

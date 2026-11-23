@@ -10,7 +10,7 @@ import (
 )
 
 // Lists is what a caller's .github/coderules.json says its code and tests may take, beside the
-// standard library's packages the rules allow everyone (R107 spec). Every field is a list,
+// standard library's packages the rules allow everyone. Every field is a list,
 // empty when the file leaves it out:
 //
 //   - code-imports: the packages code may import, beside the module's own;
