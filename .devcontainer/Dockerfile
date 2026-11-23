@@ -4,12 +4,12 @@
 # detected at RUN time via dpkg instead, so any host that has Docker can build this.
 #
 # `toolchain-core` holds Node, just, Go and buf: what a release needs — its version and its files —
-# and every check that runs no browser, and a release builds it alone (R31 spec). `toolchain` adds what
+# and every check that runs no browser, and a release builds it alone. `toolchain` adds what
 # the repository's tests need — in a copy, its kind's lines at the end of the stage — and is the
 # stage the automated checks run inside. `devcontainer` adds what a person needs, and
 # devcontainer.json names it as its target. spec's own file ends with `orchestrator`, the
 # devcontainer with the Docker CLI and the Dev Containers CLI, which `just new-repo` leaves out of
-# a copy (R156 spec, R158 spec): in a copy `devcontainer` is the last stage, the one a build with no target
+# a copy: in a copy `devcontainer` is the last stage, the one a build with no target
 # gives, and in spec every build names its stage.
 
 # -- toolchain-core: releases the repository, checks it without a browser -----
@@ -25,15 +25,15 @@ ARG JUST_VERSION=1.58.0
 # Go, in /usr/local/go, where the shared CodeQL workflow of .github looks for it: a repository's
 # Go code is built, vetted, tested and read by CodeQL with it. In spec that code is its Go module
 # and the Go tools in tools/, and the checks build the module's zip as the Go module proxy will.
-# Every copy gets Go whatever its kind, unused where there is no Go code (R64 spec).
+# Every copy gets Go whatever its kind, unused where there is no Go code.
 ARG GO_VERSION=1.27.4
 # buf formats, lints, compares with the previous release and generates code from the protobuf
-# API contracts, spec's contracts/ (R83 spec). Every copy gets it as it gets Go, unused where there are
+# API contracts, spec's contracts/. Every copy gets it as it gets Go, unused where there are
 # no contracts: the other repositories take the generated code from a release of spec.
 ARG BUF_VERSION=1.75.0
 # Each archive's sha256 per architecture, as its publisher lists it: SHASUMS256.txt of the Node
 # release, SHA256SUMS of just's, go.dev/dl for Go, sha256.txt of buf's, whose binary comes bare. A
-# sum written here keeps a download from being swapped, and is raised with its version (R34 spec).
+# sum written here keeps a download from being swapped, and is raised with its version.
 ARG NODE_SHA256_AMD64=6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff
 ARG NODE_SHA256_ARM64=724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5
 ARG JUST_SHA256_AMD64=4a5cc2f53e6f0f8c59092a6cc38291eb729d46a7dd95d3ae582008881b84931d

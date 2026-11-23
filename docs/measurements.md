@@ -448,6 +448,10 @@ Measured 2026-11-23:
 - **the draft** — `just new-repo-draft .github docs 3.11 v0.19.11` and `… v0.19.4` on clones of `spec` at those tags in a temporary folder: the two drafts differ in CLAUDE.md, RUN.md, `docs/README.md`, `docs/decisions.md`, `docs/sources.md`, `run/QUESTIONS.md` and `docs-budgets.json` alone, by the rule of citations and the name of the tag; `.devcontainer/` and `.claude/` of `.github` are the same as the new draft's (`diff -r`);
 - **the checks** — `docs-check-repo` on v0.19.11 ok before the edits and after, with "0 files by the rule of citations": `docs-budgets.json` does not turn the rule on.
 
+Measured 2026-11-23, the move to v0.19.12:
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.19.12` on a clone of `spec` at that tag in a temporary folder: `.devcontainer/` of `.github` differed from the draft by seven lines of comments, the numbers of decisions, and after the move is the draft with no difference (`diff -r`); `.claude/settings.json`, AGENTS.md and LICENSE are the same as the draft's; CLAUDE.md and RUN.md differ from it by the strict rule of citations and by what `.github` is;
+- **the checks** — `docs-check-repo` on v0.19.12 ok, with "0 files by the rule of citations": `docs-budgets.json` does not turn the rule on.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55

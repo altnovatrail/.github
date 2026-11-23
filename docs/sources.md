@@ -836,6 +836,14 @@ Read 2026-11-23:
 - **the card 3.11 spec** — no change;
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories; Д217's column "When to return" reads "`skill-map` moves to a tag with T141". Table 5, `run/INBOX.md`: `.github` В45 — "T246, option (1): Д217's «When to return» names `skill-map` alone".
 
+### 12.20. `spec` v0.19.12
+
+Read 2026-11-23:
+- **the tag** — v0.19.12, commit b9c246a, the merge of pull request 218 of `spec`, came out 2026-11-23 at 17:07 UTC; the API's latest release is v0.19.12, `gh release view` calls it immutable, and `gh release verify v0.19.12 -R altnovatrail/spec` — "Release v0.19.12 verified!";
+- **what changed** (`git log --oneline v0.19.11..v0.19.12`, `git diff --stat v0.19.11 v0.19.12`) — 7 commits, 52 files, the strict rule of citations; for a copy: RULES.md, Citations — "No decision's number — the repository's own, spec's, another NovaTrail repository's or MathTrail's — stands in `docs/`, a README, CLAUDE.md, RULES.md, a rule of `.claude/rules/`, code and its comments, the devcontainer, a `.proto` file or a schema's description", "No section and no document is cited: what a text needs from another, it says in words", and "it checks the rule where `docs-budgets.json` sets `"citations": true`"; the template's CLAUDE.md, RUN.md, `docs/` and `run/` — the same rule; `.devcontainer/Dockerfile` and `devcontainer.json` — comments without the numbers of decisions, nothing else; `.claude/` and `docs-budgets.json` of the template — no change; row 7.38 of COORDINATION.md — `.github`, still «задачи нет»;
+- **the card of `.github`** in `spec/docs/architecture.md` — no change;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, as at v0.19.11, each the work of other repositories.
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
