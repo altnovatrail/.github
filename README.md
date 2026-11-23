@@ -21,4 +21,4 @@ A component of [NovaTrail](https://github.com/altnovatrail/spec), a universal op
 
 Nothing calls it while the platform runs, and it holds no learner's data. Every other repository of NovaTrail, spec among them, shows its community health files where it has none of its own and calls its shared workflows, each pinned by a release of this one; the shared release signs a repository's files keylessly through Sigstore and publishes its packages to npm, and the wrappers for code send the coverage of a repository's tests to Codecov.
 
-Its card is architecture 3.11 spec, among the documents of [spec](https://github.com/altnovatrail/spec); its own documents, its decisions and its plan are in [docs/](docs/README.md).
+Its card is in the architecture of [spec](https://github.com/altnovatrail/spec); its own documents, its decisions and its plan are in [docs/](docs/README.md).

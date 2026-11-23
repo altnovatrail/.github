@@ -551,17 +551,17 @@ test_go_composite_action_refuses_another_save_a_check_no_key_holds_and_a_second_
     action_inputs_step binaries yes
     run_step
     assert_status 1
-    assert_line '::error::save is "yes", not true or false (R49).'
+    assert_line '::error::save is "yes", not true or false.'
     for check in "" "a,b" "a b" 'a$b'; do
         action_inputs_step "$check" false
         run_step
         assert_status 1
-        assert_line "::error::check is \"${check}\", not a word of letters, digits, ., _ and -, which names the job in the key of its Go caches (R49)."
+        assert_line "::error::check is \"${check}\", not a word of letters, digits, ., _ and -, which names the job in the key of its Go caches."
     done
     action_inputs_step binaries false more
     run_step
     assert_status 1
-    assert_line '::error::The job has taken the Go caches by this action already: call it once before the work, and once after it with save: "true" (R49).'
+    assert_line '::error::The job has taken the Go caches by this action already: call it once before the work, and once after it with save: "true".'
 }
 
 # The key of the restore, and whether it hit — none on a miss, as actions/cache/restore leaves it —,
@@ -596,7 +596,7 @@ test_go_composite_action_saves_nothing_without_the_call_before_the_work() {
     run_step
     assert_status 1
     refute_output key
-    assert_line "::error::The job has not taken the Go caches by this action before its work, so it has none to save: call it without save first (R49)."
+    assert_line "::error::The job has not taken the Go caches by this action before its work, so it has none to save: call it without save first."
 }
 
 test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_image() {
@@ -1238,7 +1238,7 @@ test_go_fma_diff_fails_on_a_target_where_a_package_fuses() {
     run_container_script
     assert_script_status 1
     assert_eq "$(cat "$state/script.out")" "$(printf '%s\n' "fma-diff: arm64: ok" \
-        "fma-diff: ppc64le: the compiler fuses in example.com/m/sub; put float64() round the * or / (R107 spec):" \
+        "fma-diff: ppc64le: the compiler fuses in example.com/m/sub; put float64() round the * or /:" \
         "1c1" "< TEXT example.com/m/sub fused" "---" "> TEXT example.com/m/sub plain" \
         "fma-diff: s390x: ok" "fma-diff: riscv64: ok" "fma-diff: loong64: ok" "fma-diff: amd64/v3: ok")" "the script's output"
 }
@@ -1251,7 +1251,7 @@ test_go_fma_diff_fails_where_a_rule_would_have_fired() {
     assert_script_status 1
     local target
     for target in "${fma_targets[@]}"; do
-        assert_script_line "fma-diff: $target: the compiler fuses in example.com/m; put float64() round the * or / (R107 spec):"
+        assert_script_line "fma-diff: $target: the compiler fuses in example.com/m; put float64() round the * or /:"
     done
 }
 
@@ -1380,7 +1380,7 @@ test_go_rules_stops_without_the_callers_lists() {
     stub docker
     run_step
     assert_status 1
-    assert_line "::error::same-bits holds the code to the rules of code by the caller's lists, .github/coderules.json, and there is none (architecture 3.3 of .github)."
+    assert_line "::error::same-bits holds the code to the rules of code by the caller's lists, .github/coderules.json, and there is none."
     assert_calls docker 0
 }
 

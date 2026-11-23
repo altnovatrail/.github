@@ -45,7 +45,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E28, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (R34). Task numbers are taken through T93: next — T94.
+- **Done epics:** E1–E15 and E17–E28, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (R34). Task numbers are taken through T94: next — T95.
 
 ## Table 1. Current epic — E29. Теги `spec` v0.19.11 и v0.19.12, ссылки по R171 spec
 
@@ -56,6 +56,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T83 | Переход на тег `spec` v0.19.11 | Claude | — | — |
 | [x] | T84 | Ссылки по R171 spec: план, CLAUDE.md, `.claude/rules/`, комментарии кода (часть 1 из 9) | Claude | да | T83 |
 | [x] | T93 | Переход на тег `spec` v0.19.12 | Claude | — | T84 |
+| [x] | T94 | Ссылки по строгому правилу R171 spec: проход по первой части | Claude | — | T93 |
 | [ ] | T85 | Ссылки по R171 spec: вводная журнала и R01–R12 (часть 2) | Claude | — | T84 |
 | [ ] | T86 | Ссылки по R171 spec: журнал, R13–R18 (часть 3) | Claude | — | T85 |
 | [ ] | T87 | Ссылки по R171 spec: журнал, R19–R29 (часть 4) | Claude | — | T86 |

@@ -51,16 +51,16 @@ runs:
         case $SAVE in
             true | false) ;;
             *)
-                echo "::error::save is \"${SAVE}\", not true or false (R49)."
+                echo "::error::save is \"${SAVE}\", not true or false."
                 exit 1
                 ;;
         esac
         if ! [[ $CHECK =~ ^[A-Za-z0-9._-]+$ ]]; then
-            echo "::error::check is \"${CHECK}\", not a word of letters, digits, ., _ and -, which names the job in the key of its Go caches (R49)."
+            echo "::error::check is \"${CHECK}\", not a word of letters, digits, ., _ and -, which names the job in the key of its Go caches."
             exit 1
         fi
         if [ "$SAVE" = false ] && [ -e "$RUNNER_TEMP/novatrail-go-cache.key" ]; then
-            echo "::error::The job has taken the Go caches by this action already: call it once before the work, and once after it with save: \"true\" (R49)."
+            echo "::error::The job has taken the Go caches by this action already: call it once before the work, and once after it with save: \"true\"."
             exit 1
         fi
 
@@ -200,7 +200,7 @@ runs:
       run: |
         file=$RUNNER_TEMP/novatrail-go-cache.key
         if [ ! -f "$file" ]; then
-            echo "::error::The job has not taken the Go caches by this action before its work, so it has none to save: call it without save first (R49)."
+            echo "::error::The job has not taken the Go caches by this action before its work, so it has none to save: call it without save first."
             exit 1
         fi
         { read -r key && read -r hit; } < "$file"

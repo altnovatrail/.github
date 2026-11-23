@@ -15,7 +15,7 @@
 #
 # The image of the toolchain stage comes from the caller's cache of GitHub Actions, so that an
 # outage of what the Dockerfile downloads from fails no check while the Dockerfile stays the
-# same (R36): on a miss the job toolchain alone builds it and hands it on by an artifact of the
+# same: on a miss the job toolchain alone builds it and hands it on by an artifact of the
 # run, and a push to main alone saves it. lint, vuln and licenses, which start no browser and run no
 # test, run in the smaller stage toolchain-core where the Dockerfile has one. The caches of
 # Go come from the same cache, an entry a check, saved by a push to main alone.
@@ -42,7 +42,7 @@ on:
   workflow_call:
     inputs:
       same-bits:
-        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff", "Go / arm64" and "Go / rules" (R107 spec).
+        description: Hold the bits the same on every build, by "Go / targets", "Go / fma-diff", "Go / arm64" and "Go / rules".
         type: boolean
         default: false
 
@@ -412,7 +412,7 @@ jobs:
 
       # A push to main saves the caches, once its recipes have passed, under a key no entry holds
       # yet: an entry is never replaced, and an entry a pull request saved would be read by its own
-      # re-runs alone, so a pull request and every other event only read (R41). A save that fails
+      # re-runs alone, so a pull request and every other event only read. A save that fails
       # costs the next run its speed, not this one its verdict. release.yml takes no cache.
       - name: Go caches into the cache
         if: steps.go-cache.outputs.cache-hit != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -667,7 +667,7 @@ jobs:
                       # wasip1 in node:wasi, by an executor written outside the checkout: the test
                       # binary with its arguments, the environment, where go test sets PWD to the
                       # package's folder, and the whole file system; the code wasi.start returns is
-                      # the process's. Node has the stack go_js_wasm_exec gives it for js/wasm (R39).
+                      # the process's. Node has the stack go_js_wasm_exec gives it for js/wasm.
                       wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
                       cat > "$wasi" <<'JS'
           import { readFile } from "node:fs/promises";
@@ -699,7 +699,7 @@ jobs:
   # "Go / targets", the one check of the targets in the caller's ruleset: green when every job of
   # the matrix target passed, red otherwise — a target that failed, was cancelled or did not run.
   # It runs whatever came before it, a cancelled run too, which a skipped check would pass
-  # as "Success" (R43); it checks nothing out and only reads the result, so nothing in it can hang.
+  # as "Success"; it checks nothing out and only reads the result, so nothing in it can hang.
   targets:
     name: targets
     needs: target
@@ -902,7 +902,7 @@ jobs:
                       continue
                   fi
                   if [ "$fused" != "$plain" ] || grep -q 'fmahash triggered' <<<"$plain"; then
-                      echo "fma-diff: $target: the compiler fuses in $pkg; put float64() round the * or / (R107 spec):" >&2
+                      echo "fma-diff: $target: the compiler fuses in $pkg; put float64() round the * or /:" >&2
                       diff <(echo "$fused") <(echo "$plain") | head -n 40 >&2 || true
                       ok=0
                   fi
@@ -1027,7 +1027,7 @@ jobs:
                       # wasip1 in node:wasi, by an executor written outside the checkout: the test
                       # binary with its arguments, the environment, where go test sets PWD to the
                       # package's folder, and the whole file system; the code wasi.start returns is
-                      # the process's. Node has the stack go_js_wasm_exec gives it for js/wasm (R39).
+                      # the process's. Node has the stack go_js_wasm_exec gives it for js/wasm.
                       wasi="$(mktemp -d)/go_wasip1_wasm_exec.mjs"
                       cat > "$wasi" <<'JS'
           import { readFile } from "node:fs/promises";
@@ -1201,7 +1201,7 @@ jobs:
         run: |
           mv .shared-github "$RUNNER_TEMP/shared-github"
           if [ ! -f .github/coderules.json ]; then
-              echo "::error::same-bits holds the code to the rules of code by the caller's lists, .github/coderules.json, and there is none (architecture 3.3 of .github)."
+              echo "::error::same-bits holds the code to the rules of code by the caller's lists, .github/coderules.json, and there is none."
               exit 1
           fi
           docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \

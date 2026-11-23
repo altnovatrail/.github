@@ -133,7 +133,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # The Go of the caller's toolchain stage without building the stage (R45): go.dev's archive
+      # The Go of the caller's toolchain stage without building the stage: go.dev's archive
       # by the stage's ARG GO_VERSION and GO_SHA256_AMD64 — the job runs on X64 —, each once in the
       # stage or a stage it is built from, where Docker reads them. The Dockerfile is read as
       # Docker's parser reads it, with \ as its escape character. The build would take from the

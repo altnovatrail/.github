@@ -89,7 +89,7 @@ jobs:
       # the toolchain stage and spec's recipes all come from one commit. TARGET, in its
       # history, which main's ruleset keeps from being rewritten, is named by its SHA alone: git
       # diff reads its tree from the history, and a checkout by a ref of the workflow_run event is
-      # what Scorecard's Dangerous-Workflow flags (R12).
+      # what Scorecard's Dangerous-Workflow flags.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
@@ -130,7 +130,7 @@ jobs:
           # so the script's sum is taken in the checkout and checked in the copy before each call
           # after a container: what runs on the runner is the script the tag holds.
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
-              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 spec): .github's spec submodule is older than that."
+              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17: .github's spec submodule is older than that."
               exit 1
           fi
           toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
@@ -162,7 +162,7 @@ jobs:
           behind=$(sed -n 's/^behind=//p' "$RUNNER_TEMP/release-version")
           for tag in $released $behind $previous; do
               if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null; then
-                  echo "::error::${tag} has no release behind it: a tag pushed by hand. Tags come from this workflow alone (R04)."
+                  echo "::error::${tag} has no release behind it: a tag pushed by hand. Tags come from this workflow alone."
                   exit 1
               fi
           done
