@@ -49,7 +49,7 @@ run_documents() {
     run_step
 }
 
-script_missing="::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 spec): move the spec submodule to v0.2.17 or newer, then run the check again."
+script_missing="::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17: move the spec submodule to v0.2.17 or newer, then run the check again."
 
 test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_the_check() {
     use_workflow documents.yml

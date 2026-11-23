@@ -40,7 +40,7 @@ on:
   workflow_call:
     inputs:
       engines:
-        description: Run the tests in WebKit and Firefox by the recipe ci-engines, as the check "TypeScript / engines" (R19).
+        description: Run the tests in WebKit and Firefox by the recipe ci-engines, as the check "TypeScript / engines".
         type: boolean
         default: false
 
@@ -309,7 +309,7 @@ jobs:
 
       # As in go.yml, the container runs as the runner's user, with its home in /tmp, and it has
       # the network npm ci and npm audit need. Playwright recommends --init for any container and
-      # --ipc=host for Chromium (R19): only the jobs test and engines, where the browsers run, get
+      # --ipc=host for Chromium: only the jobs test and engines, where the browsers run, get
       # the latter, and the checks that start none keep Docker's own IPC namespace. WebKit and
       # Firefox get it too: without engines, ci-test runs them beside Chromium, and with it they
       # keep the flags they run under there. Of the step's environment only CI goes in, which

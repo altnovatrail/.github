@@ -1,6 +1,6 @@
 # The documents of .github
 
-What the [README](../README.md) of the repository leaves out, which says only what the component is and where it stands in NovaTrail (R21 spec). How to build and run the component, and anything else of the kind, is added here as it comes, or in a document of its own that this list names.
+What the [README](../README.md) of the repository leaves out, which says only what the component is and where it stands in NovaTrail. How to build and run the component, and anything else of the kind, is added here as it comes, or in a document of its own that this list names.
 
 - [architecture.md](architecture.md) — the component: what it does and does not do, its data and links, what the card left to decide and the decisions on it, and how it is built.
 - [decisions.md](decisions.md) — the decision log: what was decided, why, and what was rejected.
@@ -11,8 +11,8 @@ What the [README](../README.md) of the repository leaves out, which says only wh
 
 What the other repositories take from it, by the SHA of a [release](https://github.com/altnovatrail/.github/releases):
 
-- [.github/workflows/](../.github/workflows/) — the shared workflows, beside `.github`'s own `self-` ones; what each does and the calling files a repository copies are in [architecture.md](architecture.md), sections 3.1 and 3.3.
-- [.github/actions/toolchain/](../.github/actions/toolchain/action.yml) — the composite action for a repository's own job: the image of its stage `toolchain` and the Go caches, architecture section 3.7.
+- [.github/workflows/](../.github/workflows/) — the shared workflows, beside `.github`'s own `self-` ones; what each does and the calling files a repository copies are in [architecture.md](architecture.md).
+- [.github/actions/toolchain/](../.github/actions/toolchain/action.yml) — the composite action for a repository's own job: the image of its stage `toolchain` and the Go caches, as [architecture.md](architecture.md) describes it.
 - [tools/coderules/](../tools/coderules/main.go) — the test of the rules of code that the Go wrapper runs, with its `justfile` recipes; [tests/](../tests/) — the suite of the workflows' steps.
 
 The profile and the community health files, which GitHub shows to everyone:

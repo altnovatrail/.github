@@ -133,7 +133,7 @@ jobs:
           NPM_PACKAGE: ${{ inputs.npm-package }}
         run: |
           if ! [[ "$NPM_PACKAGE" =~ ^@altnovatrail/[a-z0-9][a-z0-9._-]*$ ]]; then
-              echo "::error::npm-package is \"${NPM_PACKAGE}\", which is no package of the @altnovatrail scope, as @altnovatrail/canvas is (R37 spec)."
+              echo "::error::npm-package is \"${NPM_PACKAGE}\", which is no package of the @altnovatrail scope, as @altnovatrail/canvas is."
               exit 1
           fi
           name="${NPM_PACKAGE#@}"
@@ -187,11 +187,11 @@ jobs:
         run: |
           wanted="${GITHUB_REPOSITORY}/.github/workflows/release.yml@refs/heads/main"
           if [ "$CALLER_WORKFLOW_REF" != "$wanted" ]; then
-              echo "::error::The caller's workflow is ${CALLER_WORKFLOW_REF}, not ${wanted}. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable (R77 spec): release from .github/workflows/release.yml on main."
+              echo "::error::The caller's workflow is ${CALLER_WORKFLOW_REF}, not ${wanted}. A consumer's release-verify refuses a file whose certificate names another workflow of the caller, and a release's files are immutable: release from .github/workflows/release.yml on main."
               exit 1
           fi
           if ! [[ "$SHARED_WORKFLOW_REF" =~ ^altnovatrail/\.github/\.github/workflows/release\.yml@[0-9a-f]{40}$ ]]; then
-              echo "::error::The caller pins this workflow as ${SHARED_WORKFLOW_REF}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone (R77 spec): pin it by the SHA of a release, with its version beside it (R04)."
+              echo "::error::The caller pins this workflow as ${SHARED_WORKFLOW_REF}, not as altnovatrail/.github's .github/workflows/release.yml at a commit's SHA. The signature would name that ref, and a consumer's release-verify lets in this workflow at the SHA of a release of .github alone: pin it by the SHA of a release, with its version beside it."
               exit 1
           fi
 
@@ -215,7 +215,7 @@ jobs:
       # The recipes run by spec's own script, tools/toolchain/toolchain.sh in the caller's spec
       # submodule, at the tag it pins. The script itself runs on the runner, in this
       # step's environment and the job's, where the caller's own code runs in a container with no
-      # token (R18). So the run first asks that spec/ be a submodule of altnovatrail/spec, checked
+      # token. So the run first asks that spec/ be a submodule of altnovatrail/spec, checked
       # out at the commit the caller pins and at a tag of spec, as every NovaTrail repository pins
       # it, and that the tag hold the script, which spec ships from v0.2.17; anything
       # else stops it before anything is built, with the reason. A run of a commit older than the
@@ -301,7 +301,7 @@ jobs:
               exit 1
           fi
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
-              echo "::error::spec ${tag} has no executable tools/toolchain/toolchain.sh. This release runs spec's recipes by that script, which spec ships from v0.2.17 (R31 spec): move spec/ to v0.2.17 or newer, then run the release again."
+              echo "::error::spec ${tag} has no executable tools/toolchain/toolchain.sh. This release runs spec's recipes by that script, which spec ships from v0.2.17: move spec/ to v0.2.17 or newer, then run the release again."
               exit 1
           fi
           toolchain_sum=$(sha256sum spec/tools/toolchain/toolchain.sh)
@@ -373,7 +373,7 @@ jobs:
           cd "$RUNNER_TEMP/release-verify-probe"
           if ! spec/tools/toolchain/toolchain.sh spec --dry-run release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
               "$VERSION" "$RUNNER_TEMP/dist/${STEM}-${VERSION#v}.tgz"; then
-              echo "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0 (R77 spec): move spec/ to v0.6.0 or newer, then run the release again."
+              echo "::error::The dry run of spec's release-verify, with the arguments a run again of this release gives it — the repository, the tag and the archive — failed; the lines above say why. A run again checks the npm package by that recipe, which spec ships from v0.6.0: move spec/ to v0.6.0 or newer, then run the release again."
               exit 1
           fi
 
@@ -407,7 +407,7 @@ jobs:
               cd "$RUNNER_TEMP/previous-verify"
               if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec --dry-run release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
                   "$VERSION" "$folder/$PREVIOUS_FILE"; then
-                  echo "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${PREVIOUS_FILE}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0 (R77 spec): move spec/ to v0.6.0 or newer, then run the release again."
+                  echo "::error::The dry run of spec's release-verify, with the arguments the release after this one gives it for ${PREVIOUS_FILE}, failed; the lines above say why. A release checks the previous release's file by that recipe, which spec ships from v0.6.0: move spec/ to v0.6.0 or newer, then run the release again."
                   exit 1
               fi
               echo "::notice::${VERSION} is the first release, with no ${PREVIOUS_FILE} before it: release-files gets an empty second argument."
@@ -418,17 +418,17 @@ jobs:
           gh release download "$PREVIOUS" --repo "$GITHUB_REPOSITORY" --dir "$folder" \
               --pattern "$PREVIOUS_FILE" --pattern "${PREVIOUS_FILE}.sigstore.json" || true
           if [ ! -f "$folder/$PREVIOUS_FILE" ] || [ ! -f "$folder/${PREVIOUS_FILE}.sigstore.json" ]; then
-              echo "::error::${PREVIOUS} holds no ${PREVIOUS_FILE} with its bundle ${PREVIOUS_FILE}.sigstore.json, or gh could not download them; the lines above say which. release-files builds ${VERSION} on that file, and one that cannot be read stops the release (R63 spec)."
+              echo "::error::${PREVIOUS} holds no ${PREVIOUS_FILE} with its bundle ${PREVIOUS_FILE}.sigstore.json, or gh could not download them; the lines above say which. release-files builds ${VERSION} on that file, and one that cannot be read stops the release."
               exit 1
           fi
           if ! gh release verify-asset "$PREVIOUS" "$folder/$PREVIOUS_FILE" --repo "$GITHUB_REPOSITORY"; then
-              echo "::error::The attestation of ${PREVIOUS} does not hold for its ${PREVIOUS_FILE}; the lines above say why, and nothing is built on it (R63 spec)."
+              echo "::error::The attestation of ${PREVIOUS} does not hold for its ${PREVIOUS_FILE}; the lines above say why, and nothing is built on it."
               exit 1
           fi
           cd "$RUNNER_TEMP/previous-verify"
           if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
               "$PREVIOUS" "$folder/$PREVIOUS_FILE"; then
-              echo "::error::spec's release-verify refused ${PREVIOUS_FILE} of ${PREVIOUS}; the lines above say why, and nothing is built on it (R63 spec, R77 spec). If Sigstore, GitHub or the npm registry could not be read, run the job again."
+              echo "::error::spec's release-verify refused ${PREVIOUS_FILE} of ${PREVIOUS}; the lines above say why, and nothing is built on it. If Sigstore, GitHub or the npm registry could not be read, run the job again."
               exit 1
           fi
           mkdir "$RUNNER_TEMP/previous"
@@ -598,7 +598,7 @@ jobs:
           cd "$RUNNER_TEMP/release-verify"
           if ! env -u GH_TOKEN spec/tools/toolchain/toolchain.sh spec release-verify "${GITHUB_REPOSITORY#altnovatrail/}" \
               "$RELEASED" "$RUNNER_TEMP/dist/$file"; then
-              echo "::error::spec's release-verify refused ${file} of ${RELEASED}; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again (R77 spec)."
+              echo "::error::spec's release-verify refused ${file} of ${RELEASED}; the lines above say why, and nothing goes to npm. If Sigstore, GitHub or the npm registry could not be read, run the job again."
               exit 1
           fi
 
@@ -688,7 +688,7 @@ jobs:
           case "$code" in
               404)
                   if [ "$PUBLISH" = true ]; then
-                      echo "::error::${NPM_PACKAGE} is not in the npm registry. Its first version is published by hand and a trusted publisher set on it; only then does a release publish (architecture 3.3 of .github)."
+                      echo "::error::${NPM_PACKAGE} is not in the npm registry. Its first version is published by hand and a trusted publisher set on it; only then does a release publish."
                       exit 1
                   fi
                   echo "::notice::${NPM_PACKAGE} is not in the npm registry yet, which matters not with publish false."
@@ -698,7 +698,7 @@ jobs:
                   published=$(jq -r --arg v "$version" '(.versions // {}) | if has($v) then .[$v].dist.integrity // "none" else "" end' "$packument")
                   whole=""
                   if jq -e '((.time // {}) | has("unpublished")) and ((.versions // {}) | length == 0)' "$packument" > /dev/null; then
-                      whole="${NPM_PACKAGE} was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package (architecture 3.3 of .github)."
+                      whole="${NPM_PACKAGE} was unpublished from the npm registry as a whole, and takes no new version for 24 hours. Then its next version is published by hand, as a first version is, and a trusted publisher set on it again if it has none: npm's documentation does not say whether one outlives the package."
                   fi
                   if [ -n "$published" ] && [ "$published" != "$integrity" ]; then
                       echo "::error::${NPM_PACKAGE}@${version} is in the npm registry with the integrity ${published}, and this archive's is ${integrity}. npm never takes a version back. ${gone}"
@@ -756,7 +756,7 @@ jobs:
       # a print that fails says so and holds nothing up.
       #
       # The files are signed AT_ONCE at a time, by xargs -P, since one after another a release of a
-      # hundred files takes minutes (R44). Each file is signed and checked with a TUF cache of its
+      # hundred files takes minutes. Each file is signed and checked with a TUF cache of its
       # own, TUF_ROOT: the TUF client cosign builds on fails when another process has written
       # another copy of a file of metadata it wrote, and writes the trusted root over in place.
       # cosign initialize fills one cache first, and each file starts from a copy of it, so that the

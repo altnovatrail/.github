@@ -75,7 +75,7 @@ jobs:
           SAVE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           if [ ! -f spec/tools/toolchain/toolchain.sh ] || [ ! -x spec/tools/toolchain/toolchain.sh ]; then
-              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17 (R31 spec): move the spec submodule to v0.2.17 or newer, then run the check again."
+              echo "::error::spec/ has no executable tools/toolchain/toolchain.sh, which spec ships from v0.2.17: move the spec submodule to v0.2.17 or newer, then run the check again."
               exit 1
           fi
           if [ "$SAVE" != true ] && [ ! -f "$TOOLCHAIN_IMAGE_FILE" ]; then
