@@ -1,16 +1,16 @@
 # Codecov's rules for the coverage of .github's own tests, which the coverage job of go.yml
-# uploads (R16; R48 spec). A Go profile names a file by its import path, which Codecov cuts down
+# uploads. A Go profile names a file by its import path, which Codecov cuts down
 # to the path in the repository by a default rule of its own.
 
 coverage:
   status:
-    # New and changed lines are covered at 90 % at least, and the ruleset of main requires the check
-    # (R48 spec, R30 spec). A pull request that changes no line of the report, the documents alone,
+    # New and changed lines are covered at 90 % at least, and the ruleset of main requires the check.
+    # A pull request that changes no line of the report, the documents alone,
     # passes as "Coverage not affected".
     patch:
       default:
         target: 90%
-    # Codecov sets no project status for a public repository (R48 spec); should it ever set one, it
+    # Codecov sets no project status for a public repository; should it ever set one, it
     # only informs.
     project:
       default:

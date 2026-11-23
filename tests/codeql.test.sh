@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of codeql.yml's step "Go of the caller's toolchain stage" (R45). The stand-in curl
+# The tests of codeql.yml's step "Go of the caller's toolchain stage". The stand-in curl
 # answers with an archive the case builds: a go/bin/go that says its version, as go.dev's archive
 # holds go/ at its top.
 # shellcheck source=tests/lib.sh

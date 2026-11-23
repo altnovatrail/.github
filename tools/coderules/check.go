@@ -15,8 +15,8 @@ import (
 )
 
 // The rules a finding names. A caller's lists say what its code and tests may take; the rules
-// themselves, and what they allow of math, strings and strconv, are the same for every caller
-// (R107 spec). Each rule is named by a word, as the comments "// want <rule>" of the controls in
+// themselves, and what they allow of math, strings and strconv, are the same for every caller.
+// Each rule is named by a word, as the comments "// want <rule>" of the controls in
 // testdata/ name them; a repository numbers its rules in its own documents.
 var allRules = []string{
 	"import",    // a package outside the lists, of code or of tests

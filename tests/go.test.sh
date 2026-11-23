@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of go.yml (R16). The steps that use an action the harness does not run are read as
+# The tests of go.yml. The steps that use an action the harness does not run are read as
 # text, and the actions named without their SHAs, which Dependabot moves.
 # shellcheck source=tests/lib.sh
 . "${BASH_SOURCE[0]%/*}/lib.sh"
@@ -128,7 +128,7 @@ test_go_fails_the_check_with_the_recipe() {
 }
 
 # The tests of the image of the toolchain stage, in go.yml, typescript.yml and the composite action
-# alike (R36, R42, R47, R49).
+# alike.
 
 # The step "Toolchain image" of a job of go.yml, or of the composite action when the job is action,
 # a Dockerfile in the workspace, and, with a word, the file of the toolchain stage that came from
@@ -320,7 +320,7 @@ test_go_drops_the_file_that_does_not_load_even_when_the_build_fails() {
 }
 
 # arm64 builds its own image by the composite action, which writes the file only where its job
-# saves it, on a push to main (R49).
+# saves it, on a push to main.
 test_go_arm64_writes_the_file_of_the_toolchain_stage_only_where_it_saves_it() {
     toolchain_step action
     set_env SAVE true
@@ -491,7 +491,7 @@ test_go_and_typescript_take_the_toolchain_stage_from_the_cache_or_the_job_toolch
 }
 
 # arm64 builds its image on its own, and takes it and the Go caches by the composite action of the
-# very commit go.yml comes from, $/, which a caller's own job takes by the SHA of a release (R49):
+# very commit go.yml comes from, $/, which a caller's own job takes by the SHA of a release:
 # first, then the work, then the save, both with the check arm64.
 test_go_arm64_takes_the_toolchain_stage_and_the_go_caches_by_the_composite_action() {
     use_workflow go.yml
@@ -504,7 +504,7 @@ test_go_arm64_takes_the_toolchain_stage_and_the_go_caches_by_the_composite_actio
 # The composite action's steps, read as text: the check of its inputs, then those of go.yml's jobs,
 # each under the input save — the image, then the Go caches by the check the input names, and the
 # key they were asked by, without it; with it, that key and the save by it, on a push to main and
-# a miss. Every run step names bash -e {0}, the shell of go.yml's steps (R49).
+# a miss. Every run step names bash -e {0}, the shell of go.yml's steps.
 test_go_composite_action_takes_the_toolchain_stage_and_the_go_caches_as_go_yml_does() {
     local restore image save go_restore go_caches go_key go_to_save go_save
     local before="inputs.save != 'true'" after="inputs.save == 'true'" shell="bash -e {0}"
@@ -631,8 +631,7 @@ test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_im
         assert_eq "$(grep -c 'toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" \
             "$(grep -c 'novatrail-toolchain\.tar' "$HARNESS_ROOT/.github/workflows/$file")" "the files of the toolchain stage in $file"
     done
-    # The composite action, which arm64 takes, builds by the same script, with the same file and SHA
-    # (R49).
+    # The composite action, which arm64 takes, builds by the same script, with the same file and SHA.
     use_action toolchain
     assert_eq "$(wf '.runs.steps[] | select(.name == "Toolchain image") | .run')" "$run" "the build of the composite action"
     assert_eq "$(wf '[.runs.steps[] | select(.uses // "" | startswith("actions/cache/")) | .uses | sub("^[^@]*@"; "")] | unique')" "[\"$sha\"]" "the one SHA of actions/cache in the composite action"
@@ -641,7 +640,7 @@ test_go_and_typescript_build_the_toolchain_stage_by_one_script_and_run_in_its_im
     assert_eq "$(grep -c 'toolchain\.tar' "$file")" "$(grep -c 'novatrail-toolchain\.tar' "$file")" "the files of the toolchain stage in the composite action"
 }
 
-# The tests of the Go caches (R41).
+# The tests of the Go caches.
 
 # The flags that point the container's Go at the caches, beside the volume that holds them.
 go_cache_env=(--env GOMODCACHE=/go-cache/mod --env GOCACHE=/go-cache/build --env GOLANGCI_LINT_CACHE=/go-cache/lint)
@@ -661,7 +660,7 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
     for job in check target fma-diff rules; do
         check=$job
         if [ "$job" = check ]; then check='${{ matrix.check }}'; fi
-        # An entry for each target of the matrix (R43).
+        # An entry for each target of the matrix.
         if [ "$job" = target ]; then check='target-${{ matrix.target }}'; fi
         # Right after the toolchain stage, ahead of the work, and the save last of all.
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | map(.name) as $n | ($n | index("Toolchain image")) as $b | ($b + if $n[$b + 1] == "Toolchain image into the cache" then 1 else 0 end) as $i | .[$i + 1:$i + 3]
@@ -681,7 +680,7 @@ test_go_takes_the_go_caches_from_the_cache_in_every_job_that_runs_go() {
             "$runs" "the docker runs of $job that point Go at the caches"
     done
     # The composite action takes them by the same script, and arm64, which takes the action, mounts
-    # them in every docker run of its work after it (R49).
+    # them in every docker run of its work after it.
     use_action toolchain
     assert_eq "$(wf '.runs.steps[] | select(.name == "Go caches") | .run')" "$run" "the step Go caches of the composite action"
     use_workflow go.yml
@@ -754,7 +753,7 @@ test_go_caches_from_the_cache_are_verified_in_every_module_of_the_repository() {
     assert_eq "$(find "$step_temp/go-cache/mod" -type f -mmin +60 | wc -l)" 1 "the modules older than an hour"
 }
 
-# An entry of another go.sum, restored by the prefix of the key (R41): the modules, which go left
+# An entry of another go.sum, restored by the prefix of the key: the modules, which go left
 # read-only, are dropped, and nothing is verified; the builds stay. Those of the run that saved
 # it, no more than six hours older than its newest, are set seven hours back; an older one keeps
 # its time, for go to trim.
@@ -865,7 +864,7 @@ test_go_caches_without_a_module_to_verify_them_by_are_kept() {
     assert_line "Go caches: go-Linux-X64-test-a-b, with no module of the repository to verify them by."
 }
 
-# The tests of same-bits, the jobs targets and fma-diff (R107 spec). A step hands its script to one
+# The tests of same-bits, the jobs targets and fma-diff. A step hands its script to one
 # toolchain container on stdin; the cases run that script as the container would, with bash in the
 # workspace, and with the stand-in go first on PATH.
 
@@ -933,13 +932,13 @@ test_go_runs_targets_and_fma_diff_with_same_bits_alone() {
             '["actions/cache/restore@<sha>","Go caches","actions/cache/save@<sha>"]' "the Go caches round the step of $job"
         assert_eq "$(wf --arg j "$job" '.jobs[$j].steps | length')" 8 "the steps of $job"
     done
-    # A job for each target, every one to its end (R43); fma-diff is one job.
+    # A job for each target, every one to its end; fma-diff is one job.
     assert_eq "$(wf '.jobs.target.strategy')" '{"fail-fast":false,"matrix":{"target":["amd64-v3","cpu-off","386","js-wasm","wasip1"]}}' "the matrix of target"
     assert_eq "$(wf '.jobs["fma-diff"].strategy')" null "the matrix of fma-diff"
     assert_eq "$(wf '.jobs.target.steps[] | select(.name == "Tests on the targets") | .env')" '{"TARGETS":"${{ matrix.target }}"}' "the targets of a job of target"
 }
 
-# "Go / targets", the one check of the targets, reads what the matrix came to (R43).
+# "Go / targets", the one check of the targets, reads what the matrix came to.
 test_go_holds_the_targets_in_one_check_that_is_red_unless_every_target_passed() {
     use_workflow go.yml
     assert_eq "$(wf '.jobs.targets | {name, needs, if, "runs-on", "timeout-minutes", permissions, strategy}')" \
@@ -1066,7 +1065,7 @@ test_go_targets_fails_with_its_target_and_stops_at_the_first_that_fails() {
     refute_script_has "GOOS=js"
 }
 
-# The tests on wasip1 (R39): go test by an executor of the script's own in node:wasi, as
+# The tests on wasip1: go test by an executor of the script's own in node:wasi, as
 # js/wasm runs go_js_wasm_exec.
 
 # The executor that the go test of the index-th call of go runs, by its -exec. It sets two
@@ -1175,7 +1174,7 @@ test_go_fma_diff_passes_when_no_package_fuses_and_the_control_does() {
     assert_call_record go "$(fma_call amd64/v3 1)" env "GOOS=linux" "GOARCH=amd64" "GOAMD64=v3" "GODEBUG unset"
 }
 
-# The targets run at once (R43): the go list of the first waits for the go list of the last, which a
+# The targets run at once: the go list of the first waits for the go list of the last, which a
 # loop of one target after the other would never reach. The output keeps the order of the targets.
 test_go_fma_diff_runs_its_targets_at_once_and_prints_them_in_their_order() {
     run_same_bits_step fma-diff 'The assembler with fusion and without it'
@@ -1199,7 +1198,7 @@ test_go_fma_diff_fails_with_a_target_that_stops_and_checks_the_others() {
 }
 
 # A target that has not ended in 25 minutes is stopped, and says so after what it wrote; the others
-# are printed as they are, in their order (R43).
+# are printed as they are, in their order.
 test_go_fma_diff_stops_a_target_at_25_minutes_and_prints_the_others() {
     run_same_bits_step fma-diff 'The assembler with fusion and without it'
     two_packages
@@ -1297,7 +1296,7 @@ test_go_fma_diff_builds_each_target_s_own_packages() {
     refute_script_has "does not build"
 }
 
-# The tests of "Go / arm64": ci-test and the targets of its host on an arm64 runner (R107 spec).
+# The tests of "Go / arm64": ci-test and the targets of its host on an arm64 runner.
 
 test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
     use_workflow go.yml
@@ -1307,7 +1306,7 @@ test_go_runs_arm64_with_same_bits_alone_on_an_arm64_runner() {
         '["actions/checkout@<sha>","$/.github/actions/toolchain","ci-test","Tests on the targets","$/.github/actions/toolchain"]' "its steps"
     assert_eq "$(wf '.jobs.arm64.steps[0].with')" '{"persist-credentials":false}' "its checkout"
     # The targets as the jobs of target have them, word for word: one script for both hosts, with
-    # the targets of its host (R43).
+    # the targets of its host.
     assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .run')" "$(wf '.jobs.target.steps[] | select(.name == "Tests on the targets") | .run')" "its tests on the targets"
     assert_eq "$(wf '.jobs.arm64.steps[] | select(.name == "Tests on the targets") | .env')" '{"TARGETS":"cpu-off js-wasm wasip1"}' "its targets"
 }
@@ -1334,7 +1333,7 @@ test_go_arm64_fails_with_ci_test() {
 }
 
 # The tests of "Go / rules": the rules of code by tools/coderules of this workflow's own version and
-# the caller's lists (R33).
+# the caller's lists.
 
 test_go_runs_rules_with_same_bits_alone_by_the_tool_of_its_own_version() {
     use_workflow go.yml

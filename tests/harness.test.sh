@@ -482,7 +482,7 @@ test_harness_takes_the_yq_that_self_ci_pins_and_no_other() {
 
 # A composite action is read as the one job action, whose steps run as a job's do: in the shell
 # the step names — bash -e {0} as the one a step without a shell gets —, with its env, inputs among
-# the ctx (R49). One that is not there stops the test.
+# the ctx. One that is not there stops the test.
 test_harness_runs_a_step_of_a_composite_action_as_one_of_a_job() {
     mkdir -p "$state/fixtures"
     cat > "$state/fixtures/action.yml" <<'YAML'

@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The harness of the tests of the workflows' steps (R28). A test takes a step as its file has it,
+# The harness of the tests of the workflows' steps. A test takes a step as its file has it,
 # the run script byte for byte and the env as GitHub would hand it in, and runs it with this
 # machine's bash, in a directory of its own: in CI the runner, with its own jq, tar, openssl and
 # git. docker, gh, curl, wget, cosign and npm, which would reach the network or a container, are
@@ -130,7 +130,7 @@ use_workflow() {
 # A composite action of .github/actions/ by its folder's name, or a path to its action.yml: what wf
 # reads is the file as it is, and its steps are those of the one job action, which select_step
 # takes as a job's, on ubuntu-24.04: the runner of the job that calls the action is the caller's
-# to give (R49).
+# to give.
 use_action() {
     local file=$1
     [[ $file == /* ]] || file="$HARNESS_ROOT/.github/actions/$file/action.yml"
@@ -378,7 +378,7 @@ run_step() {
         envs+=("$name=${HARNESS_RUNNER[$name]}")
     done
     # GitHub's shells on Linux: bash -e {0} when the step names none, and for shell: bash -e {0}, the
-    # same template named, as the steps of a composite action name it (R49); bash --noprofile --norc
+    # same template named, as the steps of a composite action name it; bash --noprofile --norc
     # -eo pipefail {0} for shell: bash.
     shell=$(harness_step -r '.jobs[$j].steps[$i].shell // .jobs[$j].defaults.run.shell // .defaults.run.shell // ""')
     case $shell in

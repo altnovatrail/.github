@@ -1,7 +1,7 @@
-# The CI of .github itself (R03). It calls the shared workflows by local path, so that a pull
-# request checks the very version it changes (R04). The rulesets of main require the checks by
+# The CI of .github itself. It calls the shared workflows by local path, so that a pull
+# request checks the very version it changes. The rulesets of main require the checks by
 # their names, "<job name> / <the shared workflow's job>", and the release of .github follows this
-# workflow by its name, CI: renaming a job or the workflow breaks them (R04, R33, R49).
+# workflow by its name, CI: renaming a job or the workflow breaks them.
 
 name: CI
 
@@ -34,7 +34,7 @@ jobs:
     uses: ./.github/workflows/documents.yml
 
   # id-token: write is for go.yml's coverage job alone: a called workflow can only lower what this
-  # job gives it (R16, R33).
+  # job gives it.
   go:
     name: Go
     permissions:
@@ -42,7 +42,7 @@ jobs:
       id-token: write
     uses: ./.github/workflows/go.yml
 
-  # actionlint and shellcheck at exact versions, by the archive's SHA-256 (R08): shellcheck
+  # actionlint and shellcheck at exact versions, by the archive's SHA-256: shellcheck
   # publishes no checksums, so its is the SHA-256 of the archive as downloaded. actionlint takes
   # that shellcheck by path, not the runner image's, and no pyflakes: there is no Python here. A
   # waiver goes in .github/actionlint.yaml, with its reason.
@@ -84,7 +84,7 @@ jobs:
         run: '"$RUNNER_TEMP/actionlint" -color -shellcheck="$RUNNER_TEMP/shellcheck" -pyflakes='
 
       # The SHA-256 is the column of checksums that checksums_hashes_order of yq's release names
-      # SHA-256. tests/run.sh holds the yq it is given to YQ_VERSION here (R28).
+      # SHA-256. tests/run.sh holds the yq it is given to YQ_VERSION here.
       - name: Install yq
         env:
           YQ_VERSION: "4.54.1"
@@ -103,7 +103,7 @@ jobs:
         run: '"$RUNNER_TEMP/shellcheck" --external-sources tests/*.sh tests/stubs/*'
 
       # actionlint reads no composite action: shellcheck reads each run script as bash, the shell
-      # their steps name (R49).
+      # their steps name.
       - name: Lint the actions
         run: |
           status=0
@@ -120,16 +120,15 @@ jobs:
           done
           exit "$status"
 
-      # A change to a step comes with its cases (R28). A test stops after two minutes, and the suite
+      # A change to a step comes with its cases. A test stops after two minutes, and the suite
       # after five, inside the job's ten.
       - name: Test the workflows
         timeout-minutes: 5
         run: YQ="$RUNNER_TEMP/yq" bash tests/run.sh
 
-      # The toolchain stage, for spec's recipe licenses-allowed below (R31 spec), by the script of
+      # The toolchain stage, for spec's recipe licenses-allowed below, by the script of
       # .github's own submodule, which the step does not look for. Its image shares the entry of the
-      # cache with documents.yml's by the same three steps, and only a push to main saves it (R36,
-      # R42).
+      # cache with documents.yml's by the same three steps, and only a push to main saves it.
       - name: Toolchain image from the cache
         id: toolchain
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -155,8 +154,8 @@ jobs:
           key: ${{ steps.toolchain.outputs.cache-primary-key }}
 
       # go.yml carries a copy of the list spec's licenses-allowed prints at the tag .github is on, so
-      # a move to a tag that changes the list turns this red until go.yml follows (R16, R39 spec).
-      # typescript.yml carries none: its callers check by spec's recipe (R19). The list is taken by
+      # a move to a tag that changes the list turns this red until go.yml follows.
+      # typescript.yml carries none: its callers check by spec's recipe. The list is taken by
       # assignment, not through a pipe: the shell has no pipefail, and a recipe that failed would
       # pass as an empty list. go.yml is named on its own, since it must carry the list, and each
       # copy is checked apart, so a red step says which one strayed.
@@ -183,7 +182,7 @@ jobs:
 
   # The composite action, run by local path as a caller's own job runs it, so that a pull request
   # runs the very action it changes and a push to main its save: .github calls go.yml without
-  # same-bits, so its job arm64 never runs the action here (R49).
+  # same-bits, so its job arm64 never runs the action here.
   toolchain-action:
     name: Toolchain action
     runs-on: ubuntu-24.04

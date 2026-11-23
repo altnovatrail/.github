@@ -1,12 +1,12 @@
-# Dependabot proposes new versions of what it can see (R10): the actions of the workflows and of
+# Dependabot proposes new versions of what it can see: the actions of the workflows and of
 # the composite action, with the version comment beside each SHA, the Go module and the base image
 # of the devcontainer, tag and digest. An action it moves in a shared workflow comes out in the
-# next release of .github, and the callers' Dependabot moves their reference to it (R04).
+# next release of .github, and the callers' Dependabot moves their reference to it.
 #
 # Raised by hand, because no ecosystem reads them: gitleaks, actionlint, shellcheck and the yq of
-# the tests (R08, R28), cosign and the Node of the npm step of release.yml (R18), and the Codecov
-# CLI of go.yml and typescript.yml, raised in both at once (R16, R19), each with the sha256 of its
-# download in the workflow that fetches it; the tools of the justfile (R33); and the ARGs of
+# the tests, cosign and the Node of the npm step of release.yml, and the Codecov
+# CLI of go.yml and typescript.yml, raised in both at once, each with the sha256 of its
+# download in the workflow that fetches it; the tools of the justfile; and the ARGs of
 # .devcontainer/Dockerfile, which come with a new tag of spec.
 #
 # Every ecosystem waits three days after a release before proposing it, as in spec, so that a bad
@@ -17,7 +17,7 @@ version: 2
 updates:
   # Dependabot reads a composite action only where a directory names it: / is .github/workflows and
   # an action.yml at the root. One pull request moves an action in both, so that go.yml and the
-  # action keep one SHA of actions/cache, as the suite of tests holds them (R49).
+  # action keep one SHA of actions/cache, as the suite of tests holds them.
   - package-ecosystem: github-actions
     directories:
       - /
@@ -30,7 +30,7 @@ updates:
       actions:
         group-by: dependency-name
 
-  # tools/coderules requires nothing yet (R33): a require it comes to have is proposed like any
+  # tools/coderules requires nothing yet: a require it comes to have is proposed like any
   # other.
   - package-ecosystem: gomod
     directory: /tools/coderules

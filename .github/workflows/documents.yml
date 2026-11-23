@@ -1,12 +1,12 @@
-# Shared check (R03): the caller's documents, by the docs-check of the spec it pins as its
-# submodule, `just -f spec/justfile docs-check-repo` (R32 spec). spec runs its own `just
+# Shared check: the caller's documents, by the docs-check of the spec it pins as its
+# submodule, `just -f spec/justfile docs-check-repo`. spec runs its own `just
 # docs-check` instead.
 #
 # It runs in the stage toolchain-core of the caller's .devcontainer/Dockerfile where it has one,
-# and in toolchain otherwise (R47), by spec's script tools/toolchain/toolchain.sh of the
+# and in toolchain otherwise, by spec's script tools/toolchain/toolchain.sh of the
 # submodule, as spec's CI and the shared release run it, so that a check green locally is green
-# here (R31 spec). The image comes from the caller's cache by the key and the file go.yml's jobs
-# use, built only on a miss and saved only from a push to main (R36, R42). A script of an older
+# here. The image comes from the caller's cache by the key and the file go.yml's jobs
+# use, built only on a miss and saved only from a push to main. A script of an older
 # spec, which reads no TOOLCHAIN_STAGE, builds toolchain, which holds all the core does: an entry
 # of the core may then hold toolchain, which costs its size and no verdict.
 #
@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
 
       # toolchain-core where the Dockerfile has one that holds less than toolchain, by the reading
-      # of go.yml's and typescript.yml's job toolchain, and toolchain otherwise (R47).
+      # of go.yml's and typescript.yml's job toolchain, and toolchain otherwise.
       - name: Toolchain stages
         id: stages
         run: |
@@ -56,7 +56,7 @@ jobs:
           echo "core=${core}" >> "$GITHUB_OUTPUT"
 
       # The key, the file and the image go.yml's jobs and spec's CI give the stage, so that the
-      # caller keeps one entry a stage for all of them (R36, R42, R47). The build is a step of its
+      # caller keeps one entry a stage for all of them. The build is a step of its
       # own, so that a red check still fills the cache.
       - name: Toolchain image from the cache
         id: toolchain

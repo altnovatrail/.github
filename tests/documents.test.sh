@@ -1,5 +1,5 @@
 # shellcheck shell=bash disable=SC2016 # jq's variables and GitHub's expressions stay unexpanded in single quotes.
-# The tests of documents.yml (R08, R36). The script is spec's own toolchain.sh, from .github's
+# The tests of documents.yml. The script is spec's own toolchain.sh, from .github's
 # submodule, and docker the stand-in, which writes down what the script asks of it. The steps of
 # actions/cache the harness does not run are read as text, against go.yml's.
 # shellcheck source=tests/lib.sh
@@ -60,9 +60,9 @@ test_documents_has_the_checkout_with_the_submodule_the_cache_of_the_stage_and_th
 
 # The restore and the save of the cache are those by which go.yml's job arm64 builds its own image
 # too, the steps of the composite action without its input save: the same file, the same key, the
-# action at the same SHA, and only a push to main saves (R42, R49). The variable the script reads
+# action at the same SHA, and only a push to main saves. The variable the script reads
 # names that same file. documents.yml takes them for the stage its step "Toolchain stages" names, by
-# the file and the key that name it, as go.yml's job check does (R47); the job Workflows of
+# the file and the key that name it, as go.yml's job check does; the job Workflows of
 # .github, whose toolchain adds nothing to its core, for toolchain.
 test_documents_caches_the_stage_as_go_does_in_the_same_file() {
     local go documents workflows job file stage env
@@ -182,7 +182,7 @@ test_documents_builds_the_stage_by_a_script_that_knows_no_cache() {
 }
 
 # The core, where the Dockerfile has one of its own: the real script builds that stage and writes
-# its file, and loads it from there on a hit (R47).
+# its file, and loads it from there on a hit.
 test_documents_builds_the_core_and_writes_its_file_on_a_miss() {
     documents_workspace
     core_dockerfile
