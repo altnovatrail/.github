@@ -357,7 +357,7 @@ Read 2026-10-20:
 
 Read 2026-10-20:
 - **checkout without `ref` in Scorecard** — in [`checks/raw/dangerous_workflow.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/dangerous_workflow.go) at the commit 61e8474, the function `checkJobForUntrustedCodeCheckout` skips a step without the input `ref`: `if !ok || ref.Value == nil { continue }`. The function `validateScriptInjection` looks for an injection only in `run:`, by a list of contexts, and `head_sha` is not in it;
-- **npm in Scorecard** — in [`checks/raw/shell_download_validate.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/shell_download_validate.go) at 61e8474, the function `isNpmUnpinnedDownload` leaves unmarked only `npm ci` — "`npm ci` will verify all hashes are present" — and a package from git pinned by a commit hash. The other install commands of npm it marks. The code scanning finding #2 is line 113 of `.devcontainer/Dockerfile`, Pinned-Dependencies — 8. The archives that the Dockerfile downloads by curl and unpacks by tar it did not mark: `.github` has no other findings of Pinned-Dependencies (В12 RUN.md, now decided in `spec`).
+- **npm in Scorecard** — in [`checks/raw/shell_download_validate.go`](https://github.com/ossf/scorecard/blob/61e84743356275f6ffca23b1b2f2cb945e19eb96/checks/raw/shell_download_validate.go) at 61e8474, the function `isNpmUnpinnedDownload` leaves unmarked only `npm ci` — "`npm ci` will verify all hashes are present" — and a package from git pinned by a commit hash. The other install commands of npm it marks. The code scanning finding #2 is line 113 of `.devcontainer/Dockerfile`, Pinned-Dependencies — 8. The archives that the Dockerfile downloads by curl and unpacks by tar it did not mark: `.github` has no other findings of Pinned-Dependencies.
 
 ### 6.3. Scorecard's API
 
@@ -465,7 +465,7 @@ Read 2026-11-02:
 - **the documents of packages unpublished whole**, by the step of `spec` (sources 12.7) — `curl https://registry.npmjs.org/<name>?write=true`, 2026-11-02:
   - for `asdasd`, `aaaaaaa` and `test-unpublish`, `versions` is empty, and `time` has `created`, `modified`, `unpublished` and every number the package held: `1.0.0`; `2.0.0`, `1.0.0`, `1.0.1`, `3.0.0`, `4.0.0` and `4.0.1`; `0.0.1` and `0.0.0`;
   - `time.unpublished.versions` has the numbers the package held last: `["1.0.0"]`, `["1.0.0","1.0.1","3.0.0","4.0.0"]` and `["0.0.0"]`. The numbers unpublished earlier — `2.0.0` and `4.0.1` for `aaaaaaa`, `0.0.1` for `test-unpublish` — are only in `time`;
-  - corrected 2026-11-02: the first reading took from `time` only `created`, `modified` and `unpublished` — a jq filter — and so lost the keys of the numbers. On it stood В34 and the claim of the log that the shared step does not find such a number; that claim is wrong, and the log no longer makes it.
+  - a jq filter that takes from `time` only `created`, `modified` and `unpublished` loses the keys of the numbers, as a first reading of this day did.
 
 Read 2026-11-02:
 - **the documents of packages unpublished whole** — the same as above, in the first reading, read whole: `curl https://registry.npmjs.org/<name>?write=true | jq '{keys: keys, versions: (.versions // {} | keys), time: .time}'`. The document's keys are `_id`, `_rev`, `name` and `time`, and `time` has every number the package held. The earlier step `(.time // {}) | has($v)` did find such a number.
@@ -479,7 +479,7 @@ Read 2026-11-01:
 - **the immutable OIDC subject** — the GitHub API, `repos/altnovatrail/<repository>/actions/oidc/customization/sub`: `spec` and `canvas` have `"use_immutable_subject":true`, the prefixes `repo:altnovatrail@344507087/spec@1424771727` and `repo:altnovatrail@344507087/canvas@1425820257`. npm/cli#9969 — "OIDC trusted publishing fails with "package not found" for GitHub repos that use immutable OIDC subject claims" — is open, updated 2026-10-28; npm/cli#9889 is open too (the GitHub API).
 
 Read 2026-11-02:
-- **npm's open bugs** (Д7 in RUN.md) — [npm/cli#9969](https://github.com/npm/cli/issues/9969) — open, updated 2026-10-28; [npm/cli#9889](https://github.com/npm/cli/issues/9889) — open, updated 2026-10-22.
+- **npm's open bugs** — [npm/cli#9969](https://github.com/npm/cli/issues/9969) — open, updated 2026-10-28; [npm/cli#9889](https://github.com/npm/cli/issues/9889) — open, updated 2026-10-22.
 
 ## 9. Node, browsers and the TypeScript tests
 
@@ -748,7 +748,7 @@ Read 2026-11-08:
 Read 2026-11-09:
 - **the tag** — v0.12.0, commit 5b4640a, came out 2026-11-09 at 19:38 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.12.0 -R altnovatrail/spec` — "Release v0.12.0 verified!";
 - **what changed** (`git diff --stat v0.9.9 v0.12.0`) — 56 commits, 756 files: format 0.4 (v0.10.0), the part `deployment/` (v0.11.0), the admission table 0.2 (v0.12.0), the contracts, the types, `repo-template/` and `tools/new-repo/`, `justfile` and `tools/release/`. `.devcontainer/`, RULES.md, `tools/toolchain/`, `tools/docs-check/` and `tools/licenses/` did not change;
-- **COORDINATION.md of `spec` v0.12.0** — in «Состоянии», `.github` has the submodule v0.9.9, the release v0.1.21 and «нет: таблица 2 пуста»; the row 2.4 is «задачи ещё нет»: the cache of the image of the `toolchain` stage in `go.yml`, `typescript.yml` and `documents.yml`, with no cache in the shared `release.yml`, and a release of `.github` (Д146 in the RUN.md of `spec`). The cache in `toolchain.sh` is not yet in `spec` at v0.12.0.
+- **COORDINATION.md of `spec` v0.12.0** — in «Состоянии», `.github` has the submodule v0.9.9, the release v0.1.21 and «нет: таблица 2 пуста»; the row 2.4 is «задачи ещё нет»: the cache of the image of the `toolchain` stage in `go.yml`, `typescript.yml` and `documents.yml`, with no cache in the shared `release.yml`, and a release of `.github` (Д146 of `spec`). The cache in `toolchain.sh` is not yet in `spec` at v0.12.0.
 
 ### 12.11. `spec` v0.13.0
 
@@ -849,16 +849,16 @@ Read 2026-11-23:
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
 
 Read 2026-11-01:
-- **the callers of `documents.yml`** (Д5 in RUN.md) — `ci.yml` and the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` — v0.2.9; `module-kit` — v0.2.13; `canvas` — v0.2.42; `tutor` — v0.3.3. They call `documents.yml` by the SHA of v0.1.0, and `tutor` by that of v0.1.5 and `canvas` of v0.1.10.
+- **the callers of `documents.yml`** — `ci.yml` and the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` — v0.2.9; `module-kit` — v0.2.13; `canvas` — v0.2.42; `tutor` — v0.3.3. They call `documents.yml` by the SHA of v0.1.0, and `tutor` by that of v0.1.5 and `canvas` of v0.1.10.
 
 Read 2026-11-02:
-- **the callers of `documents.yml`** (Д5 in RUN.md; 2026-11-02) — the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `canvas` v0.4.1, `tutor` v0.5.4. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
+- **the callers of `documents.yml`** (2026-11-02) — the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `canvas` v0.4.1, `tutor` v0.5.4. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
 
 Read 2026-11-02:
-- **the callers of `documents.yml`** (Д5 in RUN.md) — the `spec` submodule on the `main` of each, the GitHub API: `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `api`, `app`, `canvas` and `tutor` v0.6.2. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
+- **the callers of `documents.yml`** — the `spec` submodule on the `main` of each, the GitHub API: `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `api`, `app`, `canvas` and `tutor` v0.6.2. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
 
 Read 2026-11-08:
-- **the callers of `documents.yml`** (Д5 in RUN.md) — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, `canvas` — v0.6.5, `app` — v0.6.6, `module-kit` — v0.9.3, `api` — v0.9.4, `learner-model`, `modules` and `tutor` — v0.9.5, and `engine`, `sim` and `skill-map` — v0.9.8. The tag is named by the submodule's commit: the tags `vX.Y.Z` and `contracts/vX.Y.Z` stand on one commit.
+- **the callers of `documents.yml`** — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, `canvas` — v0.6.5, `app` — v0.6.6, `module-kit` — v0.9.3, `api` — v0.9.4, `learner-model`, `modules` and `tutor` — v0.9.5, and `engine`, `sim` and `skill-map` — v0.9.8. The tag is named by the submodule's commit: the tags `vX.Y.Z` and `contracts/vX.Y.Z` stand on one commit.
 
 Read 2026-11-08:
 - **the callers** — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, and the other ten — v0.6.6 or newer: `app` — v0.6.6, `api` — v0.9.4, `learner-model` and `tutor` — v0.9.5, `canvas`, `engine`, `module-kit`, `modules`, `sim` and `skill-map` — v0.9.8. `infra` calls `documents.yml` by the SHA of `v0.1.0`, ff2a359, and its latest commit is of 2026-10-21.
@@ -872,21 +872,21 @@ Read 2026-10-22:
 - **the registry and `canvas`** — `https://registry.npmjs.org/@altnovatrail%2fcanvas` answers 404 "Not found", and `-/org/altnovatrail/package` 200. `canvas` has no `release.yml`, no releases, no immutable releases and no ruleset of tags (the GitHub API).
 
 Read 2026-11-01:
-- **`canvas` and npm** (Д7 in RUN.md) — `canvas` has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404 "Not found". Its first release is a task of the epic E5, which stands in table 2 of the RUN.md of `canvas`, among the epics for later, and its current epic E7 carries no release (the RUN.md of `canvas`, `main`).
+- **`canvas` and npm** — `canvas` has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404 "Not found". Its first release is a task of the epic E5, which stands in table 2 of the RUN.md of `canvas`, among the epics for later, and its current epic E7 carries no release (the RUN.md of `canvas`, `main`).
 
 Read 2026-11-02:
-- **`canvas` and npm** (Д7 in RUN.md; 2026-11-02) — `canvas` still has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404. Its current epic is E8 «Первый релиз» (RUN.md `canvas`, `main`):
+- **`canvas` and npm** (2026-11-02) — `canvas` still has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404. Its current epic is E8 «Первый релиз» (RUN.md `canvas`, `main`):
   - a task moves `canvas` to a tag of the line 0.6;
   - the next brings out v0.1.0 and puts the same archive in npm;
   - the last — the next versions by the step of the shared release, through trusted publishing.
 
 Read 2026-11-02:
-- **`canvas` and npm** (Д7 in RUN.md):
+- **`canvas` and npm**:
   - `canvas` has `.github/workflows/release.yml` — commit bc60d93, "…: the release build and its trial run", 2026-11-02. It calls the shared `release.yml` v0.1.12 by the SHA 4225639, with `publish: false` and `npm-package: "@altnovatrail/canvas"`, and its runs of 2026-11-02 — `pull_request` and `workflow_run` — passed (the GitHub API);
   - `canvas` has no releases, `@altnovatrail/canvas` in the registry is 404, and the tasks «Первый релиз: пакет» and «Публикация шагом npm» in the RUN.md of `canvas` are `[ ]`.
 
 Read 2026-11-08:
-- **`canvas` and npm** (Д7 in RUN.md):
+- **`canvas` and npm**:
   - `canvas` has the releases v0.1.0, v0.1.1 and v0.1.2, all of 2026-11-02. In the registry, `@altnovatrail/canvas` has the versions `0.0.0-stage` and 0.1.0 without provenance, and then 0.1.1, at 05:39 UTC, and 0.1.2, at 16:36 UTC, with the provenance `https://slsa.dev/provenance/v1`;
   - the provenance of 0.1.1 (`registry.npmjs.org/-/npm/v1/attestations/@altnovatrail%2fcanvas@0.1.1`): the workflow is `.github/workflows/release.yml` of the repository `altnovatrail/canvas` on `refs/heads/main`, the run 41395016624. The run is `workflow_run`, "success", and its `referenced_workflows` is `altnovatrail/.github/.github/workflows/release.yml@09443e1027ef24197439dfe60a072d14c3626cc3`, v0.1.13. Its job is "Release / release";
   - so npm accepted a publication through trusted publishing from a reusable workflow of another repository and recorded the caller's provenance. Now the `release.yml` of `canvas` on `main` calls the shared v0.1.13 with `npm-package: "@altnovatrail/canvas"`.

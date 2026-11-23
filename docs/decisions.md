@@ -715,7 +715,7 @@ The entries run by number, so the later moves to a tag stand further on, each in
   - `.devcontainer/` of `spec`, the repository template and AGENTS.md did not change (`git diff --quiet`).
 - **What is changed here:**
   - `spec/` is at v0.2.17, commit 5195df0; the tag is in README.md, `profile/README.md`, CLAUDE.md and at the start of RUN.md;
-  - in `.devcontainer/Dockerfile` the decision of `spec` it cites carries the suffix "spec": this is how `editDevcontainer` now builds it, and the files of `.devcontainer/` have no other differences from the repository template but the first line;
+  - the files of `.devcontainer/` have no differences from the repository template but the first line;
   - the opening of [architecture.md](architecture.md) and CLAUDE.md follow the new card: the recipes of `spec` at the wrappers, the script at the release, the npm step and the npm registry among the services. The calling texts of [architecture.md](architecture.md) say who writes what the code adds;
   - the questions the tag answers left table 3.
 - **What waits for its tasks:** the script, the license recipes and the npm step. `.github` has no `apt` packages, and the rule of the snapshot does not concern it.
@@ -1010,7 +1010,7 @@ The rest was rejected by `spec`'s rule itself: copies in every repository throug
 - **What did not change.** The recipes that the shared and `self-` workflows call have the same parameters, and `tools/toolchain/` and `tools/docs-check/` did not change. `release-verify` accepts the file of `tutor` v0.1.0, as on v0.6.3 (measurements 5.8). So no workflow is changed, and the move gives no release of `.github`.
 - **What is changed here:**
   - `spec/` — at v0.9.8, commit b1fbc61; the tag — in README.md, `profile/README.md`, CLAUDE.md and at the start of RUN.md. The release is immutable, and `gh release verify v0.9.8 -R altnovatrail/spec` confirms it;
-  - `.devcontainer/Dockerfile` — the file of `spec` v0.9.8, then with its heading and the suffix "spec" on the decisions its comments cited as the differences. CLAUDE.md names buf in its environment;
+  - `.devcontainer/Dockerfile` — the file of `spec` v0.9.8, then with its heading. CLAUDE.md names buf in its environment;
   - rule 2 of RUN.md — by the template;
   - the calling template of the release in [architecture.md](architecture.md) — the `paths` list of the kind modules, with the reason why `.devcontainer/Dockerfile` is not in it. The list is the same as in `release.yml` of `modules`;
   - CONTRIBUTING.md: once samples for eval sets start to be accepted, a volunteer hands the file to the eval-set organizer, a maintainer of `modules`, outside GitHub, and only the organizer adds a sample. While П-16 is open, the ban stays;
@@ -1148,7 +1148,7 @@ The rest was rejected by `spec`'s rule itself: copies in every repository throug
   - RUN.md and table 4 followed the template of the tag; the layout of the plan of a later tag replaced them, in English, with tables 2–4 in `run/`;
   - AGENTS.md — the item "Rules by path", as in the template: CLAUDE.md names the rules of the parts;
   - the profile — "OpenTofu" and the documents of `spec` "in English"; CONTRIBUTING.md — what is in which language, by `spec`'s rule of language; README.md — the status, the language of the documents and table 4;
-  - `.devcontainer/Dockerfile` — Go 1.27.4 and its sums, as at `spec`, then with its heading and the suffix "spec" on the decisions its comments cited as the differences.
+  - `.devcontainer/Dockerfile` — Go 1.27.4 and its sums, as at `spec`, then with its heading.
 - **The sources and the measurements.** The section "Sources" of [architecture.md](architecture.md) is sorted out by source: the records of external facts are in `docs/sources.md`, the results of measurements in `docs/measurements.md`, and in the place of the section stands the pointer "Sources and measurements" with a table "group → records". The claims of [architecture.md](architecture.md), CLAUDE.md, README.md and the comments of the workflows and the tests cite the records — `sources 2.1`, `measurements 5.2`.
   - **Topics — by subject:** GitHub Actions; GitHub — rulesets, releases and the organization; Dependabot; CodeQL; Scorecard; Sigstore; npm; Node, browsers and TypeScript tests; Go, go-licenses and Codecov; the tools of the checks; the tags of `spec`; other NovaTrail repositories; MathTrail and samples. A record is one source: the pages of one publisher on one subject, the code of one project, a tag of `spec`; in it are readings by date, each with its date and decision, as the opening of `docs/sources.md` says.
   - **Read goes to sources, run goes to measurements.** In sources — documentation, code at a commit, the answers of the API and of the registry, files of other repositories and sums checked against the downloaded file; in measurements — trial pull requests, steps taken out of their files, the suite and its breakages, durations, sizes and trials of a tool's behaviour. An item where a trial stood beside a quote is cut, and both parts cite each other: there are 20 such items.

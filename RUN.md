@@ -38,7 +38,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 
 **Task body** (Russian): «Цель», «Сделать», «Как проверить», «Разделы»; as needed «Не делать», «Решить при планировании», «Мой шаг», «Стоимость», «Риски»; from planning «Почему», «Решено автором (дата)», «Выяснилось при планировании»; when done «Сделано (дата)» (rule 9).
 
-**Citations** — by `spec/RULES.md`: a task's number and a dated line stand only here, in `run/` and in `docs/plan/`; outside them a text cites no decision and no section, and only a claim about the outside world cites its record — `sources 1.1`, spec's `sources 2.3 spec`. spec's open questions — «Т-22», «П-7», «О-2» — stand anywhere: the repository keeps no registers. A task — «T03», from another repository «T03 .github»; one not here is in an archive: `grep -n '^#### T03\.' RUN.md docs/plan/*.md`. Task numbers are global and never reused: take the one free when writing it down.
+**Citations** — by `spec/RULES.md`: a task's number and a dated line stand only here, in `run/` and in `docs/plan/`; outside them a text cites no decision and no section, and only a claim about the outside world cites its record — `sources 2.1`, spec's `sources 2.3 spec`. spec's open questions — «Т-22», «П-7», «О-2» — stand anywhere: the repository keeps no registers. A task — «T03», from another repository «T03 .github»; one not here is in an archive: `grep -n '^#### T03\.' RUN.md docs/plan/*.md`. Task numbers are global and never reused: take the one free when writing it down.
 
 ## Epics
 
