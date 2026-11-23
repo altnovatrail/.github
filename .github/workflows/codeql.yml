@@ -115,7 +115,7 @@ jobs:
   # commit of the action ships with; without it, GitHub's flags choose the bundle at run time. Only
   # javascript-typescript takes paths-ignore: actions reads every workflow, and go what the
   # build compiled. A green analysis says that CodeQL ran, not that it found nothing: what it found
-  # holds a merge through the ruleset. The queries are security-extended.
+  # holds a merge through the ruleset.
   analyze:
     name: analyze (${{ matrix.language }})
     needs: languages

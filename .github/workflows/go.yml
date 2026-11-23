@@ -699,7 +699,7 @@ jobs:
   # "Go / targets", the one check of the targets in the caller's ruleset: green when every job of
   # the matrix target passed, red otherwise — a target that failed, was cancelled or did not run.
   # It runs whatever came before it, a cancelled run too, which a skipped check would pass
-  # as "Success"; it checks nothing out and only reads the result, so nothing in it can hang.
+  # as "Success" (R43); it checks nothing out and only reads the result, so nothing in it can hang.
   targets:
     name: targets
     needs: target

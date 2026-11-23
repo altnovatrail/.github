@@ -25,7 +25,7 @@ var allRules = []string{
 	"linkname",  // a //go:linkname directive
 	"buildtag",  // a //go:build or +build line, or a file name the go command reads as one
 	"require",   // a require directive in go.mod for a module the lists do not name
-	"replace",   // a replace directive in go.mod: a module as no release gave it (R77 spec)
+	"replace",   // a replace directive in go.mod: a module as no release gave it
 	"nested",    // a go.mod below the root, which the module's zip leaves out
 	"math",      // a function of math whose result is not defined exactly
 	"fused",     // a float * or / whose result does not go straight into float64()
