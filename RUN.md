@@ -1,6 +1,6 @@
 # RUN.md — work plan of .github
 
-What .github does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.19.4: the component's card — architecture 3.11 spec; the platform's decisions — spec's log. Small tasks, one at a time, each reviewed by the author; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md).
+What .github does, does not do and has still to decide — [docs/architecture.md](docs/architecture.md); why — [docs/decisions.md](docs/decisions.md). The platform is in `spec/`, a submodule at tag v0.19.11: the component's card — architecture 3.11 spec; the platform's decisions — spec's log. Small tasks, one at a time, each reviewed by the author; only the current epic is in detail (R19 spec). Other tables, each a file opening with its rules (R153 spec): 2, epics for later — [run/EPICS.md](run/EPICS.md); 3, questions to the author — [run/QUESTIONS.md](run/QUESTIONS.md); 4, debt — [run/DEBT.md](run/DEBT.md).
 
 Language (R154 spec): rules and tables in English, terse, for the session; the bodies of tasks in table 1 in Russian — the author writes and reviews them.
 
@@ -45,8 +45,18 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E28, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T82: next — T83.
+- **Done epics:** E1–E15 and E17–E28, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (the 2026-11-08 amendment to R34). Task numbers are taken through T83: next — T84.
 
-## Table 1. Current epic — none
+## Table 1. Current epic — E29. Тег `spec` v0.19.11 и ссылки по R171 spec
 
-The last done epic is E28, its archive [docs/plan/E28.md](docs/plan/E28.md).
+**Результат:** `.github` на теге `spec` v0.19.11 и ссылается по правилу ссылок R171 spec (строка 7.38 COORDINATION.md spec).
+
+| Статус | ID | Задача | Кто | План | Зависит от |
+|---|---|---|---|---|---|
+| [x] | T83 | Переход на тег `spec` v0.19.11 | Claude | — | — |
+
+## Epic E29. Тег `spec` v0.19.11 и ссылки по R171 spec
+
+**Почему эпик такой.** Прогон «Сделай эпик E22» `spec` (R156 spec): задачи дал оркестратор (правило 6 COORDINATION.md spec), пачкой на ветке `e22-github` с одним pull request (R159 spec). Задача живёт только в эпике (R40), а текущего эпика не было: E28 в архиве. Первая задача — переход на тег, волна 0; следующую, ссылки по R171 spec, оркестратор запишет сюда сам.
+
+**Не входит в переход:** правки заготовки `spec/repo-template/` v0.19.11 по R171 spec — строки CLAUDE.md и RUN.md о ссылках, вводные `docs/decisions.md`, `docs/sources.md` и `run/QUESTIONS.md`, `docs-budgets.json` с `"citations": true`: их берёт задача ссылок.

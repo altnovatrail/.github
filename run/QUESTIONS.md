@@ -12,4 +12,3 @@ Numbers are not reused: next — В46.
 
 | ID | Question | From | Options | Recommendation |
 |---|---|---|---|---|
-| В45 | «В реестр spec»: row Д217 of `run/DEBT.md` spec names "Pending: `skill-map`" alone since T218 (В73), by option 1 of В44, but its column "When to return" still reads "`skill-map` and `.github` moves to a tag with T141" (sources 12.18). Drop `.github` from that column too? | T82 | 1) yes: "`skill-map` moves to a tag with T141"; 2) no change | 1: `grep -n '`.github`' spec/run/DEBT.md` of every move still finds Д217 and sends the session to read it again, as В44 found |

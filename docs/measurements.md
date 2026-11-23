@@ -444,6 +444,10 @@ Measured 2026-11-20 (T82):
 - **the draft** — `just new-repo-draft .github docs 3.11 v0.19.4` and `… v0.18.34` on clones of `spec` at those tags in a temporary folder: the two drafts differ in `.devcontainer/devcontainer.json` — the mount of `../.epics` at `/workspaces/.epics`, `mkdir -p ../.epics` in `initializeCommand` and the comments on them and on `shutdownAction` —, in the comments of `.devcontainer/Dockerfile`, in `docs-budgets.json`, `{}`, and in the name of the tag alone. `.devcontainer/` of `.github` before the move was the draft of v0.18.34 but for the comment of its heading on `spec`'s stage `orchestrator`, and after it is the draft of v0.19.4 with no difference (`diff -r`); `.claude/settings.json`, AGENTS.md and LICENSE are the same as the draft's;
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.19.4 and yq 4.54.1 by the sum of `self-ci.yml` — 230 tests, 0 failed; `docs-check-repo` on v0.19.4 ok.
 
+Measured 2026-11-23:
+- **the draft** — `just new-repo-draft .github docs 3.11 v0.19.11` and `… v0.19.4` on clones of `spec` at those tags in a temporary folder: the two drafts differ in CLAUDE.md, RUN.md, `docs/README.md`, `docs/decisions.md`, `docs/sources.md`, `run/QUESTIONS.md` and `docs-budgets.json` alone, by the rule of citations and the name of the tag; `.devcontainer/` and `.claude/` of `.github` are the same as the new draft's (`diff -r`);
+- **the checks** — `docs-check-repo` on v0.19.11 ok before the edits and after, with "0 files by the rule of citations": `docs-budgets.json` does not turn the rule on.
+
 ## 10. The restructuring of the documents
 
 ### 10.1. The "lossless" comparison («без потерь») of T55
