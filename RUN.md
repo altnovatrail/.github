@@ -62,7 +62,7 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 | [x] | T87 | Ссылки по R171 spec: журнал, R19–R29 (часть 4) | Claude | — | T86 |
 | [x] | T88 | Ссылки по R171 spec: журнал, R30–R41 (часть 5) | Claude | — | T87 |
 | [x] | T89 | Ссылки по R171 spec: журнал, R42–R51 (часть 6) | Claude | — | T88 |
-| [ ] | T90 | Ссылки по R171 spec: `docs/architecture.md` и `docs/README.md` (часть 7) | Claude | — | T89 |
+| [x] | T90 | Ссылки по R171 spec: `docs/architecture.md` и `docs/README.md` (часть 7) | Claude | — | T89 |
 | [ ] | T91 | Ссылки по R171 spec: `docs/sources.md` (часть 8) | Claude | — | T90 |
 | [ ] | T92 | Ссылки по R171 spec: `docs/measurements.md` и ключ `"citations": true` (часть 9) | Claude | — | T91 |
 
@@ -73,17 +73,6 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 **Не входит в переходы:** правки заготовки `spec/repo-template/` v0.19.11 и v0.19.12 по R171 spec — строки CLAUDE.md и RUN.md о ссылках, вводные `docs/decisions.md`, `docs/sources.md` и таблиц `run/`, `docs-budgets.json` с `"citations": true`: их берут задачи ссылок.
 
 **Части T84.** T85–T92 — остальные части задачи T84, разбитой по её шагу 9 (правило 11): её тело и «Решено при планировании» — в [docs/plan/E29.md](docs/plan/E29.md), `grep -n '^#### T84\.' docs/plan/E29.md`. Каждая часть правит ссылки по шагам 4–8 T84 и только в своём месте; пока ключа нет, она проверяет себя ключом, включённым на время прогона, по строкам своего места.
-
-#### T90. Ссылки по R171 spec: `docs/architecture.md` и `docs/README.md`
-
-- **Цель:** `docs/architecture.md` и `docs/README.md` ссылаются по R171 spec: без номеров задач, без ссылок на поправки, не больше двух ссылок в скобке, без цепочек.
-- **Почему:** часть 7 задачи T84 (её шаг 9).
-- **Сделать:**
-  1. Ссылки — по шагу 4 T84; ссылка на поправку своего журнала или `spec` — на запись; номер задачи — на файл или решение.
-  2. Файлы вызывающих, которые архитектура цитирует блоками кода, — их комментарии по шагу 5 T84, как комментарии кода `.github`.
-  3. Смысл не менять (шаг 7 T84).
-- **Как проверить:** `docs-check-repo` с ключом, включённым на время, — ни одной находки в этих двух файлах; без ключа — зелёный; `/code-review high`, один круг; в отчёте — ссылок было и стало, командой measurements 1.18.4 spec.
-- **Разделы:** T84; R171 spec; RULES.md spec — The bar и Citations; свои `docs/architecture.md`, `docs/README.md`.
 
 #### T91. Ссылки по R171 spec: `docs/sources.md`
 
