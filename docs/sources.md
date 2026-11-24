@@ -21,7 +21,7 @@
 
 ## 2. GitHub Actions
 
-GitHub's documentation is a link to [github/docs](https://github.com/github/docs) at a commit where the claim stands, and the code of an action or of the runner's image a link at its tag or commit; a behaviour of a step that a test or a trial checks is a measurement. What stays here are the terms and the limits of the service, which change in place and which no run of ours checks.
+GitHub's documentation is a link to [github/docs](https://github.com/github/docs) at a commit where the claim stands, and the code of an action or of the runner's image a link at its tag or commit; a behaviour of a step that a test or a trial checks is a measurement. What stays here are the terms and the limits of the service, and the license of `actions/cache`, which change in place and which no run of ours checks.
 
 ### 2.6. GitHub's runners
 
@@ -76,7 +76,7 @@ GitHub's documentation of Dependabot is a link to github/docs at a commit, and t
 
 ## 5. CodeQL
 
-GitHub's documentation of code scanning is a link to github/docs at a commit, the code of `github/codeql-action` and `github/codeql` a link at the tag the workflow pins, and what a trial saw is in measurements.md. No record of this topic is left.
+GitHub's documentation of code scanning is a link to github/docs at a commit, the code of `github/codeql-action` and `github/codeql` a link at the version the claim names, and what a trial saw is in measurements.md. No record of this topic is left.
 
 ## 6. Scorecard
 
@@ -104,7 +104,7 @@ Read 2026-11-24:
 
 ## 8. npm
 
-npm's documentation and the code of `npm/cli` and npm-registry-fetch are links at the tag or commit where the claim stands, the npm that Node carries a link to Node at its tag, and an attestation of a package's version a link to the registry's answer for it. What stays here are npm's policies, the answers of npm's registry and of the GitHub API, and npm's open bugs, which change in place and which no run of ours checks.
+npm's documentation and the code of `npm/cli` and npm-registry-fetch are links at the tag or commit where the claim stands, the npm that Node carries a link to Node at its tag, and an attestation of a package's version a link to the registry's answer for it. What stays here are npm's policies, the answers of npm's registry and of the GitHub API, and npm's open bugs, which change in place and which no run of ours checks. A policy — of unpublishing, or the default and the window of a trusted publisher's setting — stays a record even where its page is a file of npm/documentation at a commit, as a limit of a service does; what npm does by the same page is a link.
 
 ### 8.1. npm's policies
 
@@ -152,7 +152,7 @@ Read 2026-11-24, the GitHub API:
 
 ## 10. Go, go-licenses and Codecov
 
-The documentation and code of Go, golangci-lint and go-licenses are links at the tag or commit where the claim stands, and a behaviour a trial saw is in measurements.md; the sum of the Codecov CLI is held by the steps that check it. What stays here are the Codecov app of the organization, the license of the CLI, the key its sums are signed with, and Codecov's pages, which change in place and which no run of ours checks.
+The documentation and code of Go, golangci-lint and go-licenses are links at the tag or commit where the claim stands, and a behaviour a trial saw is in measurements.md; the steps that check the sum of the Codecov CLI hold it. What stays here are the Codecov app of the organization, the license of the CLI, the signed file of its sums and the key it is signed with, and Codecov's pages, which change in place and which no run of ours checks.
 
 ### 10.3. Codecov
 
@@ -161,6 +161,7 @@ Read 2026-11-24:
 - **the Codecov CLI** — the license Apache-2.0 (the GitHub API, `repos/codecov/codecov-cli/license`); v11.3.2 came out 2026-10-28;
   - gpg accepted the signature `codecov.SHA256SUM.sig` of `https://cli.codecov.io/v11.3.2/linux/codecov.SHA256SUM`, with the key `https://keybase.io/codecovsecops/pgp_keys.asc`: "Good signature from "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>"", "Primary key fingerprint: 2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869"; the file holds `8e1bfb71661378530f6ea21e82b414095899e565cbb4cf555c613064be17b973  codecov`;
   - the same fingerprint is named by the page [Codecov Uploader](https://docs.codecov.com/docs/codecov-uploader), updated 2026-06-07: "Key Fingerprint: `2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869`". It says to take the key from `https://keybase.io/codecovsecops/pgp_keys.asc`;
+- **the paths in Codecov** — [Codecov, Fixing paths](https://docs.codecov.com/docs/fixing-paths), updated 2025-11-11, section Default path fixing: "Codecov performs a number of default path fixes for specific CI providers and situations where we will need to fix the path every single time"; among them `"((.+/src/)?github\.com/[^\/\n]+/[^\/\n]+/)"` — "Golang specific rule to strip out the github portion of a file path";
 - **several uploads per commit** — [Codecov, codecov.yml reference](https://docs.codecov.com/docs/codecovyml-reference), updated 2026-07-23. `codecov.notify.wait_for_ci` has "Should Codecov wait for all CI statuses to complete before sending ours", `true` by default. `codecov.notify.after_n_builds` has "How many uploaded reports Codecov should wait to receive before sending statuses", `1` by default.
 
 ## 11. The tools of the checks
@@ -204,4 +205,4 @@ Read 2026-11-24: canvas-api has the rule `code_scanning` with the tool CodeQL an
 ### 14.2. `nodenv/.github`
 
 Read 2026-10-19:
-- **a repository named `.github`** — the documentation does not name it as a place of shared workflows. That is how [nodenv/.github](https://github.com/nodenv/.github) is built (commit 01e040a): `nodenv/nodenv` calls `uses: nodenv/.github/.github/workflows/release.yml@bd27009d5f178c0a88d42f7b07e6a3c7623ed768 # v7.0.8`, and the README explains: "GitHub doesn't allow them to live in any other directory, so the reusable workflows are all in the same location as the workflows _for this repository. To distinguish them, the workflows for this repository are prefixed with `.github_`". That Dependabot bumps such a reference was shown by a maintainer of dependabot-core in [issue #12489](https://github.com/dependabot/dependabot-core/issues/12489), 2025-12-29: "issue is not reproducible. Attaching screenshots below for a bump PR to version 7.0.5". `spec` confirmed the call; whether Dependabot bumps the reference, `v0.1.1` will show.
+- **a repository named `.github`** — the documentation does not name it as a place of shared workflows. That is how [nodenv/.github](https://github.com/nodenv/.github) is built (commit 01e040a): `nodenv/nodenv` calls `uses: nodenv/.github/.github/workflows/release.yml@bd27009d5f178c0a88d42f7b07e6a3c7623ed768 # v7.0.8`, and the README explains: "GitHub doesn't allow them to live in any other directory, so the reusable workflows are all in the same location as the workflows _for this repository. To distinguish them, the workflows for this repository are prefixed with `.github_`". That Dependabot bumps such a reference was shown by a maintainer of dependabot-core in [issue #12489](https://github.com/dependabot/dependabot-core/issues/12489), 2025-12-29: "issue is not reproducible. Attaching screenshots below for a bump PR to version 7.0.5".
