@@ -1,17 +1,22 @@
 # .github — sources
 
-> The external facts that the documents of `docs/` stand on: the documentation of GitHub and of other providers, the code of actions and tools at a commit, the answers of the GitHub API and of npm's registry, the tags of `spec`, the files of other repositories. Here are their records: the address, the version or commit, the date read and the quote in the source's language, while [architecture.md](architecture.md) and the decision log hold the claim and a citation of its one record by its number, `sources 2.1`, not a chain. A record's heading names its topic and date, not a task.
+> The facts of the outside world that the documents of `docs/` rest on and that no run of ours checks: a provider's terms and policies, a license, a page that changes in place with no version, an answer of an API or a registry that no run of ours checks, other projects' practice. Here are their records — the address, the date read and a quote in the source's language —, while [architecture.md](architecture.md) and the decision log hold the claim and a citation of its one record by its number, `sources 2.1`, not a chain. A record's heading names its topic, not a task.
 >
-> The results of measurements — trial pull requests and their runs, steps run apart from the workflow, the suite of tests of the steps, durations and sizes — are in [measurements.md](measurements.md).
+> No record is needed for GitHub's documentation, or the code of an action or a tool, at a version or commit — a link beside the claim —, for a behaviour a test or a measurement checks — they are its evidence —, or for spec's tags and the files of NovaTrail's and MathTrail's repositories — git, at a tag or commit. The results of measurements — trial pull requests and their runs, steps run apart from the workflow, the suite of tests of the steps, durations and sizes — are in [measurements.md](measurements.md).
 
 ## 1. How to keep it
 
-- **A record** is a subsection "N.M" of a topic: one source — the pages of one publisher on one subject, the code or files of one project, a tag of `spec` — or one reading of several sources for the sake of one decision. It holds the address, the version, the commit or the date of the page, the date read and the quote in the source's language, word for word. What was read not from the primary source — a copy, a quote from a decision of `spec` — the record names as such.
-- **A reading** is a paragraph "Read <date>:" and the items under it. The readings of one source on different dates are one record, by dates.
-- **A reference.** A claim of a document refers to a record by its number: `sources 2.1`, and from another repository `sources 2.1 .github`. A record's number does not change: a new record goes to the end of its topic, a new topic to the end of the file.
-- **A source read again** is a new reading with its date in the same record, and the earlier text is not edited: the decisions of its day stand on it. If the source has changed and a claim has diverged from it, that is a change of the decision or a question still open in `docs/architecture.md`, not an edit of the record.
+- **What is a record.** The line is whether a run of ours checks the fact and whether its source has a version, not whether it is a law or technology. A record holds terms, a policy, a license, and any fact whose source changes in place with no version and which no run of ours checks: a limit of a service, an answer of the GitHub API or of npm's registry, an open issue. A text outside the repositories, and other projects' practice, are records too.
+- **What is no record.**
+  - GitHub's documentation, at a commit of [github/docs](https://github.com/github/docs), and the documentation or code of an action, a tool or a library at a version, a tag or a commit: a link where the claim stands, with no quote.
+  - A behaviour a test of `tests/` or a record of [measurements.md](measurements.md) checks: the test or the record is its evidence; a sum, the Dockerfile that checks the archive against it.
+  - spec's tags and the files of the other NovaTrail repositories and of MathTrail: git — a link to the repository at its tag or commit, or the submodule `spec/`.
+- **A record** is a subsection "N.M" of a topic: one source — the pages of one publisher on one subject — or one reading of several sources for the sake of one decision. It holds the address, the date of the page where it has one, the date read, and the quote in the source's language, word for word. What was not read from the primary source — a copy, a pointer, a page that did not open — the record names as such.
+- **A reference.** A claim of a document refers to its one record by its number: `sources 2.1`, and from another repository `sources 2.1 .github`; not to a chain of records.
+- **The source was read again.** The same text: the record's date read changes. Another text: the claims and decisions that rest on it are rewritten in the same change, and the record holds the new reading alone; where a decision waits on the author, that is an open question, and both readings stand until it is closed. A record holds the current state; its history is git.
+- **Numbers.** A record's number never changes and is never given again: a new record goes at the end of its topic, a new topic at the end of the file, and a record removed leaves a gap. The archives of `docs/plan/` keep citing a removed record, and the documents check does not look up their citations of records.
 - **What is not here:** the results of measurements — they are in measurements.md, and a record that a trial stood beside names its measurement; the quotes that the entries of the log give themselves — they stay in the entry.
-- **Where from.** The records 2.1–14.2 are the former section "Sources" of `docs/architecture.md`, sorted out by source on 2026-11-12. The items were moved word for word; an item where a trial stood beside the quote was cut in two, and both parts refer to each other. Which group of the section went to which records, the table at the end of `docs/architecture.md` names. Not from it are the record 13.6 and the readings of 2026-11-12.
+- **Where from.** The records were once the section "Sources" of `docs/architecture.md`; the archives cite its groups, and the table from a group to its records is at the end of [docs/plan/history.md](plan/history.md).
 
 ## 2. GitHub Actions
 
@@ -200,7 +205,7 @@ Read 2026-10-20:
 
 Read 2026-10-20:
 - **immutable releases** — the GitHub API: `PUT repos/altnovatrail/.github/immutable-releases` answered 204, and `GET` of the same path `{"enabled":true,"enforced_by_owner":false}`, as for `spec`. The ruleset `v-tags` — `POST repos/altnovatrail/.github/rulesets` with the rules `update`, `deletion` and `non_fast_forward` on `refs/tags/v*`, with no bypass; the model is the ruleset of `spec` 25426896;
-- **the Releases API's refusal** to a commit that is no longer the tip of `main` — [GitHub Docs, REST API endpoints for releases](https://docs.github.com/en/rest/releases/releases), Create a release: "If the commit identified by target_commitish … adds or modifies any file under .github/workflows/ relative to the repository's default branch, the authenticating token must be authorized to modify workflows. Otherwise, this endpoint returns 404 Not Found; some authentication paths surface 403 Resource not accessible by integration instead", and "The GITHUB_TOKEN available to GitHub Actions cannot be authorized for this". How the release of `spec` lets this refusal pass — sources 12.1.
+- **the Releases API's refusal** to a commit that is no longer the tip of `main` — [GitHub Docs, REST API endpoints for releases](https://docs.github.com/en/rest/releases/releases), Create a release: "If the commit identified by target_commitish … adds or modifies any file under .github/workflows/ relative to the repository's default branch, the authenticating token must be authorized to modify workflows. Otherwise, this endpoint returns 404 Not Found; some authentication paths surface 403 Resource not accessible by integration instead", and "The GITHUB_TOKEN available to GitHub Actions cannot be authorized for this". How the release of `spec` lets this refusal pass — the recipe `release-refusal` of [spec v0.2.11](https://github.com/altnovatrail/spec/blob/v0.2.11/justfile).
 
 Read 2026-11-01:
 - **source code archives** — github/docs at 33b1f4a, `content/repositories/working-with-files/using-files/downloading-source-code-archives.md`, section Stability of source code archives:
@@ -462,7 +467,7 @@ Read 2026-11-01:
   - A package published again has no `time.unpublished`, and `time` keeps the earlier numbers: for `pokemon-assets` — 0.6.0 and 0.7.0, which are not in `versions`.
 
 Read 2026-11-02:
-- **the documents of packages unpublished whole**, by the step of `spec` (sources 12.7) — `curl https://registry.npmjs.org/<name>?write=true`, 2026-11-02:
+- **the documents of packages unpublished whole**, by the step "Check the npm package" of [spec v0.6.3](https://github.com/altnovatrail/spec/blob/v0.6.3/.github/workflows/release.yml) — `curl https://registry.npmjs.org/<name>?write=true`, 2026-11-02:
   - for `asdasd`, `aaaaaaa` and `test-unpublish`, `versions` is empty, and `time` has `created`, `modified`, `unpublished` and every number the package held: `1.0.0`; `2.0.0`, `1.0.0`, `1.0.1`, `3.0.0`, `4.0.0` and `4.0.1`; `0.0.1` and `0.0.0`;
   - `time.unpublished.versions` has the numbers the package held last: `["1.0.0"]`, `["1.0.0","1.0.1","3.0.0","4.0.0"]` and `["0.0.0"]`. The numbers unpublished earlier — `2.0.0` and `4.0.1` for `aaaaaaa`, `0.0.1` for `test-unpublish` — are only in `time`;
   - a jq filter that takes from `time` only `created`, `modified` and `unpublished` loses the keys of the numbers, as a first reading of this day did.
@@ -632,367 +637,19 @@ Read 2026-10-22:
 
 ## 12. `spec`: tags, recipes and scripts
 
-### 12.1. `spec` v0.2.11
-
-Read 2026-10-20:
-- **the Releases API's refusal for a release of `spec`** (sources 3.2) — The `release.yml` of `spec` at v0.2.6 let only a 404 through. From v0.2.7 both a 404 and a 403 are let through, but only when the commit is no longer the tip and adds or changes files of `.github/workflows/` against the tip: `git diff --quiet --diff-filter=AM "$tip" "$TARGET" -- .github/workflows/` (the `release.yml` of `spec` v0.2.9). From v0.2.11 this rule is the recipe `release-refusal`, and it also requires the commit to lie in the tip's history (the next reading).
-
-Read 2026-10-20:
-- **`release-version`** in `spec/justfile` v0.2.11 takes a commit and a path to a workflow. The recipe's comment: outside `spec` "the line is RELEASE_LINE as the workflow named second sets it at that commit, a path from the repository's root, whatever the shell sets: a release workflow's own env, the tip's, must not number an older commit. A commit from before that workflow existed takes the checked-out file's line";
-- **`release-refusal <commit> <tip> <error file>`** ibid.: "Exits 0 when the refusal is that one, and 1 with the reason when it is not or when anything cannot be read". The `release.yml` of `spec` v0.2.11 calls both recipes through the launch script `$RUNNER_TEMP/toolchain`: it runs the command in the `toolchain` stage, with the working folder and `$RUNNER_TEMP` mounted, the second read-only;
-- **the sums of the archives** — `.devcontainer/Dockerfile` from the recipe at v0.2.11. All eight sums — Node 24.21.0, just 1.58.0, gh 2.101.0 and just-lsp 0.10.0, each for amd64 and arm64 — matched the archives that were downloaded 2026-10-20 from the addresses of that Dockerfile and checked by `sha256sum`.
-
-### 12.2. `spec` v0.2.12, v0.2.13 and v0.2.17
-
-Read 2026-10-21:
-- **the list of `spec`** — `spec/tools/licenses/config.mjs` at v0.2.12: `allowed` — 0BSD, Apache-2.0, BlueOak-1.0.0, BSD-2-Clause, BSD-3-Clause, CC0-1.0, ISC, MIT, MIT-0 and Unlicense, one per line. The trial of the step — measurements 2.1.
-
-Read 2026-10-21:
-- **`licenses-check` of `spec`** — `spec/tools/licenses/main.mjs` at v0.2.13: "The lock file is always the one beside this script: no path comes from the command line". It walks the `packages` of the lock file and takes the `license` of each package, and for a lock file without `packages`, version 1, it would check zero packages and answer "ok".
-
-Read 2026-10-22:
-- **`toolchain.sh`** — `spec/tools/toolchain/toolchain.sh` at v0.2.17, mode 100755. Its modes: `build` — "build the stage as the image novatrail-toolchain", `run <command> [<argument>...]` — "run a command in it" and `spec [--dry-run] <recipe> [<argument>...]` — "run one of spec's recipes, from spec's justfile". On the launch: "The repository is mounted at /work, and RUNNER_TEMP read-only at its own path, where gh leaves the error of a refused release; nothing else of the runner's environment goes in". The script's tests are the recipe `toolchain-test`, with a stub for docker.
-
-### 12.3. `spec` v0.2.18–v0.2.21
-
-Read 2026-10-22:
-- **the tags of `spec`** — v0.2.18 04ab0d2, v0.2.19 6462304, v0.2.20 6caf6ff and v0.2.21 14e2a11 (`gh release list -R altnovatrail/spec`), each immutable. `tools/licenses/config.mjs`, `.devcontainer/` and `tools/toolchain/` have not changed since v0.2.17 (`git diff`);
-- **the license exception in the decision log of `spec`**, v0.2.18 and newer. «Исключение, которое принимает лицензию вне списка, … держит только пакет, который lock-файл помечает `dev`», and «`devOptional` — не `dev`». «То же исключение покрывает пакеты, которые сам инструмент называет в `optionalDependencies`, — так приходят его сборки под платформы, — пока они тоже `dev` и под той же лицензией». An exception for `null` or `SEE LICENSE IN <file>` «поправляет то, что говорит lock-файл, а не принимает лицензию вне списка»;
-- **the recipes** — `spec/justfile` v0.2.21. `licenses-check-repo lock exceptions=""` runs from the folder it is called from: `cd {{quote(invocation_directory())}} && node … --lock=… --exceptions=…`. `licenses-allowed` — `node tools/licenses/main.mjs --allowed`, one identifier per line, in the order of `config.mjs`. Neither calls `_tools`.
-
-### 12.4. `spec` v0.4.1
-
-Read 2026-11-01:
-- **the tag** — v0.4.1, commit 23000f3, came out 2026-10-29: `gh release view` — immutable, and `gh release verify v0.4.1 -R altnovatrail/spec` — "Release v0.4.1 verified!", with the files `format-0.1.tar.gz` and `altnovatrail-spec-0.4.1.tgz` and their bundle. Between v0.2.23 and it — 76 commits (`git log --oneline v0.2.23..v0.4.1`). `tools/toolchain/` and `tools/licenses/` have not changed (`git diff --quiet`);
-- **Go in the `toolchain` stage** — `.devcontainer/Dockerfile` from `editDevcontainer` v0.4.1 for `.github`: Go 1.27.3. The sums of the archives match go.dev's list, `https://go.dev/dl/?mode=json&include=all`: `go1.27.3.linux-amd64.tar.gz` — `65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40`, `go1.27.3.linux-arm64.tar.gz` — `a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49`. The recipe gives `devcontainer.json` and `host-network.sh` the same as here. There is no docker in the devcontainer, and the image was not built here: the pull request's CI will build the `toolchain` stage;
-- **the README badges** — each address answered 200 and a value: CI, Release and CodeQL — "passing", the release number — "v0.1.10", Scorecard — 6.8, the license — "Apache-2.0"; for SonarCloud, code smells — 0, reliability, security and maintainability — A, vulnerabilities — 0.
-
-### 12.5. `spec` v0.5.3
-
-Read 2026-11-01:
-- **the tag** — v0.5.3, commit 38ce564, came out 2026-11-01 at 17:19 UTC: `gh release view` — immutable, and `gh release verify v0.5.3 -R altnovatrail/spec` — "Release v0.5.3 verified!". Between v0.4.1 and it — v0.5.0, with the first contract between components, and v0.5.1 and v0.5.2; v0.5.3 itself is the answer to В28;
-- **what did not change** — `.devcontainer/`, RULES.md, AGENTS.md, `repo-template/`, `tools/toolchain/`, `tools/licenses/`, `tools/new-repo/` and `tools/docs-check/` (`git diff --quiet v0.4.1 v0.5.3`). In `tools/release/` only a test changed. The recipes `_tools`, `docs-check-repo`, `licenses-allowed`, `licenses-check-repo`, `release-version` and `release-refusal` in `justfile` are the same, word for word; the new ones are `ci-lint`, `ci-test`, `ci-vuln` and `ci-licenses` for `go.yml`;
-- **the README of `spec` v0.5.3**, section "Status": "version 0.1 … comes out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0 … The first contract between components, the types of the element `<novatrail-canvas>` between `canvas` and `app`, comes out from v0.5.0", with a link to the decision of `spec` on that contract, "and the other contracts come after it";
-- **`spec` calls `go.yml`** — the decision log of `spec`: the job "Go" in the `ci.yml` of `spec` calls the shared `go.yml` v0.1.10, commit f3addb7, by a SHA with the version beside it, and its `ci-licenses` checks by the `ALLOWED_LICENSES` that `go.yml` gives.
-
-### 12.6. `spec` v0.6.2
-
-Read 2026-11-01:
-- **the tag** — v0.6.2, commit 49d0fb6, came out 2026-11-01 at 23:54 UTC. `gh release view` — immutable, and `gh release verify v0.6.2 -R altnovatrail/spec` — "Release v0.6.2 verified!". Between v0.5.3 and it — v0.5.4–v0.5.8, v0.6.0 and v0.6.1 (`gh api repos/altnovatrail/spec/releases`). v0.6.2 differs from v0.6.1 only in RUN.md and a section of `docs/concepts.md` of `spec`;
-- **what did not change** — `.devcontainer/`, AGENTS.md, `repo-template/`, `tools/toolchain/`, `tools/licenses/`, `tools/new-repo/` and `tools/docs-check/` (`git diff --stat v0.5.3 v0.6.2`).
-  - The recipes that the shared and `self-` workflows call — `docs-check-repo`, `licenses-allowed`, `licenses-check-repo`, `release-version`, `release-refusal` and `ci-*` — are the same word for word.
-  - The new recipes are `release-verify` and `release-verify-npm`, and `release-version-test` now calls `_tools`.
-  - `tools/package.json` got the sigstore-js packages for `release-verify`, and `_tools` installs them for the documents check too;
-- **RULES.md**:
-  - a new hard rule "Release files are verified": "A file of a NovaTrail release — a binary, an archive, an index — enters code or CI only once `just -f spec/justfile release-verify` has accepted it …, where it enters NovaTrail";
-  - in the rule on language — "and so is spec's cross-repository plan, COORDINATION.md";
-- **the README of `spec` v0.6.2**, section "Status": "Version 0.1 came out as files for code from the release v0.3.0, with its types for Go from v0.3.4 and for TypeScript from v0.4.0; version 0.2, whose digit on a crop is 24 px high unless the module gives it, comes out from v0.6.0. The format is still to be tried on the modules of the first slice";
-- **В29 and В30** — they are not in `spec` v0.6.2: neither RUN.md nor the decision log of `spec` names them.
-
-Read 2026-11-02:
-- **`toolchain.sh` v0.6.2** (the comment at the top of the file): "The repository is mounted at /work, and RUNNER_TEMP read-only at its own path … nothing else of the runner's environment goes in". On `spec --dry-run`: "just's dry run parses the call, prints the recipe and runs nothing".
-
-### 12.7. `spec` v0.6.3
-
-Read 2026-11-02:
-- **the tag** — v0.6.3, commit 8460f11, came out 2026-11-02 at 02:30 UTC. `gh release view` — immutable, and `gh release verify v0.6.3 -R altnovatrail/spec` — "Release v0.6.3 verified!". There are no tags between v0.6.2 and it (`gh release list -R altnovatrail/spec`);
-- **what did not change** — `.devcontainer/`, RULES.md, AGENTS.md, README.md, `justfile`, `tools/toolchain/`, `tools/licenses/` and `tools/docs-check/` (`git diff --quiet v0.6.2 v0.6.3`). In `tools/release/` only `test/` changed, and `tools/package.json` and `tools/package-lock.json` did not. The recipes that the shared and `self-` workflows call are the same word for word. `repo-template/` and `tools/new-repo/` and `tools/types/npm/README.md` changed;
-- **the decision of `spec` on the previous index** — «прошлый индекс получает и проверяет шаг общего `release.yml` `.github` на раннере, а рецепт `release-files` `modules` получает уже проверенный файл». It closes Т-35, by the option 1′ of the row «в реестр spec» В33 of `.github`. How the file reaches the recipe, `.github` decides;
-- **the decision of `spec` on where a release file is checked** — «В пункте „Где проверяется“ слова „в том шаге, который его получает“ у релиза `modules` значат шаг общего `release.yml` на раннере, а не рецепт `release-files`»;
-- **an unpublished version number at `spec`** — the comment of the step "Check the npm package" of the `release.yml` of `spec` v0.6.3: "A version it held lies in its time then, or under time.unpublished.versions once the whole package is gone". The step looks for the number there too: `(.time.unpublished.versions? // []) | index($v) != null`. The documents of such packages in the registry — sources 8.3;
-- **COORDINATION.md of `spec` v0.6.3** — the row 2.2 is marked done 2026-11-02, with the pull requests 85 and 86 of `.github`, the submodule `v0.6.2` and the release `v0.1.13`. The row 2.3 is the epic E11 of `.github`, and the row 3.7 is «рецепт `release-files` `modules` получает его проверенным от общего релиза, а не скачивает сам», by the decision of `spec` on the previous index, and how exactly, `.github` decides.
-
-Read 2026-11-02:
-- **`previous` of the step of the version number** — `tools/release/version.mjs` of `spec` v0.6.3: "previous= the newest release before it, where the release notes start", and `nextVersion` puts `newest` in it, the highest release by number. `modules` has no releases, no `release.yml` and no recipe `release-files` yet (the GitHub API).
-
-Read 2026-11-02:
-- **the check of `spec`** — the step "Check the npm package" of the `release.yml` of `spec` v0.6.3: `jq -e --arg v "$version" '((.time // {}) | has($v)) or ((.time.unpublished.versions? // []) | index($v) != null)'`. The shared step's check is now the same: the `diff` of the lines with `jq -e --arg v "$version"` of both files is empty. The second half catches a number from `unpublished.versions` without a key in `time`; none of the three documents has such a number.
-
-### 12.8. `spec` v0.9.8
-
-Read 2026-11-08:
-- **the tag** — v0.9.8, commit b1fbc61, came out 2026-11-08 at 01:29 UTC and became the newest release of `spec`. `gh release view` — immutable, and `gh release verify v0.9.8 -R altnovatrail/spec` — "Release v0.9.8 verified!". Between v0.6.3 and it, 29 tags, from v0.6.4 to v0.9.7;
-- **what changed of what `.github` takes** (`git diff v0.6.3 v0.9.8`):
-  - `.devcontainer/Dockerfile`. The base image is `mcr.microsoft.com/devcontainers/base:3.0.12-noble` by digest instead of 3.0.10. buf 1.75.0 was added with sums for amd64 and arm64, and the comments on Go name any code of the repository. `devcontainer.json` and `host-network.sh` did not change;
-  - RULES.md. The session of `spec` finds the rows «в реестр spec» itself, on `main`. A new hard rule is on production images;
-  - spec's repository template: rule 2 of RUN.md says the same of the rows «в реестр spec», and the Environment of CLAUDE.md has buf;
-  - the README of `spec`: format 0.3 comes out from v0.9.0, the admission table from the line 0.8, the code of the contracts from the line 0.7;
-  - the card of `.github` in `docs/architecture.md` — only the part on `infra` changed;
-- **what did not change for the workflows of `.github`.** The recipes `docs-check-repo`, `licenses-allowed`, `licenses-check-repo`, `release-version`, `release-refusal` and `release-verify` have the same parameters, and `tools/toolchain/` and `tools/docs-check/` did not change. `tools/release/verify.mjs`, beyond what it took before, takes the files of `spec` `admission-<version>.tar.gz` and `altnovatrail-contracts-<version>.tgz`. `tools/licenses/main.mjs` only moved `inRepository` to `tools/shared.mjs`. The recipe on a real file — measurements 5.8;
-- **what `spec` hands to `.github`** (RUN.md of `spec` v0.9.8, table 4):
-  - Д69 — the answer to В35: the comment of the step "Check the npm package" of the `release.yml` of `spec` says, as the shared step does, that the number of a package unpublished whole stays a key in `time`;
-  - Д80 — the `paths` list of the kind modules in the template, and in CONTRIBUTING that only the eval-set organizer brings in eval-set samples. Both «своим переходом»;
-  - Д88 — a group `groups` for the references `altnovatrail/.github/*` in the template `dependabot.yml`, «своим релизом»;
-  - Д91 — the step "Publish to npm" waits for the version in the registry for up to 20 minutes, with `timeout-minutes` to fit, «своей задачей»;
-  - Д114 — the options of the shared `go.yml`: runs on the targets, the difference check `fma-diff`, a job on `ubuntu-24.04-arm`, and then the shared test of the rules of code, «своей задачей»;
-- **COORDINATION.md of `spec` v0.9.8.** Item 2 is closed: the row 2.3 is «2026-11-02, pull request 88–91, релизы `v0.1.14` и `v0.1.15`». In «Состоянии», `.github` has the submodule v0.6.3, the release v0.1.15 and «нет: E11 сделан, таблица 2 пуста». Of Д5 it says that it «ждёт теперь одного `infra`».
-
-Read 2026-11-08:
-- **the decision of `spec` on the wait for npm** — the limit of 20 minutes. The registry checks a package before serving it: "introduces a short delay between publishing and availability, typically around five minutes. It may take longer, up to 15 minutes or more, at peak times or depending on a package's content and size" ([GitHub Changelog, npm publish-time malware scanning, 2026-07-28](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/), a quote the log of `spec` took on 2026-11-02);
-- **the same decision, on the archive.** «Версия в реестре доступна, когда документ пакета её показал и реестр отдаёт её архив». For the release of `spec` v0.7.2 the document showed 0.7.2 at 04:17:35 UTC, while the archive answered 404 until 04:22:50. Before then the shared step downloaded the archive by a single `curl -fsSL --retry 3`, which does not retry a 404 — the same race;
-- **the step "Publish to npm" of the `release.yml` of `spec` v0.9.8** — rounds every 10 seconds, `deadline=$((SECONDS + 1200))` and no more than 120 rounds. The document — `curl -sS --proto "=https" --retry 3 --max-time 30`, the archive — `curl -sS --proto "=https" --proto-redir "=https" -L --max-time 60`, without a retry. A package on which npm failed is looked for in three rounds, until the document shows it. The shared step took this for one package, with the same error messages.
-
-Read 2026-11-08:
-- **the script** — `spec/tools/toolchain/toolchain.sh` v0.9.8: "toolchain.sh build" — "build the stage as the image novatrail-toolchain", "toolchain.sh spec [--dry-run] <recipe>" — "run one of spec's recipes, from spec's justfile". The command runs as the runner's user, with its home in `/tmp`, the repository's root in `/work`, and `RUNNER_TEMP` read-only.
-
-### 12.9. `spec` v0.9.9
-
-Read 2026-11-08:
-- **the tag** — v0.9.9, commit fa5da0b, came out 2026-11-08 at 16:03 UTC and became the newest release of `spec`. `gh release view` — immutable, and `gh release verify v0.9.9 -R altnovatrail/spec` — "Release v0.9.9 verified!";
-- **what changed** (`git diff --stat v0.9.8 v0.9.9`) — 13 files: COORDINATION.md, RUN.md, `docs/`, `format/README.md` and the example of traps, `tools/contracts/report.mjs` and `tools/docs-check/citations.mjs` with their tests. `.devcontainer/`, RULES.md, `justfile` and `tools/toolchain/` did not change;
-- **the card of `.github`** — the item «для кода» names the input `same-bits` of the Go wrapper: runs on the targets, `fma-diff`, a run on arm64 and the test of the rules of code by the tool of `.github` with the caller's lists in `.github/coderules.json`. Table 5 of the RUN.md of `spec` recorded the answer to В36 `.github` — the card and Д116;
-- **COORDINATION.md of `spec` v0.9.9** — in «Состоянии», `.github` has the submodule v0.9.8, the release v0.1.21 and «нет: E12–E15 сделаны, таблица 2 пуста».
-
-### 12.10. `spec` v0.12.0
-
-Read 2026-11-09:
-- **the tag** — v0.12.0, commit 5b4640a, came out 2026-11-09 at 19:38 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.12.0 -R altnovatrail/spec` — "Release v0.12.0 verified!";
-- **what changed** (`git diff --stat v0.9.9 v0.12.0`) — 56 commits, 756 files: format 0.4 (v0.10.0), the part `deployment/` (v0.11.0), the admission table 0.2 (v0.12.0), the contracts, the types, `repo-template/` and `tools/new-repo/`, `justfile` and `tools/release/`. `.devcontainer/`, RULES.md, `tools/toolchain/`, `tools/docs-check/` and `tools/licenses/` did not change;
-- **COORDINATION.md of `spec` v0.12.0** — in «Состоянии», `.github` has the submodule v0.9.9, the release v0.1.21 and «нет: таблица 2 пуста»; the row 2.4 is «задачи ещё нет»: the cache of the image of the `toolchain` stage in `go.yml`, `typescript.yml` and `documents.yml`, with no cache in the shared `release.yml`, and a release of `.github` (Д146 of `spec`). The cache in `toolchain.sh` is not yet in `spec` at v0.12.0.
-
-### 12.11. `spec` v0.13.0
-
-Read 2026-11-10:
-- **the tag** — v0.13.0, commit 59fd14f, came out 2026-11-10 at 00:27 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.13.0 -R altnovatrail/spec` — "Release v0.13.0 verified!";
-- **the cache in `toolchain.sh`** (commit 82411a5) — `tools/toolchain/toolchain.sh`: "The image may come from a file of docker save, which the caller keeps in the cache of GitHub Actions by the sha256 of the Dockerfile …: TOOLCHAIN_IMAGE_FILE names it, its whole path. Unset or empty, build builds the stage, as ever". The docker calls — "load --quiet --input <file>, image inspect novatrail-toolchain, build as above, save --output <file> novatrail-toolchain". The warning is a line `::warning::toolchain.sh: …` in stdout without the path, and the path is a line in stderr;
-- **what else changed** (`git diff --stat v0.12.0 v0.13.0`) — 102 files: the legal texts (`legal/`), the DPIA, the `ci.yml` and `release.yml` of `spec`, `justfile`, `tools/docs-check/config.mjs` — the document `docs/dpia.md`. `.devcontainer/`, RULES.md and `tools/licenses/` did not change;
-- **COORDINATION.md of `spec` v0.13.0** — the row 2.4: the epic E17 of `.github` half done, on the branch `e17`, the draft pull request 109.
-
-Read 2026-11-10:
-- **the script** — `spec/tools/toolchain/toolchain.sh` v0.13.0: "TOOLCHAIN_IMAGE_FILE names it, its whole path. Unset or empty, build builds the stage, as ever"; the warning about a file that did not give the image — "::warning::toolchain.sh: the file of TOOLCHAIN_IMAGE_FILE did not give the image novatrail-toolchain, so it is built. The cache entry that held the file is broken and stays: delete it, or it is hit again";
-- **the path** — the `ci.yml` of `spec` v0.13.0 keeps the file in `${{ runner.temp }}/novatrail-toolchain.tar` under the same key as `go.yml`.
-
-### 12.12. `spec` v0.16.3
-
-Read 2026-11-12:
-- **the tag** — v0.16.3, commit 664398e, the merge of pull request 138 of `spec`, came out 2026-11-12 at 20:17 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.16.3 -R altnovatrail/spec` — "Release v0.16.3 verified!";
-- **what changed** (`git diff --stat v0.13.0 v0.16.3`) — 77 commits, 302 files: RULES.md, CLAUDE.md and the rules `.claude/rules/` of `spec`, `docs/` in English with `docs/sources.md` and `docs/measurements.md`, `DEBT.md`, the parts `consent-age/` and `export/`, `legal/` of version 2, the contracts, `repo-template/`, `tools/docs-check/`, `tools/session/`, `tools/tokens/`, `tools/translation/`, `tools/release/` and `.devcontainer/Dockerfile` — Go 1.27.4. `tools/toolchain/` did not change;
-- **Go 1.27.4** — the sums of the archives by `https://go.dev/dl/?mode=json`: `linux-amd64` — `7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840`, `linux-arm64` — `3392582988a273a87ab5043ee1b2c9c17a2c3c00580bf9326c47a2e0aaaeac92`, the same as in the Dockerfile of `spec` v0.16.3.
-
-### 12.13. `spec` v0.18.3
-
-Read 2026-11-16:
-- **the tag** — v0.18.3, commit 922886a, the merge of pull request 162 of `spec`, came out 2026-11-16 at 00:42 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.3 -R altnovatrail/spec` — "Release v0.18.3 verified!";
-- **what changed** (`git log --oneline v0.16.3..v0.18.3`, `git diff --stat v0.16.3 v0.18.3`) — 77 commits, 258 files: RULES.md, `repo-template/` — RUN.md in English, the tables in `run/`, the alias in the network —, `run/` of `spec` itself, `.devcontainer/` — the base image `devcontainers/base:3.0.13-noble` and the stage `orchestrator` —, `tools/docs-check/` — the layout of `run/` and the key `entries` —, `tools/session/`, `tools/new-repo/` and the new `tools/orchestrator/` and `tools/mockup/`. `tools/toolchain/` adds a test alone, and `tools/licenses/` did not change;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag: Д88, Д134, Д146, Д195, Д213, Д217, Д236 and Д250; table 5 of `run/INBOX.md` answers В37 and В38; row 7.13 of COORDINATION.md is `.github`'s, «задачи нет».
-
-### 12.14. `spec` v0.18.4
-
-Read 2026-11-16:
-- **the tag** — v0.18.4, commit 5867a6c, the merge of pull request 163 of `spec`, came out 2026-11-16 at 07:08 UTC; `gh release list` calls it "Latest". `gh release view` — immutable, and `gh release verify v0.18.4 -R altnovatrail/spec` — "Release v0.18.4 verified!";
-- **what changed** (`git log --oneline v0.18.3..v0.18.4`, `git diff --stat v0.18.3 v0.18.4`) — 4 commits, 29 files: `.devcontainer/Dockerfile` — the stage `toolchain-core`, Node, just, Go and buf, and `toolchain` built `FROM toolchain-core` —, `repo-template/kinds/typescript.Dockerfile` — apt from a source of the snapshot alone —, `tools/toolchain/toolchain.sh` — the variable `TOOLCHAIN_STAGE` —, `tools/coverage/`, the recipe `coverage-part`, `ci.yml` and `release.yml` of `spec` itself, `run/TASKS.md`, COORDINATION.md and four decisions changed in `docs/decisions.md`. RULES.md, `run/DEBT.md`, `docs/architecture.md` and `repo-template/files/` did not change;
-- **the decision of `spec` on the stage the release builds** — "the release builds the stage `toolchain-core` of `.devcontainer/Dockerfile` — Node, just, Go and buf —, from the Dockerfile and with no cache, as before. The stage `toolchain` is built over it with what the repository's tests need […] `toolchain.sh build` takes the stage from the environment variable `TOOLCHAIN_STAGE`: unset, empty or `toolchain` — `toolchain`, as before; `toolchain-core` — that stage, and a Dockerfile that has no such stage gets `toolchain`, with a notice; any other value stops the script.";
-- **the rows of `.github`** — COORDINATION.md: row 7.13, «задачи нет», with «Зависит от» «—», and the row 7.14 closed by `spec`; ``grep -n '`.github`' run/DEBT.md`` of the tag gives the same rows as v0.18.3 (sources 12.13).
-
-### 12.15. `spec` v0.18.6
-
-Read 2026-11-16:
-- **the tag** — v0.18.6, commit bf3dce9, the merge of pull request 167 of `spec`, came out 2026-11-16 at 21:26 UTC, and v0.18.5, the merge of pull request 166, at 18:46 UTC; `gh release list` calls v0.18.6 "Latest", and `gh release verify v0.18.6 -R altnovatrail/spec` — "Release v0.18.6 verified!";
-- **what changed** (`git log --oneline v0.18.4..v0.18.6`, `git diff --stat v0.18.4 v0.18.6`) — 14 commits, 59 files, among them `.devcontainer/Dockerfile` — the comment of the stage `toolchain` —, `.devcontainer/devcontainer.json` — `shutdownAction` —, `tools/session/`, `tools/orchestrator/`, `tools/docs-check/`, `tools/inbox/`, `tools/new-repo/devcontainer.mjs`, `repo-template/kinds/go/Dockerfile` — a comment —, RULES.md, `run/DEBT.md`, `run/INBOX.md`, COORDINATION.md and `docs/decisions.md`; the others are `spec`'s own plan, documents and tools — its RUN.md, CLAUDE.md, `.claude/rules/tools.md`, `docs/`, `tools/tokens/` and the tests. `repo-template/files/`, `tools/toolchain/toolchain.sh` and `tools/licenses/` did not change, and the justfile changed comments alone;
-- **the decision of `spec` on its orchestrator**, on the devcontainer — "spec's `.devcontainer/devcontainer.json`, which every repository's copies, sets `"shutdownAction": "none"`: closing a window of VS Code no longer stops a container under a running executor (sources 9.4), and `docker stop` ends one; a repository takes it with its move to a tag.";
-- **the decision of `spec` on one task a session** — "the hook of `tools/session/` counts the numbers of `NOVATRAIL_RUN_TASKS` as one task […] A repository runs the hook from its `spec/` submodule, so this holds there from its move to a tag that has it.";
-- **the comment of the stage `toolchain`** — "What the repository's tests need beyond the core: in spec, nothing; in a copy, the lines its kind adds at the end of this stage, if it adds any. What they install, a release never builds, and neither do the checks that run no browser: what the release and those ci- recipes call belongs in toolchain-core.";
-- **table 5 of `spec`**, `run/INBOX.md` — the rows of `.github` В39, `0bdd5bea10d9`, "one sentence for spec and every copy", and В40, `10c52b8885da`, "the heading of `toolchain` says the core holds what the release and the `ci-` recipes run; rows 7.15–7.25 are closed, every caller moved green";
-- **the rows of `.github`** — COORDINATION.md, point 2: «Следующая — 2.6», and row 2.5, «задачи нет», «составное действие (composite action) `.github` — образ `toolchain` и кеши Go из кеша и их сохранение на `main`, шаги job `arm64` общего `go.yml`, — которым пользуется и сам `go.yml`»; point 7: «Открытых строк нет: строки скорости CI, 7.13–7.25, сделаны»; the decision of `spec` on its orchestrator — "the repositories took it with their moves to that tag, v0.1.31". ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.4 but for Д250, which `spec` closed.
-
-### 12.16. `spec` v0.18.14
-
-Read 2026-11-17:
-- **the tag** — v0.18.14, commit 20e6384, the merge of pull request 175 of `spec`, came out 2026-11-17 at 06:02 UTC, after v0.18.7–v0.18.13 of the same night; `gh release list` calls it "Latest", `gh release view` — immutable, and `gh release verify v0.18.14 -R altnovatrail/spec` — "Release v0.18.14 verified!";
-- **what changed** (`git log --oneline v0.18.6..v0.18.14`, `git diff --stat v0.18.6 v0.18.14`) — 25 commits, 36 files, among them RULES.md — a phrase of Language —, `repo-template/files/README.md` and `RUN.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md`, `docs/architecture.md` and the contracts of `ProgressService` and `cause.proto`. `.devcontainer/`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/`, `tools/toolchain/` and `tools/licenses/` did not change;
-- **RULES.md, Language** — "Commit messages and a pull request's title and description are in English and terse, for the session that reads them, and reports to the author are in Russian.";
-- **the template's RUN.md, rule 10** — "commit messages and a pull request's title and description in English and terse, for the session, never a copy of the report.";
-- **the decision of `spec` on language** — "commit messages and a pull request's title and description are in English and terse, in every NovaTrail repository, and the report to the author stays in Russian. […] Every other repository takes the rule with its next move to a tag of `spec`.";
-- **the decision of `spec` on the languages of correspondence** — "Issues and pull requests are written in English or in Russian", unchanged that day;
-- **the card of `.github`** — one line changed, of `infra`: "and the reading mode as `API_READING_MODE` — on `novatrail` `single`, one reader";
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives the rows of v0.18.6: Д88, Д134, Д146, Д195, Д213, Д217 and Д236; COORDINATION.md, point 2: «Следующая — 2.6», its rows unchanged.
-
-### 12.17. `spec` v0.18.27
-
-Read 2026-11-18:
-- **the tag** — v0.18.27, commit 49686e7, the merge of pull request 188 of `spec`, came out 2026-11-18 at 01:16 UTC; the API's latest release is v0.18.27, `gh release view` calls it immutable, and `gh release verify v0.18.27 -R altnovatrail/spec` — "Release v0.18.27 verified!";
-- **what changed** (`git log --oneline v0.18.14..v0.18.27`, `git diff --stat v0.18.14 v0.18.27`) — 38 commits, 56 files; among them RULES.md — a rule of How we work and the phrase of Language —, `repo-template/files/README.md`, `files/docs/README.md`, new, and `files/CLAUDE.md`, `repo-template/README.md`, `tools/new-repo/check.mjs`, `tools/orchestrator/`, `tools/tokens/`, `.devcontainer/Dockerfile` — the stage `orchestrator` and the heading's comment on it —, COORDINATION.md, `run/DEBT.md`, `run/INBOX.md`, `docs/decisions.md` and `docs/architecture.md`. `repo-template/files/RUN.md`, `repo-template/kinds/`, `tools/session/`, `tools/docs-check/main.mjs`, `tools/toolchain/toolchain.sh` and `tools/licenses/` did not change;
-- **RULES.md, How we work** — "A run longer than a few minutes — tests, a simulation, a build, CI — goes to the background, and the session waits for its notification or a Monitor of its condition, never a `sleep` loop in the foreground: each call that polls rereads the whole context.";
-- **RULES.md, Language** — "Commit messages, issues and a pull request's title and description are in English, a person's too, and a session's are terse, for the session that reads them; reports to the author are in Russian.";
-- **the decision of `spec` on the README** — "the README of a repository — spec's, the template's and so every copy's — is its title, its badges … and a description alone: one to three paragraphs of what the component is and why, and its place in NovaTrail's architecture […] It has no other section and no command, code block or instruction, and names no status, version, date, number or language. What it held before goes to `docs/README.md`, the index of `docs/` […]", and "Each of `module-kit`, `learner-model`, `engine`, `tutor`, `canvas`, `app`, `api` and `skill-map` does its part in a task of its own in the same run; the author named no other repository.";
-- **the decisions of `spec` on language and on the languages of correspondence** — the same text as at v0.18.26, commit fdb0072: `git diff fdb0072 v0.18.27 -- docs/decisions.md` changes one decision more, on `tokens-report`;
-- **`tokens-report --row`** — an eighth column, "Context of a main call among its session's first 80, k", the header of measurements 1.9 spec;
-- **the card of `.github`** — one line added under the shared workflows: "beside them, the shared composite action `toolchain`, `.github/actions/toolchain` […]";
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217; Д134, Д195 and Д236 are deleted. Table 5, `run/INBOX.md`: `.github` В41 — option 1, the card of `.github` in `spec` names "the composite action `toolchain`", В43 — option 1, "Д134, Д195 and Д236 closed — done in every repository they named, checked on `main` 2026-11-17". COORDINATION.md, point 2: «Следующая — 2.8», rows 2.6 and 2.7 still `[ ]` with «задачи нет».
-
-### 12.18. `spec` v0.19.4
-
-Read 2026-11-20:
-- **the tag** — v0.19.4, commit 2dad96a, the merge of pull request 210 of `spec` (E18 `spec`), came out 2026-11-20 at 20:54 UTC; the API's latest release is v0.19.4, `gh release view` calls it immutable, and `gh release verify v0.19.4 -R altnovatrail/spec` — "Release v0.19.4 verified!";
-- **what changed** (`git log --oneline v0.18.34..v0.19.4`, `git diff --stat v0.18.34 v0.19.4`) — 90 commits, 330 files; for a copy: `.devcontainer/devcontainer.json` — the mount `"source=${localWorkspaceFolder}/../.epics,target=/workspaces/.epics,type=bind"` and `"initializeCommand": "bash .devcontainer/host-network.sh && mkdir -p ../.epics"`, "since Docker refuses a missing bind source"; `.devcontainer/Dockerfile` — shorter comments; `repo-template/files/docs-budgets.json` — `{}`, "the block holds `entry` 12 and `"comments": true`" (`repo-template/README.md`); RULES.md, How we work — "Plan for the fewest pull requests and rounds of CI" and "a task across repositories pushes each change and ships on the author's «да»"; `repo-template/files/RUN.md` — the tag alone;
-- **the card of `.github`** — citations of amendments become citations of their entries; nothing of what `.github` does changes;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146, Д213 and Д217. Д217 names "Pending: `skill-map`", and its column "When to return" still "`skill-map` and `.github` moves to a tag …". Table 5, `run/INBOX.md`: `.github` В44 — option (1), "`.github` leaves Д217, which keeps `skill-map` alone".
-
-### 12.19. `spec` v0.19.11
-
-Read 2026-11-23:
-- **the tag** — v0.19.11, commit 3ad433a, the merge of pull request 217 of `spec` (E22 `spec`), came out 2026-11-23 at 05:38 UTC; the API's latest release is v0.19.11, `gh release view` calls it immutable, and `gh release verify v0.19.11 -R altnovatrail/spec` — "Release v0.19.11 verified!";
-- **what changed** (`git log --oneline v0.19.4..v0.19.11`, `git diff --stat v0.19.4 v0.19.11`) — 65 commits, 97 files; for a copy: RULES.md, Citations — "A citation stands only where its reader will follow it to act, one to a claim … Task numbers and dated amendments stand only in RUN.md, `run/` and `docs/plan/`", and How we work — "no dated amendment is written"; `repo-template/files/docs-budgets.json` — `"citations": true`, "the rule of citations checked" (`repo-template/README.md`); the template's CLAUDE.md, RUN.md (rule 10, «Citations»), `docs/README.md`, the openings of `docs/decisions.md`, `docs/sources.md` and `run/QUESTIONS.md` — the same rule; `.devcontainer/` and `.claude/` — no change; row 7.38 of COORDINATION.md — `.github`, no task there yet, the citations by the new rule, on a tag of `spec` that checks it or newer;
-- **the card of `.github`** — no change;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories; Д217's column "When to return" reads "`skill-map` moves to a tag …". Table 5, `run/INBOX.md`: `.github` В45 — option (1), "Д217's «When to return» names `skill-map` alone".
-
-### 12.20. `spec` v0.19.12
-
-Read 2026-11-23:
-- **the tag** — v0.19.12, commit b9c246a, the merge of pull request 218 of `spec`, came out 2026-11-23 at 17:07 UTC; the API's latest release is v0.19.12, `gh release view` calls it immutable, and `gh release verify v0.19.12 -R altnovatrail/spec` — "Release v0.19.12 verified!";
-- **what changed** (`git log --oneline v0.19.11..v0.19.12`, `git diff --stat v0.19.11 v0.19.12`) — 7 commits, 52 files, the strict rule of citations; for a copy: RULES.md, Citations — "No decision's number — the repository's own, spec's, another NovaTrail repository's or MathTrail's — stands in `docs/`, a README, CLAUDE.md, RULES.md, a rule of `.claude/rules/`, code and its comments, the devcontainer, a `.proto` file or a schema's description", "No section and no document is cited: what a text needs from another, it says in words", and "it checks the rule where `docs-budgets.json` sets `"citations": true`"; the template's CLAUDE.md, RUN.md, `docs/` and `run/` — the same rule; `.devcontainer/Dockerfile` and `devcontainer.json` — comments without the numbers of decisions, nothing else; `.claude/` and `docs-budgets.json` of the template — no change; row 7.38 of COORDINATION.md — `.github`, still «задачи нет»;
-- **the card of `.github`** in `spec/docs/architecture.md` — no change;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, as at v0.19.11, each the work of other repositories.
-
-### 12.21. `spec` v0.19.17
-
-Read 2026-11-24:
-- **the tag** — v0.19.17, commit cec4fbd, the merge of pull request 223 of `spec` of 2026-11-24 at 00:00 UTC; its release came out at 00:05 UTC; the API's latest release is v0.19.17, it calls it immutable, and `gh release verify v0.19.17 -R altnovatrail/spec` — "Release v0.19.17 verified!";
-- **what changed** (`git log --oneline v0.19.12..v0.19.17`, `git diff --stat v0.19.12 v0.19.17`) — 43 commits, 374 files, most of them `spec`'s own log, documents and comments by the strict rule of citations, and the formats of the stroke's style; for a copy: the recipe `devcontainer-outdated`, `tools/toolchain/outdated.mjs`, new — "Print which pinned VS Code extensions and which Claude Code have a newer stable release"; `.devcontainer/Dockerfile` — `CLAUDE_CODE_VERSION` 2.1.331; `.devcontainer/devcontainer.json` — `anthropic.claude-code@2.1.331`, `openai.chatgpt@26.1117.41037`, `redhat.vscode-yaml@2.0.0` and `eamodio.gitlens@19.6.1`; the template's CLAUDE.md — "cites its one record, `sources 1.1` or `measurements 1.1`, or spec's, `sources 2.3 spec`", and its RUN.md, rule 6 and «Citations», the same; `repo-template/kinds.json` — `golang.go@0.58.0`, for the kind `go` alone. RULES.md, `.claude/` of the template and the block `repository` of `tools/docs-check/budgets.json` did not change; `tools/toolchain/toolchain.sh`, `tools/licenses/` and `tools/release/` changed comments and messages alone, without the numbers of decisions;
-- **row 7.50 of COORDINATION.md** — `.github`, no task there yet: the move to the tag that brings `devcontainer-outdated`, and the raise of what it names, by the text of the task of `spec` that brought it;
-- **the card of `.github`** in `spec/docs/architecture.md` — the strict rule of citations alone: its numbers of decisions and of sections become words, "by the texts of `.github`'s `docs/architecture.md`"; nothing of what `.github` does changes;
-- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories, and Д296, `spec`'s own: "The next task that changes `.bestpractices.json`" of `spec`.
-
-### 12.22. `redhat.vscode-yaml` 2.0.0
-
-Read 2026-11-24, `https://github.com/redhat-developer/vscode-yaml/blob/2.0.0/CHANGELOG.md`, at the tag 2.0.0, commit cd3950f, by the GitHub API:
-- **2.0.0** — "Breaking: Raise the minimum supported VS Code version to 1.91.0, as required by `vscode-languageclient` 10.1.2.", "Chore: Support ESM-only `yaml-language-server` builds in the desktop and browser extensions." and "Chore: Upgrade `vscode-languageclient` to 10.1.2 and adapt to its updated APIs.";
-- **1.25.0**, between it and 1.24.0 — "Breaking: Raise the minimum supported VS Code version to 1.90.0." and "Fix: Make formatter settings resource scoped.", among fixes of schemas.
+spec's tags are git: a claim links to spec's file at its tag, or names the submodule `spec/`, and the topic holds no record.
 
 ## 13. Other repositories of NovaTrail
 
-### 13.1. The `spec` submodule and `documents.yml` in other repositories
-
-Read 2026-11-01:
-- **the callers of `documents.yml`** — `ci.yml` and the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` — v0.2.9; `module-kit` — v0.2.13; `canvas` — v0.2.42; `tutor` — v0.3.3. They call `documents.yml` by the SHA of v0.1.0, and `tutor` by that of v0.1.5 and `canvas` of v0.1.10.
-
-Read 2026-11-02:
-- **the callers of `documents.yml`** (2026-11-02) — the `spec` submodule on the `main` of each, the GitHub API: `api`, `app`, `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `canvas` v0.4.1, `tutor` v0.5.4. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
-
-Read 2026-11-02:
-- **the callers of `documents.yml`** — the `spec` submodule on the `main` of each, the GitHub API: `engine`, `infra`, `learner-model`, `modules`, `sim` and `skill-map` have v0.2.9, `module-kit` v0.2.13, `api`, `app`, `canvas` and `tutor` v0.6.2. They call `documents.yml` by the SHA of v0.1.0, `tutor` by that of v0.1.5, and `canvas` of v0.1.12.
-
-Read 2026-11-08:
-- **the callers of `documents.yml`** — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, `canvas` — v0.6.5, `app` — v0.6.6, `module-kit` — v0.9.3, `api` — v0.9.4, `learner-model`, `modules` and `tutor` — v0.9.5, and `engine`, `sim` and `skill-map` — v0.9.8. The tag is named by the submodule's commit: the tags `vX.Y.Z` and `contracts/vX.Y.Z` stand on one commit.
-
-Read 2026-11-08:
-- **the callers** — the `spec` submodule on the `main` of each, the GitHub API: `infra` — v0.2.9, and the other ten — v0.6.6 or newer: `app` — v0.6.6, `api` — v0.9.4, `learner-model` and `tutor` — v0.9.5, `canvas`, `engine`, `module-kit`, `modules`, `sim` and `skill-map` — v0.9.8. `infra` calls `documents.yml` by the SHA of `v0.1.0`, ff2a359, and its latest commit is of 2026-10-21.
-
-Read 2026-11-12:
-- **`module-kit`** — the `spec` submodule on `main` is commit 58d3f46, `v0.15.0` (the GitHub API, `repos/altnovatrail/module-kit/contents/spec`): the row 7.1 of the COORDINATION.md of `spec` is not done yet.
-
-### 13.2. `canvas` and npm
-
-Read 2026-10-22:
-- **the registry and `canvas`** — `https://registry.npmjs.org/@altnovatrail%2fcanvas` answers 404 "Not found", and `-/org/altnovatrail/package` 200. `canvas` has no `release.yml`, no releases, no immutable releases and no ruleset of tags (the GitHub API).
-
-Read 2026-11-01:
-- **`canvas` and npm** — `canvas` has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404 "Not found". Its first release is a task of the epic E5, which stands in table 2 of the RUN.md of `canvas`, among the epics for later, and its current epic E7 carries no release (the RUN.md of `canvas`, `main`).
-
-Read 2026-11-02:
-- **`canvas` and npm** (2026-11-02) — `canvas` still has neither releases nor `release.yml` (the GitHub API), and `@altnovatrail/canvas` in the registry is 404. Its current epic is E8 «Первый релиз» (RUN.md `canvas`, `main`):
-  - a task moves `canvas` to a tag of the line 0.6;
-  - the next brings out v0.1.0 and puts the same archive in npm;
-  - the last — the next versions by the step of the shared release, through trusted publishing.
-
-Read 2026-11-02:
-- **`canvas` and npm**:
-  - `canvas` has `.github/workflows/release.yml` — commit bc60d93, "…: the release build and its trial run", 2026-11-02. It calls the shared `release.yml` v0.1.12 by the SHA 4225639, with `publish: false` and `npm-package: "@altnovatrail/canvas"`, and its runs of 2026-11-02 — `pull_request` and `workflow_run` — passed (the GitHub API);
-  - `canvas` has no releases, `@altnovatrail/canvas` in the registry is 404, and the tasks «Первый релиз: пакет» and «Публикация шагом npm» in the RUN.md of `canvas` are `[ ]`.
-
-Read 2026-11-08:
-- **`canvas` and npm**:
-  - `canvas` has the releases v0.1.0, v0.1.1 and v0.1.2, all of 2026-11-02. In the registry, `@altnovatrail/canvas` has the versions `0.0.0-stage` and 0.1.0 without provenance, and then 0.1.1, at 05:39 UTC, and 0.1.2, at 16:36 UTC, with the provenance `https://slsa.dev/provenance/v1`;
-  - the provenance of 0.1.1 (`registry.npmjs.org/-/npm/v1/attestations/@altnovatrail%2fcanvas@0.1.1`): the workflow is `.github/workflows/release.yml` of the repository `altnovatrail/canvas` on `refs/heads/main`, the run 41395016624. The run is `workflow_run`, "success", and its `referenced_workflows` is `altnovatrail/.github/.github/workflows/release.yml@09443e1027ef24197439dfe60a072d14c3626cc3`, v0.1.13. Its job is "Release / release";
-  - so npm accepted a publication through trusted publishing from a reusable workflow of another repository and recorded the caller's provenance. Now the `release.yml` of `canvas` on `main` calls the shared v0.1.13 with `npm-package: "@altnovatrail/canvas"`.
-
-### 13.3. Who calls the shared workflows for code
-
-Read 2026-10-22:
-- **the callers** — `.github/workflows/` and `justfile` of the twelve other repositories of the organization — `canvas` and the eleven others — through the GitHub API. Only `canvas` calls `typescript.yml`. `ALLOWED_LICENSES` is read by the `ci-licenses` of `module-kit` and `tutor`, but that is go-licenses with the list from `go.yml`. GitHub's code search `org:altnovatrail ALLOWED_LICENSES` answered empty, so the files were read one by one.
-
-Read 2026-11-01:
-- **who calls the wrappers** — `ci.yml` on the `main` of each repository of the organization, the GitHub API:
-  - `canvas` — `typescript.yml` v0.1.10;
-  - `spec` — `go.yml` v0.1.10;
-  - `tutor` — `go.yml` v0.1.5;
-  - `module-kit` — `go.yml` v0.1.2;
-  - the others — neither.
-
-  The `ci-test` of `module-kit` and `tutor` is `go test -race -count=1 ./...`, that of `canvas` is `vitest run`, and none of them writes a report. The Go modules are named `github.com/altnovatrail/module-kit` and `github.com/altnovatrail/tutor`.
-
-### 13.4. `canvas`
-
-Read 2026-10-21:
-- **`headless`** — `vitest.config.ts` of `canvas` at 88492c4: `headless: true`, with the comment "Headless whatever CI says: there is no display in the container or on the runner. CI still keeps test.only out of CI, as Vitest's allowOnly does by default";
-- **`npm` from a script** — `scripts/package.ts` of `canvas` at 88492c4 runs `execFileSync(process.execPath, [npm, "pack", …])`, where `npm` is `../lib/node_modules/npm/bin/npm-cli.js` from the folder of `process.execPath`: "no program is looked up in PATH". The finding `typescript:S4036` and the red quality gate are named by a task in the RUN.md of `canvas`;
-- **the ruleset of `canvas`** — `repos/altnovatrail/canvas/rulesets/25506234/history` (the GitHub API): the version 54216848 is of 2026-10-21T23:13:18Z. It differs from the previous version, 54024579, only by five new checks in `required_status_checks`, all with `integration_id` 15368. For pull request #19 of `canvas`, `gh pr checks 19 --required` names ten checks, and all are "pass".
-
-Read 2026-10-22:
-- **`canvas`** — the GitHub API, `main` 7163904. The `spec` submodule is 04ab0d2, v0.2.18. `ci.yml` calls `typescript.yml@c772cc8… # v0.1.5`, and `ci-licenses` is `node scripts/licenses.ts`, which reads `ALLOWED_LICENSES`. A task of its plan moves `ci-licenses` to the recipe of `spec` once a wrapper comes out with the submodule in the job `licenses`.
-
-Read 2026-10-22:
-- **`canvas`** — the GitHub API and a clone outside the repository. `main` is 379c774, the merge commit of pull request #25, merged at 16:08 UTC, and `scripts/licenses.ts` went by commit 1a335a9. `ci-licenses` is `{{ quote(just_executable()) }} -f spec/justfile licenses-check-repo package-lock.json licenses.json` (`justfile`, line 48). `git grep ALLOWED_LICENSES` at 379c774 finds the variable only in the documents and in the header of `justfile`: "Nothing here reads ALLOWED_LICENSES, which .github keeps for older checks until its Д6". The `spec` submodule is 04ab0d2, v0.2.18, and `ci.yml` calls `typescript.yml@0ab2799… # v0.1.8`. All four "TypeScript / …" are green both on the head of #25, 1a335a9, and on 379c774.
-
-Read 2026-11-08:
-- **the `release.yml` of `canvas`** on `main`, bdb9e6d, 2026-11-08 — the `paths` list as in the template of the caller's `release.yml` in `docs/architecture.md`, with `npm-package: "@altnovatrail/canvas"`. Its rule and the `NOTICE` in the archive are decisions of the log of `canvas` on `main`.
-
-Read 2026-11-09:
-- **the pattern** — a decision of `canvas` (`docs/decisions.md` of `canvas`, `main` 66266e1) and its steps in `page.yml`: `actions/cache/restore` with the key `toolchain-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('.devcontainer/Dockerfile') }}`, `emulators/toolchain.sh` — `docker load` of the file or a build with `docker save` —, and `actions/cache/save` when `steps.toolchain.outputs.cache-hit != 'true'` with the key `cache-primary-key`.
-
-### 13.5. `learner-model` and `engine`
-
-Read 2026-11-08:
-- **the recipes** `test-targets` and `fma-diff` of the `justfile` of `learner-model` (`main` 50f1b51) and of `engine` (`main` 33500ea) are the same, but for the comments and the number of the decision in the message of `fma-diff`. The scripts of the job are these recipes, with the control `testdata/fma/control.go` of `learner-model` inside `go.yml`.
-
-Read 2026-11-08:
-- **the job "Go arm64"** of `learner-model` and `engine` — `ubuntu-24.04-arm`, the `toolchain` stage, `just ci-test`, to which the recipe added `test-targets` and `fma-diff`. The job `arm64` of `go.yml` does the same, but for `fma-diff`: its output does not depend on the host — so the recipe's comment says —, and it already runs in "Go / fma-diff".
-
-Read 2026-11-08:
-- **two copies of the test** — the `rules_test.go` of `learner-model` (`main` 50f1b51, 677 lines) and of `engine` (`main` 28cbde9, 721 lines, "a port of learner-model's rules_test.go, with the engine's lists"). `diff`: `engine` has an allowed module in `require`, a rule for `replace`, the parsing of `go.mod` blocks, the importer `importer.ForCompiler(fset, "source", nil)` and a check of the external tests with the same set of `*types.Package`; the copies have different `codeImports`, `testImports` and `mathTestFuncs`, and the messages name the repository. In both, the check of nested modules exempts `.devcontainer/gopls/go.mod`. Each copy has its own `testdata/coderules`: each is fitted to its own lists.
-
-### 13.6. Rulesets and the `spec` submodules of other repositories
-
-The readings of the record stood in the text of `docs/architecture.md`, with no record, and moved here 2026-11-12, as they were: the record does not hold the API's answers.
-
-Read 2026-10-20:
-- **the rulesets of `spec`, `module-kit` and `tutor`** — the GitHub API: the rule `code_scanning` and merge only stand at `spec`, `module-kit` and `tutor`.
-
-Read 2026-10-21:
-- **the submodule of `engine`** — the GitHub API: commit 5eafb1a, v0.2.9.
-
-### 13.7. The callers of CodeQL's Go and their Dockerfiles
-
-Read 2026-11-16, `.github/workflows/codeql.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
-- **who names `go`** — `languages: go` at `api`, `engine`, `learner-model`, `module-kit`, `sim` and `tutor`, `javascript-typescript go` at `modules` and `spec`, and `.github` itself by `self-codeql.yml`; `canvas`, `app`, `infra` and `skill-map` name `javascript-typescript` alone. All call `codeql.yml` of `v0.1.24`, `spec` of `v0.1.22`;
-- **how they pin Go** — each of the nine has `ARG GO_VERSION=1.27.4`, `ARG GO_SHA256_AMD64=7226736c…4840` and `ARG GO_SHA256_ARM64=33925829…ac92` once, in the stage `toolchain`, and `spec` in `toolchain-core`, which `FROM toolchain-core AS toolchain` builds on; the stage downloads `https://go.dev/dl/go${GO_VERSION}.linux-${arch}.tar.gz` and checks it against the sum. Their only `ENV` in those stages, the lines joined, is `ENV PATH="/usr/local/node/bin:/usr/local/go/bin:/home/vscode/.local/bin:${PATH}" GOTOOLCHAIN=local`.
-
-### 13.8. The callers of the stage `toolchain-core`
-
-Read 2026-11-16, `justfile`, `.github/workflows/ci.yml`, `.github/workflows/release.yml` and `.devcontainer/Dockerfile` on the `main` of every repository of the organization, by the GitHub API:
-- **who calls which wrapper** — `go.yml`: `api`, `engine`, `learner-model`, `module-kit`, `modules`, `sim`, `tutor` and `spec`; `typescript.yml`: `app`, `canvas` and `skill-map`; no repository calls both. All but `spec` call `documents.yml`, `infra` that alone. The shared `release.yml` is called by `api`, `engine`, `module-kit`, `modules`, `sim`, `tutor`, `canvas` and `skill-map` at `v0.1.30`, and by `learner-model` and `app` at `v0.1.24`;
-- **the stage** — no `.devcontainer/Dockerfile` of a caller has a line `FROM … AS toolchain-core`; `spec`'s has it, under `FROM toolchain-core AS toolchain`;
-- **what `release-files` runs** — `app`: `node scripts/release.ts`, after `build`; `canvas`: `node scripts/package.ts`, `npm pack`, `node scripts/release.ts`, `just synthetic`, `node scripts/archive.ts`, `scripts/page.ts` and `scripts/generator.ts`, after `build`, `tsc -p tsconfig.build.json`; `skill-map`: `node scripts/package.ts`, `npm pack` and `node scripts/consumer.ts --release`, whose comment reads "tsc checks scripts/consumer/main.ts there twice, as NodeNext and as Bundler resolve modules"; `api` and `module-kit`: `go build -trimpath` for their platforms; `modules`: its `_modules-check` over the modules' files.
-- **what the stage `toolchain` installs beyond the four** — the one stage before `devcontainer` in every caller. `modules`: `module-kit` at `ARG MODULE_KIT_VERSION=v0.3.0`, by the `RUN` that installs Node, just, Go and buf, and its `release-files` runs `_modules-check`, which stops with "module-kit cannot be run; the toolchain stage installs it" without it; `tutor`: golangci-lint at `ARG GOLANGCI_LINT_VERSION=2.15.0`, by the same `RUN`, for its `ci-lint`; `api`: nss_wrapper by apt from the snapshot, "for the tests of the database"; `infra`: actionlint, OpenTofu and ShellCheck; `app`, `canvas` and `skill-map`: Playwright's three browsers by `COPY --from=mcr.microsoft.com/playwright:v1.65.0-noble@sha256:…` and their system packages by apt from the snapshot. `engine`, `learner-model`, `module-kit` and `sim` install the four alone.
+The files of the other repositories of NovaTrail are git: a claim links to the repository at its commit, and the topic holds no record.
 
 ## 14. MathTrail and patterns outside NovaTrail
 
-### 14.1. canvas-api
+MathTrail's files are git: a claim links to the repository at its commit. What stays here is an answer of the API with no version and other projects' practice.
 
-Read 2026-10-19:
-- **the workflows of canvas-api** — `.github/workflows/` at commit [0901af0](https://github.com/MathTrail/canvas-api/tree/0901af0439280334b3da33ffc4cc5c853e4403ff/.github/workflows) — `ci.yml`, `codeql.yml`, `scorecard.yml`, `release.yml` and `deploy.yml`. The only reusable workflow is `deploy.yml`, and only the `release.yml` of the same repository calls it; canvas-api calls no workflow of other repositories. The license check, the signature and CI in the toolchain's image are decisions of the log of canvas-api.
+### 14.1. canvas-api: the ruleset of `main`
 
-Read 2026-10-20:
-- **the ruleset of canvas-api** — canvas-api has the rule `code_scanning` (sources 3.1) with the tool CodeQL and the thresholds `errors` and `high_or_higher` (the GitHub API, `repos/mathtrail/canvas-api/rulesets/25036747`).
-
-Read 2026-10-21:
-- **the names of the recipes** — the `justfile` of canvas-api at commit 0901af0: `ci-lint`, `ci-test`, `ci-vuln` and `ci-licenses`; govulncheck and go-licenses run there through `go run` at the exact version of the module, and CI calls the same recipes in the toolchain's image.
-
-Read 2026-10-21:
-- **canvas-api** at commit 0901af0, through the GitHub API:
-  - `web/.npmrc` — `save-exact=true` and `ignore-scripts=true`, with the comment "No package runs code of its own while it is being installed: nothing in the tree needs to, and what it would run is code nobody here has read"; the recipe `web-install` — `npm ci --no-audit --no-fund`;
-  - `ci-vuln` — `npm audit --prefix web --omit=dev --audit-level=high`, without installing packages. `ci-licenses` — `node web/scripts/licenses.ts check --allowed … --except lightningcss=MPL-2.0` by `web/package-lock.json` of version 3;
-  - format and lint — Biome 2.5.15, types — `tsc --noEmit`, tests — Vitest 5.0.3 with happy-dom. There are no tests in a browser there.
+Read 2026-11-24: canvas-api has the rule `code_scanning` with the tool CodeQL and the thresholds `errors` and `high_or_higher` (the GitHub API, `repos/mathtrail/canvas-api/rulesets/25036747`).
 
 ### 14.2. `nodenv/.github`
 
