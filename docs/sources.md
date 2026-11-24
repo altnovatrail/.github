@@ -21,170 +21,28 @@
 
 ## 2. GitHub Actions
 
-### 2.1. Reusable workflows
-
-Read 2026-10-19:
-- **calling and pinning** — [GitHub Docs, Reuse workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows), section Calling a reusable workflow: "`{owner}/{repo}/.github/workflows/{filename}@{ref}` for reusable workflows in public and private repositories" and "Using the commit SHA is the safest option for stability and security";
-- **the folder** — the same page, section Creating a reusable workflow: "Subdirectories of the `workflows` directory are not supported";
-- **limits** — [GitHub Docs, Reusing workflow configurations](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations), section Limitations of reusable workflows: "You can connect up to ten levels of workflows" and "You can call a maximum of 50 unique reusable workflows from a single workflow file";
-- **permissions** — the same page, section Supported keywords for jobs that call a reusable workflow: "If `jobs.<job_id>.permissions` is not specified in the calling job, the called workflow will have the default permissions for the `GITHUB_TOKEN`" and "The `GITHUB_TOKEN` permissions passed from the caller workflow can be only downgraded (not elevated) by the called workflow";
-- **context** — the same page, section `github` context: "When a reusable workflow is triggered by a caller workflow, the `github` context is always associated with the caller workflow";
-- **checkout** — [GitHub Docs, Reusing workflow configurations](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations) (Concepts), section Reusable workflows: "if the called workflow uses `actions/checkout`, the action checks out the contents of the repository that hosts the caller workflow, not the called workflow";
-- **the check's name** in a ruleset — "`<job name> / <reusable job name>`", a quote of GitHub Docs in the decision log of `spec`.
-
-Read 2026-11-01:
-- **permissions in a reusable workflow** — [GitHub Docs, Reusing workflow configurations](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations): "The `GITHUB_TOKEN` permissions passed from the caller workflow can be only downgraded (not elevated) by the called workflow". How a call without the permission ends, the page does not say. How it ended on the trial — measurements 4.1.
-
-### 2.2. Contexts, variables and events
-
-Read 2026-10-19:
-- **the shared workflow's own files** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts), section `job` context: `job.workflow_sha` — "The commit SHA of the workflow file that defines the current job", `job.workflow_repository` — "The `owner/repo` of the repository containing the workflow file that defines the current job"; an example on the same page: "This example reusable workflow uses `job.workflow_repository` and `job.workflow_sha` to check out its own source code, rather than the caller's repository".
-
-Read 2026-10-20:
-- **the `workflow_run` context** — [GitHub Docs, Events that trigger workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows), section `workflow_run`: `GITHUB_SHA` — "Last commit on default branch", `GITHUB_REF` — "Default branch".
-
-Read 2026-10-20:
-- **the workflow file** — [GitHub Docs, Workflows](https://docs.github.com/en/actions/concepts/workflows-and-actions/workflows), section Workflow triggers: "Each workflow run will use the version of the workflow that is present in the associated commit SHA or Git ref of the event". For `workflow_run` this is `GITHUB_SHA`, the last commit of the default branch (above, "the `workflow_run` context").
-
-Read 2026-10-21:
-- **`job.workflow_ref`** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts), section `job` context: "The full ref of the workflow file that defines the current job".
-
-Read 2026-10-21:
-- **`CI`** — GitHub, [Variables reference](https://github.com/github/docs/blob/efd4783/content/actions/reference/workflows-and-actions/variables.md) at the commit efd4783, Default environment variables: "`CI` | Always set to `true`".
-
-Read 2026-11-01:
-- **default variables** — github/docs at 33b1f4a, `data/reusables/actions/environment-variables-are-fixed.md`: "You can't overwrite the value of the default environment variables named `GITHUB_*` and `RUNNER_*`. Currently you can overwrite the value of the `CI` variable. However, it's not guaranteed that this will always be possible".
-
-Read 2026-11-08:
-- **`job.workflow_repository` and `job.workflow_sha`** — [GitHub Docs, Contexts reference](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts) describes them: "The commit SHA of the workflow file that defines the current job" and "The `owner/repo` of the repository containing the workflow file that defines the current job". That actionlint 1.7.12 does not know them — measurements 2.5.
-
-Read 2026-11-16:
-- **the contexts of a matrix** — github/docs at 6d84733, `content/actions/reference/workflows-and-actions/contexts.md`, Context availability: "`jobs.<job_id>.strategy` | `github, needs, vars, inputs`";
-- **`fromJSON`** — the same commit, `expressions.md`: "Returns a JSON object or JSON data type for `value`. You can use this function to provide a JSON object as an evaluated expression or to convert any data type that can be represented in JSON or JavaScript, such as strings, booleans, null values, arrays, and objects", and its example sets a matrix by it: "`matrix: ${{ fromJSON(needs.job1.outputs.matrix) }}`".
-
-Read 2026-11-16:
-- **`RUNNER_ARCH`** — [GitHub Docs, Variables reference](https://docs.github.com/en/actions/reference/workflows-and-actions/variables), Default environment variables: "The architecture of the runner executing the job. Possible values are `X86`, `X64`, `ARM`, or `ARM64`." `GITHUB_PATH` — "The path on the runner to the file that sets system `PATH` variables from workflow commands. The path to this file is unique to the current step and changes for each step in a job."
-
-### 2.3. The step's shell and `set -e`
-
-Read 2026-10-20:
-- **the step's shell** — without `shell` a step on Linux runs as `bash -e {0}`, and with `shell: bash` as `bash --noprofile --norc -eo pipefail {0}`: [GitHub Docs, Workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), section `defaults.run.shell`.
-
-Read 2026-10-22:
-- **the step's shell** — GitHub Docs, Workflow syntax, `content/actions/reference/workflows-and-actions/workflow-syntax.md` at the commit c67a936 of github/docs: "By default, fail-fast behavior is enforced using `set -e` for both `sh` and `bash`. When `shell: bash` is specified, `-o pipefail` is also applied".
-
-Read 2026-11-01:
-- **the steps' shells** — github/docs at the commit 33b1f4a, `data/reusables/actions/supported-shells.md`. On Linux without `shell` — "`bash -e {0}`", and "Note that this runs a different command to when `bash` is specified explicitly". With `shell: bash` — "`bash --noprofile --norc -eo pipefail {0}`".
-- **`set -e` in bash** — [Bash Reference Manual, The Set Builtin](https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html), edition 5.3:
-  - "The shell does not exit if the command that fails is part of the command list immediately following a while or until reserved word, part of the test in an if statement, part of any command executed in a && or || list except the command following the final && or ||";
-  - "If a compound command or shell function executes in a context where -e is being ignored, none of the commands executed within the compound command or function body will be affected by the -e setting, even if -e is set and a command returns a failure status".
-
-### 2.4. Secrets, forks and skipped jobs
-
-Read 2026-10-19:
-- [GitHub Docs, Using secrets in GitHub Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets), section Using secrets in a workflow: "With the exception of `GITHUB_TOKEN`, secrets are not passed to the runner when a workflow is triggered from a forked repository";
-- [GitHub Docs, Securely using pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target), section Risks of `pull_request_target`: "Workflows triggered by `pull_request_target` run with elevated trust: the job receives the base repository's `GITHUB_TOKEN` and access to repository and organization secrets"; on the same page: "Workflows triggered by this event should not check out, build, or run code from an untrusted pull request with access to repository secrets or a privileged `GITHUB_TOKEN`";
-- [GitHub Docs, Status checks](https://docs.github.com/en/pull-requests/reference/status-checks): "A job that is skipped will report its status as "Success". It will not prevent a pull request from merging, even if it is a required check";
-- [GitHub Docs, Dependabot on GitHub Actions](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-on-actions), section Restrictions when Dependabot triggers events: "Secrets are populated from Dependabot secrets. GitHub Actions secrets are not available".
-
-### 2.5. OIDC in GitHub Actions
-
-Read 2026-10-19:
-- [GitHub Docs, OpenID Connect reference](https://docs.github.com/en/actions/reference/security/oidc), section Custom claims provided by GitHub, `job_workflow_ref`: "For jobs using a reusable workflow, the ref path to the reusable workflow".
-
-Read 2026-10-22:
-- **the OIDC token in steps** — github/docs at the commit 5815d11, `content/actions/reference/security/oidc.md`, section Methods for requesting the OIDC token: "The following environment variables on the runner" — `ACTIONS_ID_TOKEN_REQUEST_URL` and `ACTIONS_ID_TOKEN_REQUEST_TOKEN`, "Bearer token for the request to the OIDC provider". How cosign reads them — sources 7.1.
-
-Read 2026-10-22:
-- **GitHub OIDC** — github/docs at the commit 5815d11, `oidc-with-reusable-workflows.md`: "The `workflow`, `ref`, and other attributes describe the caller workflow, while `job_workflow_ref` refers to the called workflow".
+GitHub's documentation is a link to [github/docs](https://github.com/github/docs) at a commit where the claim stands, and the code of an action or of the runner's image a link at its tag or commit; a behaviour of a step that a test or a trial checks is a measurement. What stays here are the terms and the limits of the service, which change in place and which no run of ours checks.
 
 ### 2.6. GitHub's runners
 
-Read 2026-10-21:
-- **Docker on the runner** — The ubuntu-24.04 runner has Docker 28.0.4 and Buildx 0.38.0 ([`Ubuntu2404-Readme.md`](https://github.com/actions/runner-images/blob/06f4a91/images/ubuntu/Ubuntu2404-Readme.md) at the commit 06f4a91, image 20261012.334.1).
-
-Read 2026-11-01:
-- **the runner's image** — [`Ubuntu2404-Readme.md`](https://github.com/actions/runner-images/blob/4da2307112a0fad2fd2ecaca8ba7d08683b8c581/images/ubuntu/Ubuntu2404-Readme.md) at the commit 4da2307, image 20261026.354.1: Bash 5.2.21(1)-release, Git 2.56.0, jq 1.7, OpenSSL 3.0.13-0ubuntu3.16, tar 1.35+dfsg-3ubuntu0.4 and yq 4.54.1. In the devcontainer — bash 5.2.21, git 2.56.0, jq 1.7, OpenSSL 3.0.13 and GNU tar 1.35.
-
-Read 2026-11-08:
-- [GitHub Docs, GitHub-hosted runners reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), section Standard GitHub-hosted runners for public repositories: in the table, Linux arm64 has `ubuntu-24.04-arm`, `ubuntu-22.04-arm` and `ubuntu-26.04-arm`, 4 CPU and 16 GB, and "Use of the standard GitHub-hosted runners is free and unlimited on public repositories".
-
-Read 2026-11-18:
-- **how long a job runs** — github/docs at the commit 6946b3e (2026-11-12), `content/actions/reference/limits.md`, for all GitHub-hosted runners: "Job execution time | 6 hours | Each job in a workflow can run for up to 6 hours of execution time. If a job reaches this limit, the job is terminated and fails."
-
-### 2.7. `actions/checkout`
-
-Read 2026-10-20:
-- **actions/checkout** v7.0.1 — the latest release (2026-07-20); the tag points to the commit `3d3c42e5aac5ba805825da76410c181273ba90b1` (the GitHub API, `repos/actions/checkout/git/refs/tags/v7.0.1`).
-
-Read 2026-10-20:
-- **checkout v7.0.1 without `ref`** — [`src/input-helper.ts`](https://github.com/actions/checkout/blob/3d3c42e5aac5ba805825da76410c181273ba90b1/src/input-helper.ts) at the commit 3d3c42e. If `ref` is not set, checkout takes the event's ref and commit: `result.ref = github.context.ref` and `result.commit = github.context.sha`.
-
-Read 2026-10-22:
-- **the post step of `actions/checkout`** — v7.0.1 at the commit 3d3c42e, the one pinned in both releases. Its `action.yml` has `post: dist/index.js`, and on the post step `src/main.ts` calls `gitSourceProvider.cleanup(stateHelper.RepositoryPath)`. If the checkout has `.git/config`, `cleanup` in `src/git-source-provider.ts` calls `authHelper.removeAuth()`. And that one, in `src/git-auth-helper.ts`, runs in the checkout `git config --local` and `git submodule foreach --recursive` with `sh -c "git config --local …"`. What this step ran on the trial — measurements 5.4.
-
-Read 2026-10-22:
-- **the `submodules` input** — actions/checkout v7.0.1, the commit 3d3c42e, `src/input-helper.ts`, lines 146–152: `const submodulesString = (core.getInput('submodules') || '').toUpperCase()`, and then a comparison with `'RECURSIVE'` and `'TRUE'`.
-
-Read 2026-11-16:
-- **a sparse checkout** — `action.yml` at 3d3c42e: `sparse-checkout` — "Do a sparse checkout on given patterns. Each pattern should be separated with new lines."; `sparse-checkout-cone-mode` — "Specifies whether to use cone-mode when doing a sparse checkout.", `default: true`; `filter` — "Partially clone against a given filter. Overrides sparse-checkout if set.". `src/git-source-provider.ts` at 3d3c42e: `} else if (settings.sparseCheckout) { fetchOptions.filter = 'blob:none'`, and "For sparse checkouts, let `checkout` fetch the needed objects lazily"; without cone mode it calls `git.sparseCheckoutNonConeMode`.
+Read 2026-11-24, github/docs at the commit e0b0c90 (2026-11-23):
+- **the standard runners of a public repository** — `data/reusables/actions/supported-github-runners.md`: "Use of the standard {% data variables.product.prodname_dotcom %}-hosted runners is free and unlimited on public repositories", and in its table Linux arm64 — `ubuntu-24.04-arm`, `ubuntu-22.04-arm` and `ubuntu-26.04-arm` — has 4 CPU and 16 GB;
+- **how long a job runs** — `content/actions/reference/limits.md`, for all GitHub-hosted runners: "Job execution time | 6 hours | Each job in a workflow can run for up to 6 hours of execution time. If a job reaches this limit, the job is terminated and fails."
 
 ### 2.8. `actions/cache`
 
 Read 2026-11-09:
-- **`actions/cache`** — v6.1.0, the latest release, 2026-06-26 (the GitHub API, `repos/actions/cache/releases/latest`); the tag v6.1.0 is the commit 55cc8345863c7cc4c66a329aec7e433d2d1c52a9. The license is MIT: "The MIT License (MIT)", `LICENSE` at the tag. `canvas` pins the same commit in `page.yml` (`main` 66266e1 of `canvas`);
-- **entries** — the README at the tag v6.1.0: "The cache is scoped to the key, version, and branch. The default branch cache is available to other branches" ("Cache scopes"); "Cache version is a hash generated for a combination of compression tool used (Gzip, Zstd, etc. based on the runner OS) and the `path` of directories being cached", and an example: "`build-linux` will create two different caches as the `paths` are different" ("Cache Version");
-- **saving** — `src/saveImpl.ts` at the tag v6.1.0: the step writes an error of `saveCache` by `utils.logWarning`, and `saveOnlyRun` leaves the cause to the toolkit — "warning for most failures, info for benign concurrency races, error for 5xx"; the job goes on. The README, "Read-only access": "When the cache token is read-only, the save step does not fail the job".
+- **the license** — MIT: "The MIT License (MIT)", `LICENSE` at the tag v6.1.0, the commit 55cc8345863c7cc4c66a329aec7e433d2d1c52a9.
 
-Read 2026-11-16:
-- **restoring by a prefix** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `restore-keys` is "An ordered multiline string listing the prefix-matched keys, that are used for restoring stale cache if no cache hit occurred for key. Note `cache-hit` returns false in this case."; the outputs are `cache-hit` — "A boolean value to indicate an exact match was found for the primary key", `cache-primary-key` — "A resolved cache key for which cache match was attempted", and `cache-matched-key` — "Key of the cache that was restored, it could either be the primary key on cache-hit or a partial/complete match of one of the restore keys".
+Read 2026-11-24:
+- **the limit and the eviction** — github/docs at the commit e0b0c90 (2026-11-23), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Usage limits and eviction policy": "{% data variables.product.github %} will remove any cache entries that have not been accessed in over 7 days. There is no limit on the number of caches you can store, but the total size of all caches in a repository is limited. By default, the limit is 10 GB per repository, but this limit can be increased by enterprise owners, organization owners, or repository administrators."
 
-Read 2026-11-16:
-- **a lookup without the download** — `restore/action.yml` at the tag v6.1.0, commit 55cc834: the input `lookup-only` — "Check if a cache entry exists for the given input(s) (key, restore-keys) without downloading the cache", `default: 'false'`. `src/restoreImpl.ts` at the same commit: on a miss — "`cache-hit` is intentionally not set to `false` here to preserve existing behavior"; on a hit it sets `cache-hit` by `isExactKeyMatch` and, with `lookupOnly`, writes "Cache found and can be restored from key: ${cacheKey}" instead of "Cache restored from key: ${cacheKey}";
-- **the limit and the eviction** — github/docs at the commit d59b263 (2026-11-13), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Usage limits and eviction policy": "GitHub will remove any cache entries that have not been accessed in over 7 days. There is no limit on the number of caches you can store, but the total size of all caches in a repository is limited. By default, the limit is 10 GB per repository"; "Cache access for low-trust workflow triggers": "only these workflow triggers can create or overwrite caches in the default branch’s scope:" — `push`, `workflow_dispatch`, `repository_dispatch`, `delete`, `registry_package`, `page_build`, `schedule` —, and "The `pull_request` event is not affected. Caches created by a `pull_request` run are already scoped to the merge ref (`refs/pull/.../merge`) and cannot be written to the default branch's scope".
+### 2.11. The storage of artifacts
 
-Read 2026-11-18:
-- **which entry a restore key gives** — github/docs at the commit 6d84733 (2026-11-16), `content/actions/reference/workflows-and-actions/dependency-caching.md`, "Matching a cache key": "If there are multiple partial matches for a restore key, the action returns the most recently created cache"; and "If there are still no hits in the current branch, the `cache` action retries the same steps on the default branch";
-- **`cache-hit` by a restore key** — the README at the tag v6.1.0, commit 55cc834: "The `cache` action provides a `cache-hit` output which is set to `true` when the cache is restored using the primary `key` and `false` when the cache is restored using `restore-keys` or no cache is restored."
-
-### 2.9. `actions/upload-artifact`
-
-Read 2026-10-20:
-- **actions/upload-artifact** v7.0.2 — the latest release (2026-10-07, `repos/actions/upload-artifact/releases/latest`), the tag points to the commit `cf430e030ddbb5b0abf93d22962f4752f3646cd9` (`repos/actions/upload-artifact/git/refs/tags/v7.0.2`).
-
-Read 2026-11-01:
-- **artifact names** — the README of `actions/upload-artifact` at cf430e0, v7.0.2: "Artifact names must be unique since each created artifact is idempotent so multiple jobs cannot modify the same artifact". `spec` already has an artifact `coverage` in its `ci.yml`.
-
-Read 2026-11-16:
-- **the inputs** — `action.yml` at cf430e0, v7.0.2: `retention-days` — "Duration after which artifact will expire in days. 0 means using default retention. Minimum 1 day."; `compression-level` — "0: No compression", "For large files that are not easily compressed, a value of 0 is recommended for significantly faster uploads"; `overwrite` — "If true, an artifact with a matching name will be deleted before a new one is uploaded. If false, the action will fail if an artifact for the given name already exists."; `if-no-files-found` — "ignore: Do not output any warnings or errors, the action does not fail"; `archive` — "When `archive` is `false`, only a single file can be uploaded. The name of the file will be used as the artifact name (ignoring the `name` parameter)"; the output `artifact-id` — "A unique identifier for the artifact that was just uploaded. Empty if the artifact upload failed.";
-- **the limits** — the README at cf430e0, "Limitations": "You may also be limited by Artifacts if you have exceeded your shared storage quota. Storage is calculated every 6-12 hours".
-
-### 2.10. `actions/download-artifact`
-
-Read 2026-11-16:
-- **the version** — v8.0.2, the commit `9000827ccba6bdab643e8b6fd33ac0654aef8333`, as `go.yml` and `typescript.yml` pin it (sources 10.3);
-- **by its ID** — `action.yml` at 9000827: `artifact-ids` — "IDs of the artifacts to download, comma-separated. Either inputs `artifact-ids` or `name` can be used, but not both."; `path` — "Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE"; `digest-mismatch` — "Default is error which will fail the action"; without `github-token` — "the action will attempt to download artifacts from the current repository and the current workflow run". `src/download-artifact.ts` at 9000827: by IDs it throws "None of the provided artifact IDs were found", and it downloads into `path` itself when `isSingleArtifactDownload || inputs.mergeMultiple || artifacts.length === 1`, with `expectedHash: artifact.digest`.
-
-### 2.11. Jobs that need another, re-runs and the storage of artifacts
-
-Read 2026-11-16, github/docs at the commit d59b263 (2026-11-13):
-- **`needs`** — `data/reusables/actions/jobs/section-using-jobs-in-a-workflow-needs.md`: "If a job fails or is skipped, all jobs that need it are skipped unless the jobs use a conditional expression that causes the job to continue"; `content/actions/how-tos/write-workflows/choose-when-workflows-run/control-jobs-with-conditions.md`: "A job that is skipped will report its status as "Success". It will not prevent a pull request from merging, even if it is a required check" (as in sources 2.4);
-- **`!cancelled()`** — `content/actions/reference/workflows-and-actions/expressions.md`, "Status check functions": "A default status check of `success()` is applied unless you include one of these functions", and "If you want to run a job or step regardless of its success or failure, use the recommended alternative: `if: ${{ !cancelled() }}`";
-- **`continue-on-error` and `outcome`** — `contexts.md`: `steps.<step_id>.outcome` — "The result of a completed step before `continue-on-error` is applied", and "When a `continue-on-error` step fails, the `outcome` is `failure`, but the final `conclusion` is `success`";
-- **re-runs** — `content/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs.md`: "When you re-run failed jobs or a specific job, GitHub also re-runs the jobs that depend on them. Jobs that aren't included keep their outputs from the previous attempt, which the newly run jobs can use";
-- **the storage of artifacts** — `content/billing/concepts/product-billing/github-actions.md`: "For **private repositories**, usage is measured against two parts of your plan:" — "**Compute**" and "**Storage:** Artifact and cache storage have separate allowances"; "**Cache storage:** Actions cache storage is a separate allowance of 10 GB per repository. Cache storage is not shared with artifacts"; "If your account does not have a valid payment method on file, usage is blocked once you consume the included compute usage". `data/reusables/billing/actions-included-quotas.md`: the plan for organizations Free — "Artifact storage" 500 MB. The organization `altnovatrail` is on the plan `free` (`gh api orgs/altnovatrail`, `.plan.name`), and every repository of it is public. Whether the quota of artifact storage holds for a public repository the page does not say in words; what the trial saw — measurements 7.3.
-
-Read 2026-11-16, github/docs at the commit d59b263, as above:
-- **`always()`** — `content/actions/reference/workflows-and-actions/expressions.md`, "always": "Causes the step to always execute, and returns `true`, even when canceled. The `always` expression is best used at the step level or on tasks that you expect to run even when a job is canceled"; and the warning: "Avoid using `always` for any task that could suffer from a critical failure, for example: getting sources, otherwise the workflow may hang until it times out";
-- **`needs.<job_id>.result`** — `contexts.md`, `needs` context: "The result of a job that the current job depends on. Possible values are `success`, `failure`, `cancelled`, or `skipped`." Neither this page nor the pages of the matrix say how the result of a job with a matrix comes out of the results of its jobs; the trial measured it (measurements 2.7);
-- **`fail-fast`** — `data/reusables/actions/jobs/section-using-a-build-matrix-for-your-jobs-failfast.md`: "If `jobs.<job_id>.strategy.fail-fast` is set to `true` or its expression evaluates to `true`, {% data variables.product.github %} will cancel all in-progress and queued jobs in the matrix if any job in the matrix fails. This property defaults to `true`.";
-- **a job that times out** — `content/actions/reference/workflows-and-actions/workflow-syntax.md`, `jobs.<job_id>.timeout-minutes`: "The maximum number of minutes to let a job run before GitHub automatically cancels it"; `workflow-cancellation.md` of the same folder: "For steps that need to be canceled, the runner machine sends `SIGINT/Ctrl-C` to the step's entry process (`node` for JavaScript actions, `docker` for container actions, and `bash/cmd/pwd` when using `run` in a step). If the process doesn't exit within 7500 ms, the runner will send `SIGTERM/Ctrl-Break` to the process, then wait for 2500 ms for the process to exit. If the process is still running, the runner kills the process tree." The first quote renders `{% data variables.product.prodname_dotcom %}` as GitHub.
-
-### 2.12. Composite actions and the self repository reference `$/`
-
-Read 2026-11-16, github/docs at the commit 91aa429 (2026-11-16):
-- **the self repository reference** — `content/actions/reference/workflows-and-actions/workflow-syntax.md`, "Example: Using an action in the same repository as the workflow at the running commit (recommended)": "The `$/` prefix is the self repository reference. It references an action stored in the same repository as the workflow or action that is currently running, and resolves to that repository at the running commit (the same SHA as the running workflow or action). You do not need to check out the repository first"; "A `$/` reference must not include an `@{ref}` suffix"; "`$/` always resolves against the repository of the file it appears in, not the repository that called it. For example, if a reusable workflow in one repository is called by a workflow in another repository, a `$/` reference in the called workflow resolves to the called workflow's repository, not the calling workflow's repository"; and `./path/to/action` resolves to "A path in the runner's checked-out workspace, relative to the default working directory". The commit 6a8580f, "Document the $/ self-referencing uses syntax for actions and reusable workflows (#62055)", 2026-07-29, brought it to `metadata-syntax.md` (the GitHub API, the history of the file);
-- **composite actions** — `content/actions/reference/workflows-and-actions/metadata-syntax.md`: `runs.post`, "Allows you to run a script at the end of a job, once the `main:` action has completed", is a key of "`runs` for JavaScript actions", and the section "`runs` for composite actions" names `runs.using` — "You must set this value to `'composite'`" — and `runs.steps`, "These can be either `run` steps or `uses` steps", with no `post`; `runs.steps[*].shell` — "Required if `run` is set"; `runs.steps[*].if` — "You can use any supported context and expression to create a conditional"; and "With composite actions you can use the [`inputs` context] to access action inputs".
+Read 2026-11-24, github/docs at the commit e0b0c90 (2026-11-23):
+- **what is measured** — `content/billing/concepts/product-billing/github-actions.md`: "For **private repositories**, usage is measured against two parts of your plan:" — "**Compute**" and "**Storage:** Artifact and cache storage have separate allowances"; "**Cache storage:** Actions cache storage is a separate allowance of 10 GB per repository. Cache storage is not shared with artifacts"; "If your account does not have a valid payment method on file, usage is blocked once you consume the included compute usage";
+- **the quota** — `data/reusables/billing/actions-included-quotas.md`: the plan Free for organizations — "Artifact storage" 500 MB;
+- **the plan** — the organization `altnovatrail` is on the plan `free` (the GitHub API, `gh api orgs/altnovatrail`, `.plan.name`), and every repository of it is public. Whether the quota of artifact storage holds for a public repository the page does not say in words; what the trial saw — measurements 7.3.
 
 ## 3. GitHub: rulesets, releases and the organization
 
@@ -383,7 +241,7 @@ Read 2026-10-21:
 - **cosign** v3.1.4 — the latest release, 2026-10-20 (the GitHub API, `repos/sigstore/cosign/releases/latest`); the license is Apache-2.0. The sum of `cosign-linux-amd64` from `cosign_checksums.txt` of the same release is `424e2c97d0b45fd7a6b608a87f090f35633f4c23ece5f092d48bba11aaf4bbfa`, and the downloaded file matched it.
 
 Read 2026-10-22:
-- **the OIDC token for cosign** — cosign v3.1.4, the commit 8843105, takes the token from them (sources 2.5): `VariableGitHubRequestToken Variable = "ACTIONS_ID_TOKEN_REQUEST_TOKEN"` in `pkg/cosign/env/env.go`, and the request with it is sent by `pkg/providers/github/github.go`. The signing step of the shared release is a plain `run:`, and signing passes: so the steps of a job see these variables.
+- **the OIDC token for cosign** — cosign v3.1.4, the commit 8843105, takes the token from them ([github/docs](https://github.com/github/docs/blob/e0b0c90/content/actions/reference/security/oidc.md)): `VariableGitHubRequestToken Variable = "ACTIONS_ID_TOKEN_REQUEST_TOKEN"` in `pkg/cosign/env/env.go`, and the request with it is sent by `pkg/providers/github/github.go`. The signing step of the shared release is a plain `run:`, and signing passes: so the steps of a job see these variables.
 
 ### 7.2. Fulcio: signing from a reusable workflow
 
@@ -391,7 +249,7 @@ Read 2026-10-19:
 - [Fulcio, OIDC usage](https://github.com/sigstore/fulcio/blob/main/docs/oidc.md), section Case study: GitHub Actions: "GitHub Actions uses the `job_workflow_ref` as its SAN";
 - [Fulcio, OID information](https://github.com/sigstore/fulcio/blob/main/docs/oid-info.md), section Mapping OIDC token claims to Fulcio OIDs: `job_workflow_ref` is the Build Signer URI, "Reference to specific build instructions that are responsible for signing. Can be the same as Build Config URI. For example a reusable workflow in GitHub Actions or a Circle CI Orbs"; `workflow_ref` is the Build Config URI, "A reference to the initiating build instructions"; `repository` is the Source Repository URI.
 
-So, together with GitHub's `job_workflow_ref` (sources 2.5), the signature of the shared release names the shared workflow, and the caller's workflow and its repository are in the Build Config URI and the Source Repository URI.
+So, together with GitHub's `job_workflow_ref` ([github/docs](https://github.com/github/docs/blob/e0b0c90/content/actions/how-tos/secure-your-work/security-harden-deployments/oidc-with-reusable-workflows.md)), the signature of the shared release names the shared workflow, and the caller's workflow and its repository are in the Build Config URI and the Source Repository URI.
 
 ### 7.3. Calls of cosign at once
 
@@ -528,7 +386,7 @@ Read 2026-10-21:
 
 Read 2026-10-21:
 - **Vitest in the browser** — [Vitest, Browser Mode](https://vitest.dev/guide/browser): "Vitest always requires a provider to be defined. You can chose either `preview`, `playwright` or `webdriverio`" and "to run tests in CI you need to install either `playwright` or `webdriverio`";
-- **`CI`** — Vitest at commit c8558f1: [`browser.headless`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/browser/headless.md) — "**Default:** `process.env.CI`" and "If you are running Vitest in CI, it will be enabled by default"; [`allowOnly`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/allowonly.md) — "**Default:** `!process.env.CI`" and "By default, Vitest does not permit tests marked with the `only` flag in Continuous Integration (CI) environments". That `CI` is set on the runner: sources 2.2.
+- **`CI`** — Vitest at commit c8558f1: [`browser.headless`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/browser/headless.md) — "**Default:** `process.env.CI`" and "If you are running Vitest in CI, it will be enabled by default"; [`allowOnly`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/allowonly.md) — "**Default:** `!process.env.CI`" and "By default, Vitest does not permit tests marked with the `only` flag in Continuous Integration (CI) environments". That `CI` is set on the runner: [github/docs](https://github.com/github/docs/blob/e0b0c90/content/actions/reference/workflows-and-actions/variables.md).
 
 Read 2026-11-01:
 - **Vitest** — vitest-dev/vitest on `main` 2debb4e, the latest release v5.0.5:
@@ -548,7 +406,7 @@ Read 2026-10-21:
 ### 9.5. Docker: the build cache
 
 Read 2026-10-21:
-- **the build cache** — [Docker Docs, GitHub Actions cache](https://github.com/docker/docs/blob/773efbb/content/manuals/build/cache/backends/gha.md) at commit 773efbb: "This cache storage backend works with the default `docker` driver only when the containerd image store is enabled" and "If you invoke the `docker buildx` command manually from an inline step, then the variables must be manually exposed. Consider using the `crazy-max/ghaction-github-runtime`, GitHub Action as a helper for exposing the variables". Docker and Buildx on the runner — sources 2.6.
+- **the build cache** — [Docker Docs, GitHub Actions cache](https://github.com/docker/docs/blob/773efbb/content/manuals/build/cache/backends/gha.md) at commit 773efbb: "This cache storage backend works with the default `docker` driver only when the containerd image store is enabled" and "If you invoke the `docker buildx` command manually from an inline step, then the variables must be manually exposed. Consider using the `crazy-max/ghaction-github-runtime`, GitHub Action as a helper for exposing the variables". Docker and Buildx on the runner — [runner-images](https://github.com/actions/runner-images/blob/06f4a91/images/ubuntu/Ubuntu2404-Readme.md).
 
 ### 9.6. Ubuntu Snapshot Service
 
