@@ -415,7 +415,7 @@ Measured 2026-11-10:
 - **the checks** — the suite `tests/run.sh` with the submodule's new script — 149 tests, 0 failed; `docs-check-repo` on v0.13.0 ok both before the edits and after.
 
 Measured 2026-11-12:
-- **the hook** — `spec/tools/session/main.mjs` on a trial transcript with the prompt «Выполни задачу … из RUN.md» of one task: a prompt of another task — `"decision":"block"` and a message that names both tasks, says that one task is one session and names `/clear`; the same task and a prompt with no task pass;
+- **the hook** — `spec/tools/session/main.mjs` on a trial transcript with the prompt that starts one task of RUN.md by its number: a prompt of another task — `"decision":"block"` and a message that names both tasks, says that one task is one session and names `/clear`; the same task and a prompt with no task pass;
 - **the checks** — the suite `tests/run.sh` with the script of the submodule at v0.16.3 and yq 4.54.1 by the sum of `self-ci.yml` — 156 tests, 0 failed; `docs-check-repo` on v0.16.3 ok both before the edits and after.
 
 Measured 2026-11-16:
@@ -428,7 +428,7 @@ Measured 2026-11-16:
 
 Measured 2026-11-16:
 - **the draft** — `just new-repo-draft .github docs 3.11 v0.18.6` and `… v0.18.4` on clones of `spec` at those tags in a temporary folder: the two drafts differ in the comment of the stage `toolchain` of `.devcontainer/Dockerfile`, in `shutdownAction` of `devcontainer.json` and in the name of the tag alone; the new two files differ from the former ones of `.github` by those lines alone, and `host-network.sh` and `.claude/settings.json` are the same as the draft's;
-- **the hook** — `spec/tools/session/main.mjs` at v0.18.6 on a trial transcript with the prompt «Выполни задачу … из RUN.md» of one task: a prompt of the next task and no `NOVATRAIL_RUN_TASKS` — `"decision":"block"`; with both tasks in `NOVATRAIL_RUN_TASKS` it passes; a prompt of a third task under the same variable — `"decision":"block"`;
+- **the hook** — `spec/tools/session/main.mjs` at v0.18.6 on a trial transcript with the prompt that starts one task of RUN.md by its number: a prompt of the next task and no `NOVATRAIL_RUN_TASKS` — `"decision":"block"`; with both tasks in `NOVATRAIL_RUN_TASKS` it passes; a prompt of a third task under the same variable — `"decision":"block"`;
 - **the checks** — the suite `tests/run.sh` with the submodule at v0.18.6 and yq 4.54.1 by the sum of `self-ci.yml` — 218 tests, 0 failed; `docs-check-repo` on v0.18.6 ok before the edits and after.
 
 Measured 2026-11-17:
@@ -454,12 +454,12 @@ Measured 2026-11-23, the move to v0.19.12:
 
 ## 10. The restructuring of the documents
 
-### 10.1. The "lossless" comparison («без потерь») of the rebuilding of the documents
+### 10.1. The "lossless" comparison of the rebuilding of the documents
 
 Measured 2026-11-12:
-- **on what** — the former section "Sources" of `docs/architecture.md` on `main` at d5c57ae, from "## 4." to the end of the file, against `docs/sources.md`, `docs/measurements.md` and the pointer that took the section's place. The pointer is in the comparison: its table now holds the names of the groups, and the builder of the files fixed ten places of the items — the section's links to its own sections and groups, "(2.8)" or «ниже, «<группа>»», are named by a document and a record's number;
+- **on what** — the former section "Sources" of `docs/architecture.md` on `main` at d5c57ae, from "## 4." to the end of the file, against `docs/sources.md`, `docs/measurements.md` and the pointer that took the section's place. The pointer is in the comparison: its table now holds the names of the groups, and the builder of the files fixed ten places of the items — the section's links to its own sections and groups, "(2.8)" or a "below" with a group's name, are named by a document and a record's number;
 - **how** — a node script in the session's scratchpad, like the comparison of `spec`'s own rebuilding: in the former section and in the new files it gathers URLs, quotes «…» — the outer ones, by depth — dates, commits, the numbers R, О-, П-, Т-, «Д», «В» and T, and code in backticks, and for each kind counts how many distinct values went missing and how many occur less often than before. The builder of the files also checked that each of the 273 items of the section was taken exactly once — whole or in parts;
-- **the numbers** — distinct values: URLs 105, quotes 413, dates 44, commits 79, numbers 104, code 950. Missing 0, less often than before 0. Without the pointer one quote goes missing — «Интерфейс релиза `spec` и суммы архивов», a link to a group that became a record's number — and `go.yml` occurs 24 times instead of 25: only the table holds two names of groups with it.
+- **the numbers** — distinct values: URLs 105, quotes 413, dates 44, commits 79, numbers 104, code 950. Missing 0, less often than before 0. Without the pointer one quote goes missing — the name of the group on the interface of `spec`'s release and the sums of the archives, a link to a group that became a record's number — and `go.yml` occurs 24 times instead of 25: only the table holds two names of groups with it.
 
 ## 11. The cost of the sessions
 
