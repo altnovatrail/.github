@@ -844,6 +844,21 @@ Read 2026-11-23:
 - **the card of `.github`** in `spec/docs/architecture.md` — no change;
 - **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, as at v0.19.11, each the work of other repositories.
 
+### 12.21. `spec` v0.19.17
+
+Read 2026-11-24:
+- **the tag** — v0.19.17, commit cec4fbd, the merge of pull request 223 of `spec` of 2026-11-24 at 00:00 UTC; its release came out at 00:05 UTC; the API's latest release is v0.19.17, it calls it immutable, and `gh release verify v0.19.17 -R altnovatrail/spec` — "Release v0.19.17 verified!";
+- **what changed** (`git log --oneline v0.19.12..v0.19.17`, `git diff --stat v0.19.12 v0.19.17`) — 43 commits, 374 files, most of them `spec`'s own log, documents and comments by the strict rule of citations, and the formats of the stroke's style; for a copy: the recipe `devcontainer-outdated`, `tools/toolchain/outdated.mjs`, new — "Print which pinned VS Code extensions and which Claude Code have a newer stable release"; `.devcontainer/Dockerfile` — `CLAUDE_CODE_VERSION` 2.1.331; `.devcontainer/devcontainer.json` — `anthropic.claude-code@2.1.331`, `openai.chatgpt@26.1117.41037`, `redhat.vscode-yaml@2.0.0` and `eamodio.gitlens@19.6.1`; the template's CLAUDE.md — "cites its one record, `sources 1.1` or `measurements 1.1`, or spec's, `sources 2.3 spec`", and its RUN.md, rule 6 and «Citations», the same; `repo-template/kinds.json` — `golang.go@0.58.0`, for the kind `go` alone. RULES.md, `.claude/` of the template and the block `repository` of `tools/docs-check/budgets.json` did not change; `tools/toolchain/toolchain.sh`, `tools/licenses/` and `tools/release/` changed comments and messages alone, without the numbers of decisions;
+- **row 7.50 of COORDINATION.md** — `.github`, no task there yet: the move to the tag that brings `devcontainer-outdated`, and the raise of what it names, by the text of the task of `spec` that brought it;
+- **the card of `.github`** in `spec/docs/architecture.md` — the strict rule of citations alone: its numbers of decisions and of sections become words, "by the texts of `.github`'s `docs/architecture.md`"; nothing of what `.github` does changes;
+- **the rows of `.github`** — ``grep -n '`.github`' run/DEBT.md`` of the tag gives Д88, Д146 and Д213, each the work of other repositories, and Д296, `spec`'s own: "The next task that changes `.bestpractices.json`" of `spec`.
+
+### 12.22. `redhat.vscode-yaml` 2.0.0
+
+Read 2026-11-24, `https://github.com/redhat-developer/vscode-yaml/blob/2.0.0/CHANGELOG.md`, at the tag 2.0.0, commit cd3950f, by the GitHub API:
+- **2.0.0** — "Breaking: Raise the minimum supported VS Code version to 1.91.0, as required by `vscode-languageclient` 10.1.2.", "Chore: Support ESM-only `yaml-language-server` builds in the desktop and browser extensions." and "Chore: Upgrade `vscode-languageclient` to 10.1.2 and adapt to its updated APIs.";
+- **1.25.0**, between it and 1.24.0 — "Breaking: Raise the minimum supported VS Code version to 1.90.0." and "Fix: Make formatter settings resource scoped.", among fixes of schemas.
+
 ## 13. Other repositories of NovaTrail
 
 ### 13.1. The `spec` submodule and `documents.yml` in other repositories
