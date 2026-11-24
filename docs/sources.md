@@ -8,6 +8,7 @@
 
 - **What is a record.** The line is whether a run of ours checks the fact and whether its source has a version, not whether it is a law or technology. A record holds terms, a policy, a license, and any fact whose source changes in place with no version and which no run of ours checks: a limit of a service, an answer of the GitHub API or of npm's registry, an open issue. A text outside the repositories, and other projects' practice, are records too.
 - **What is no record.**
+  - An answer that never changes — a run of a workflow, a version of a ruleset's history, the attestation of a package's version: a link where the claim stands.
   - GitHub's documentation, at a commit of [github/docs](https://github.com/github/docs), and the documentation or code of an action, a tool or a library at a version, a tag or a commit: a link where the claim stands, with no quote.
   - A behaviour a test of `tests/` or a record of [measurements.md](measurements.md) checks: the test or the record is its evidence; a sum, the Dockerfile that checks the archive against it.
   - spec's tags and the files of the other NovaTrail repositories and of MathTrail: git — a link to the repository at its tag or commit, or the submodule `spec/`.
@@ -485,6 +486,10 @@ Read 2026-11-01:
 
 Read 2026-11-02:
 - **npm's open bugs** — [npm/cli#9969](https://github.com/npm/cli/issues/9969) — open, updated 2026-10-28; [npm/cli#9889](https://github.com/npm/cli/issues/9889) — open, updated 2026-10-22.
+
+### 8.5. npm's registry: the delay of the check before a version is served
+
+Read 2026-11-24: [GitHub Changelog, npm publish-time malware scanning, 2026-07-28](https://github.blog/changelog/2026-07-28-npm-publish-time-malware-scanning-and-dual-use-metadata/): the check "introduces a short delay between publishing and availability, typically around five minutes. It may take longer, up to 15 minutes or more, at peak times or depending on a package's content and size. These times reflect current typical behavior and may change as scanning evolves; they aren't a service guarantee."
 
 ## 9. Node, browsers and the TypeScript tests
 
