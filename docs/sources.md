@@ -104,89 +104,37 @@ Read 2026-11-24:
 
 ## 8. npm
 
-### 8.1. npm's documentation
+npm's documentation and the code of `npm/cli` and npm-registry-fetch are links at the tag or commit where the claim stands, the npm that Node carries a link to Node at its tag, and an attestation of a package's version a link to the registry's answer for it. What stays here are npm's policies, the answers of npm's registry and of the GitHub API, and npm's open bugs, which change in place and which no run of ours checks.
 
-Read 2026-10-20:
-- **integrity in npm** — npm's documentation, [`npm cache`](https://github.com/npm/cli/blob/ae98c62586b6fea44114f72e249e246a2981de70/docs/lib/content/commands/npm-cache.md) on the branch `latest` of npm/cli, the commit ae98c62: "All data that passes through the cache is fully verified for integrity on both insertion and extraction". Which hash npm checks against without a lock file, this page does not say, and the repository has no hash.
+### 8.1. npm's policies
 
-Read 2026-10-21:
-- **npm** — Node 24.21.0 comes with npm 11.19.0: [nodejs.org/dist/index.json](https://nodejs.org/dist/index.json), the entry `v24.21.0` — `"npm":"11.19.0"`. npm's documentation site shows v11 in the edition 11.21.0. The definition of `ignore-scripts` below is the same in npm's sources at the tag v11.19.0, the commit bfacd33: `workspaces/config/lib/definitions/definitions.js`;
-- **`npm ci`** — [npm Docs, npm ci](https://docs.npmjs.com/cli/v11/commands/npm-ci): "The project **must** have an existing `package-lock.json` or `npm-shrinkwrap.json`", "If dependencies in the package lock do not match those in `package.json`, `npm ci` will exit with an error, instead of updating the package lock" and "It will never write to `package.json` or any of the package-locks: installs are essentially frozen";
-- **`ignore-scripts`** — the same page, section Configuration: "If true, npm does not run scripts specified in package.json files. Note that commands explicitly intended to run a particular script, such as `npm start`, `npm stop`, `npm restart`, `npm test`, and `npm run` will still run their intended script if `ignore-scripts` is set, but they will *not* run any pre- or post-scripts". An environment variable sets the same — [npm Docs, config](https://docs.npmjs.com/cli/v11/using-npm/config): "Any environment variables that start with `npm_config_` will be interpreted as a configuration parameter";
-- **`npm audit`** — [npm Docs, npm audit](https://docs.npmjs.com/cli/v11/commands/npm-audit): "The audit command submits a description of the dependencies configured in your project to your default registry and asks for a report of known vulnerabilities" — it needs the network. Of `--audit-level`: "This option does not filter the report output, it simply changes the command's failure threshold".
-
-Read 2026-10-22:
-- **trusted publishing** — npm/documentation at the commit 7e98ab4, `content/packages-and-modules/securing-your-code/trusted-publishers.mdx`:
-  - "Trusted publishing requires npm CLI version 11.5.1 or later and Node version 22.14.0 or higher";
-  - of a reusable workflow: "validation checks the calling workflow's name instead of the workflow that actually contains the publish command", and "The `id-token: write` permission must also be given to both parent and child workflows";
-  - "Configurations created after Sep 03, 2026 are automatically set to allow `npm stage publish`, and you can choose whether to also permit direct publishing with `npm publish`", and "A newly created trusted publisher configuration must complete its first successful publish within 2 days";
-  - provenance: "npm automatically generates and publishes provenance attestations … you don't need to add the `--provenance` flag", and "your package's `repository.url` field in `package.json` must exactly match your GitHub repository".
-
-Read 2026-11-01:
-- **trusted publishing and a reusable workflow** — the page [npm Docs, Trusted publishing](https://docs.npmjs.com/trusted-publishers) says the same as npm/documentation at 7e98ab4: "validation checks the calling workflow's name instead of the workflow that actually contains the publish command".
-
-Read 2026-11-01:
-- **npm/documentation** — the commit c62df53, 2023-10-23, the last commit of the file `content/policies/unpublish.mdx`:
+Read 2026-11-24, npm/documentation at the last commits of its files:
+- **unpublishing** — `content/policies/unpublish.mdx`, the commit c62df53 of 2023-10-23:
   - "So if you've ever published a package called "bob" at version 1.1.0, no other package can ever be published with that name at that version. This is true even if that package is unpublished";
   - "Once `package@version` has been used, you can never use it again. You must publish a new version even if you unpublished the old one";
-  - "If you entirely unpublish all versions of a package, you may not publish any new versions of that package until 24 hours have passed".
-
-Read 2026-11-02:
-- **trusted publishing** — `content/packages-and-modules/securing-your-code/trusted-publishers.mdx` of npm/documentation, the last commit 5152d27 of 2026-10-06: "validation checks the calling workflow's name instead of the workflow that actually contains the publish command", and "The `id-token: write` permission must also be given to both parent and child workflows". Provenance — "when all of these conditions are met": trusted publishing, a public repository, a public package. Of a reusable workflow of another repository the document says nothing.
-
-### 8.2. `npm/cli`
-
-Read 2026-10-22:
-- **`npm trust`** — npm/cli v11.19.0, `docs/lib/content/commands/npm-trust.md`: "Package must exist: The package you're configuring must already exist on the npm registry". `lib/trust-cmd.js` allows publishing by the flag `--allow-publish`, and staged publishing by `--allow-stage-publish`;
-- **npm CLI 11.19.1**, the one that comes with Node 24.22.1. It does not differ from 11.19.0 in `lib/utils/oidc.js`, `lib/commands/publish.js`, libnpmpublish and npm-registry-fetch (`gh api repos/npm/cli/compare/v11.19.0...v11.19.1`):
-  - `oidc.js` without `ACTIONS_ID_TOKEN_REQUEST_URL` and `_TOKEN` skips the exchange — "Skipped because incorrect permissions for id-token within GitHub workflow", at the level silly. A refusal of the exchange and its success it writes at the level verbose: "Failed token exchange request with body message: …", "Successfully retrieved and set token";
-  - `publish.js` calls the exchange before the branch `--dry-run` (line 147). The package's scripts run only when a folder is published. Since npm 11.0.0 it does not publish a version below the highest one without a tag: "Cannot implicitly apply the "latest" tag because previously published version … is higher than the new version";
-  - npm's license is Artistic-2.0 (npm's `package.json`), and `spec/tools/licenses/config.mjs` v0.2.21 does not have it.
-
-Read 2026-11-01:
-- **npm** — `lib/commands/view.js` of npm 11.19.0 from the devcontainer, lines 151–157: on `pckmnt.time?.unpublished` the command throws an error "Unpublished on ${u.time}" with `statusCode: 404` and `code: 'E404'`. Between v11.19.0 and v11.19.1, 33 files changed. Of the files of `view` and `publish`, only `test/lib/commands/publish.js` is among them (`gh api repos/npm/cli/compare/v11.19.0...v11.19.1`).
+  - "If you entirely unpublish all versions of a package, you may not publish any new versions of that package until 24 hours have passed";
+- **a trusted publisher's setting** — `content/packages-and-modules/securing-your-code/trusted-publishers.mdx`, the commit 5152d27 of 2026-10-06: "Configurations created after Sep 03, 2026 are automatically set to allow `npm stage publish`, and you can choose whether to also permit direct publishing with `npm publish`", and "A newly created trusted publisher configuration must complete its first successful publish within 2 days".
 
 ### 8.3. npm's registry
 
-Read 2026-10-22:
-- **the registry's cache** — 2026-10-22. `https://registry.npmjs.org/semver` answers `cf-cache-status: HIT`, `cache-control: public, max-age=300` and `age` over a hundred seconds, even to a request with `Cache-Control: no-cache`. With `?write=true` the answer is `cf-cache-status: DYNAMIC`. npm-registry-fetch, which comes with npm 11.19.1, does not cache such a GET: "do not cache, because this GET is fetching a rev that will be used for a subsequent PUT or DELETE" (`lib/index.js`).
-
-Read 2026-11-01:
-- **the publication of `spec` to npm** — `https://registry.npmjs.org/@altnovatrail%2fspec`: `latest` is 0.4.1, which came out 2026-10-29T20:31:01Z, with `dist.attestations`, provenance `https://slsa.dev/provenance/v1`; 0.4.0, which the author of `spec` published by hand, has no provenance. The npm steps of `spec`'s `release.yml` are the steps of the shared `release.yml` v0.1.10 with the differences that the plan of `spec` names.
-
-Read 2026-11-01:
+Read 2026-11-24:
+- **the registry's cache** — `https://registry.npmjs.org/semver` answers `cf-cache-status: HIT`, `cache-control: public, max-age=300` and `age` of a few minutes, even to a request with `Cache-Control: no-cache`. With `?write=true` the answer is `cf-cache-status: DYNAMIC`;
 - **`time` remembers unpublished version numbers** — `https://registry.npmjs.org/<package>?write=true`. In `time`, but not in `versions`, there are:
   - for `ua-parser-js` — 0.7.29, 0.8.0 and 1.0.0;
   - for `coa` — 2.0.3, 2.0.4, 2.1.1, 2.1.3, 3.0.1 and 3.1.3;
-  - for `rc` — 1.2.9, 1.3.9 and 2.3.9.
-
-  For `@altnovatrail/spec` at 18:59 UTC the keys of `time` are its eight versions, from `0.0.0-stage` to 0.5.4, and `created` with `modified`;
-- **a package unpublished whole** — the same request.
-  - `asdasd`, `aaaaaaa` and `test-unpublish` answer 200, and the answer has only `_id`, `name`, `_rev` and `time`.
-  - For `asdasd`, `time` has `created`, `modified`, `1.0.0` and `unpublished`: `{"time":"2016-09-28T19:51:40.289Z","versions":["1.0.0"]}`.
-  - `time` also keeps the numbers that are not in `unpublished.versions`: for `aaaaaaa` — 2.0.0 and 4.0.1.
-  - A name that never existed, `dfgdfg`, gets 404 `{"error":"Not found"}`.
-  - A package published again has no `time.unpublished`, and `time` keeps the earlier numbers: for `pokemon-assets` — 0.6.0 and 0.7.0, which are not in `versions`.
-
-Read 2026-11-02:
-- **the documents of packages unpublished whole**, by the step "Check the npm package" of [spec v0.6.3](https://github.com/altnovatrail/spec/blob/v0.6.3/.github/workflows/release.yml) — `curl https://registry.npmjs.org/<name>?write=true`, 2026-11-02:
-  - for `asdasd`, `aaaaaaa` and `test-unpublish`, `versions` is empty, and `time` has `created`, `modified`, `unpublished` and every number the package held: `1.0.0`; `2.0.0`, `1.0.0`, `1.0.1`, `3.0.0`, `4.0.0` and `4.0.1`; `0.0.1` and `0.0.0`;
+  - for `rc` — 1.2.9, 1.3.9 and 2.3.9;
+- **a package unpublished whole** — the same request, read whole: `curl https://registry.npmjs.org/<name>?write=true | jq '{keys: keys, versions: (.versions // {} | keys), time: .time}'`:
+  - `asdasd`, `aaaaaaa` and `test-unpublish` answer 200; the document's keys are `_id`, `_rev`, `name` and `time`, with no `versions`;
+  - `time` has `created`, `modified`, `unpublished` and every number the package held: `1.0.0`; `1.0.0`, `1.0.1`, `2.0.0`, `3.0.0`, `4.0.0` and `4.0.1`; `0.0.0` and `0.0.1`. For `asdasd`, `time.unpublished` is `{"time":"2016-09-28T19:51:40.289Z","versions":["1.0.0"]}`;
   - `time.unpublished.versions` has the numbers the package held last: `["1.0.0"]`, `["1.0.0","1.0.1","3.0.0","4.0.0"]` and `["0.0.0"]`. The numbers unpublished earlier — `2.0.0` and `4.0.1` for `aaaaaaa`, `0.0.1` for `test-unpublish` — are only in `time`;
-  - a jq filter that takes from `time` only `created`, `modified` and `unpublished` loses the keys of the numbers, as a first reading of this day did.
-
-Read 2026-11-02:
-- **the documents of packages unpublished whole** — the same as above, in the first reading, read whole: `curl https://registry.npmjs.org/<name>?write=true | jq '{keys: keys, versions: (.versions // {} | keys), time: .time}'`. The document's keys are `_id`, `_rev`, `name` and `time`, and `time` has every number the package held. The earlier step `(.time // {}) | has($v)` did find such a number.
+  - a name that never existed, `dfgdfg`, gets 404 `{"error":"Not found"}`;
+  - a package published again has no `time.unpublished`, and `time` keeps the earlier numbers: for `pokemon-assets` — 0.6.0 and 0.7.0, which are not in `versions`.
 
 ### 8.4. The open bugs of `npm/cli`
 
-Read 2026-10-22:
-- **npm's open bugs** — npm/cli#9889: `npm publish` exits with 0 while the version is only staged. npm/cli#9969: OIDC for repositories with GitHub's immutable subject.
-
-Read 2026-11-01:
-- **the immutable OIDC subject** — the GitHub API, `repos/altnovatrail/<repository>/actions/oidc/customization/sub`: `spec` and `canvas` have `"use_immutable_subject":true`, the prefixes `repo:altnovatrail@344507087/spec@1424771727` and `repo:altnovatrail@344507087/canvas@1425820257`. npm/cli#9969 — "OIDC trusted publishing fails with "package not found" for GitHub repos that use immutable OIDC subject claims" — is open, updated 2026-10-28; npm/cli#9889 is open too (the GitHub API).
-
-Read 2026-11-02:
-- **npm's open bugs** — [npm/cli#9969](https://github.com/npm/cli/issues/9969) — open, updated 2026-10-28; [npm/cli#9889](https://github.com/npm/cli/issues/9889) — open, updated 2026-10-22.
+Read 2026-11-24, the GitHub API:
+- **npm's open bugs** — [npm/cli#9889](https://github.com/npm/cli/issues/9889), "[BUG] 409 "Cannot publish over previously staged version" for a package that never used staged publishing", open, updated 2026-11-19: "The first publish that triggered this reported success", while "The version does not exist as a published version"; [npm/cli#9969](https://github.com/npm/cli/issues/9969), "[BUG] OIDC trusted publishing fails with "package not found" for GitHub repos that use immutable OIDC subject claims", open, updated 2026-10-28;
+- **the immutable OIDC subject** — `repos/altnovatrail/<repository>/actions/oidc/customization/sub`: `spec` and `canvas` have `"use_immutable_subject":true`, the prefixes `repo:altnovatrail@344507087/spec@1424771727` and `repo:altnovatrail@344507087/canvas@1425820257`.
 
 ### 8.5. npm's registry: the delay of the check before a version is served
 
@@ -194,152 +142,48 @@ Read 2026-11-24: [GitHub Changelog, npm publish-time malware scanning, 2026-07-2
 
 ## 9. Node, browsers and the TypeScript tests
 
-### 9.1. Node
-
-Read 2026-10-22:
-- **Node** — `https://nodejs.org/dist/index.json`: v24.22.1, 2026-10-20, npm 11.19.1, `security: true`. In the `SHASUMS256.txt` of v24.22.1 — `6c172a9ab6718f7b801fb5a7bd486af2ee5e32758086a04b84fcce2aa77095e6  node-v24.22.1-linux-x64.tar.xz`, and the downloaded archive matched it.
-
-Read 2026-11-13, the documentation of Node v24.21.0, the version of the `toolchain` stage:
-- **`node:wasi`** — [`api/wasi.md`](https://nodejs.org/docs/v24.21.0/api/wasi.md): "Stability: 1 - Experimental"; the example passes `version: 'preview1'`, `args: argv`, `env` and `preopens`, and runs `wasi.start(instance)`. Of `new WASI([options])`:
-  - `args` — "An array of strings that the WebAssembly application will see as command-line arguments. The first argument is the virtual path to the WASI command itself";
-  - `env` — "An object similar to `process.env` that the WebAssembly application will see as its environment";
-  - `preopens` — "The string keys of `preopens` are treated as directories within the file system. The corresponding values in `preopens` are the real paths to those directories on the host machine";
-  - `returnOnExit` — "By default, when WASI applications call `__wasi_proc_exit()`  `wasi.start()` will return with the exit code specified rather than terminating the process. Setting this option to `false` will cause the Node.js process to exit with the specified exit code instead. **Default:** `true`", and in the history of changes: "v20.1.0 … default value of returnOnExit changed to true";
-  - `version` — "Currently the only supported versions are `unstable` and `preview1`. This option is mandatory";
-  - `wasi.start(instance)` — "Attempt to begin execution of `instance` as a WASI command by invoking its `_start()` export", and it "requires that `instance` exports a [`WebAssembly.Memory`][] named `memory`";
-  - and under Security: "The current Node.js threat model does not provide secure sandboxing as is present in some WASI runtimes";
-- **`--disable-warning`** — [`api/cli.md`](https://nodejs.org/docs/v24.21.0/api/cli.md), `--disable-warning=code-or-type`, added in v21.3.0 and v20.11.0, "now stable" from v24.20.0: "Disable specific process warnings by `code` or `type`" and "The Node.js core warning types are: `DeprecationWarning` and `ExperimentalWarning`". The trial — measurements 2.6.
-
-### 9.2. Playwright
-
-Read 2026-10-21:
-- **Playwright in Docker** — [`docs/src/docker.md`](https://github.com/microsoft/playwright/blob/66070a1/docs/src/docker.md) at commit 66070a1, section Recommended Docker Configuration: "Using `--init` Docker flag is recommended to avoid special treatment for processes with PID=1. This is a common reason for zombie processes" and "Using `--ipc=host` is recommended when using Chromium. Without it, Chromium can run out of memory and crash". Playwright — v1.64.1, Apache-2.0 (the GitHub API);
-  - [`docs/src/browsers.md`](https://github.com/microsoft/playwright/blob/66070a1/docs/src/browsers.md), ibid.: "Each version of Playwright needs specific versions of browser binaries to operate". The browsers lie in "`~/.cache/ms-playwright` on Linux", and `PLAYWRIGHT_BROWSERS_PATH` sets another path;
-  - the Playwright image sets `ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright` and installs the browsers there ([`utils/docker/Dockerfile.noble`](https://github.com/microsoft/playwright/blob/66070a1/utils/docker/Dockerfile.noble), ibid.);
-  - the browsers' system packages are installed by `apt-get install`, and, when not root, through sudo: "Switching to root user to install dependencies..." ([`dependencies.ts`](https://github.com/microsoft/playwright/blob/66070a1/packages/playwright-core/src/server/registry/dependencies.ts), ibid.);
-  - neither the documentation nor the downloader names sums of the browser downloads: no check of a sum was found in `browserFetcher.ts` and `registry/index.ts`. This is the result of a search, not the documentation's words;
-- **the Playwright image** — `mcr.microsoft.com/playwright:v1.64.1-noble`, the index `sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf`; amd64 — `sha256:bdfda2a8fdf48707c5e50a49bd3e06d8d0c759153dc8ee057d8a81c3450bb3e9`, 986,271,382 bytes compressed, in seven layers (the MCR registry). `utils/docker/Dockerfile.noble` at the tag v1.64.1 installs into `/ms-playwright` chromium with the headless shell and ffmpeg, firefox and webkit, and the system libraries by `install-deps`, outside that folder. [`docs/src/docker.md`](https://github.com/microsoft/playwright/blob/v1.64.1/docs/src/docker.md) at the tag v1.64.1: "This image includes the Playwright browsers and browser system dependencies. The Playwright package/dependency is not included in the image" and "If the Playwright version in your Docker image does not match the version in your project/tests, Playwright will be unable to locate browser executables";
-- **Chromium's system libraries** — [`nativeDeps.ts`](https://github.com/microsoft/playwright/blob/v1.64.1/packages/playwright-core/src/server/registry/nativeDeps.ts) at the tag v1.64.1, the entry `ubuntu24.04-x64`, `chromium`: 21 packages, from `libasound2t64` to `libxrandr2`. `install-deps` installs them by `apt-get install -y --no-install-recommends`, with no versions.
-
-Read 2026-10-21:
-- **Chrome for Testing** — Playwright's [`docs/src/release-notes-js.md`](https://github.com/microsoft/playwright/blob/v1.64.1/docs/src/release-notes-js.md) at the tag v1.64.1, commit cfe490d, section Version 1.57: "Playwright now runs on Chrome for Testing builds rather than Chromium. Headed mode uses `chrome`; headless mode uses `chrome-headless-shell`". In [`registry/index.ts`](https://github.com/microsoft/playwright/blob/v1.64.1/packages/playwright-core/src/server/registry/index.ts) ibid., `chromium` and `chromium-headless-shell` for `ubuntu24.04-x64` have `cftUrl(…)`, the path `builds/cft/${browserVersion}/…` on `https://cdn.playwright.dev`. Firefox, WebKit and FFmpeg have paths of their own — `builds/firefox/…`, `builds/webkit/…` and `builds/ffmpeg/…`;
-- **the folder in the image** — the decision log and `docs/architecture.md` of `canvas` at 88492c4. In the layer of the v1.64.1 image with `playwright-core install chromium` lie `chromium-1248` with `WidevineCdm/LICENSE`, `chromium_headless_shell-1248` and `ffmpeg-1013`. The `ABOUT` of Chrome Headless Shell: "Google Chrome … Copyright 2026 Google LLC. All rights reserved … See the Terms of Service at chrome://terms". The binary itself calls itself "Google Chrome for Testing 156.0.8078.4", and the folder takes 273 MB.
-
-### 9.3. Vitest and istanbul
-
-Read 2026-10-21:
-- **Vitest in the browser** — [Vitest, Browser Mode](https://vitest.dev/guide/browser): "Vitest always requires a provider to be defined. You can chose either `preview`, `playwright` or `webdriverio`" and "to run tests in CI you need to install either `playwright` or `webdriverio`";
-- **`CI`** — Vitest at commit c8558f1: [`browser.headless`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/browser/headless.md) — "**Default:** `process.env.CI`" and "If you are running Vitest in CI, it will be enabled by default"; [`allowOnly`](https://github.com/vitest-dev/vitest/blob/c8558f1/docs/config/allowonly.md) — "**Default:** `!process.env.CI`" and "By default, Vitest does not permit tests marked with the `only` flag in Continuous Integration (CI) environments". That `CI` is set on the runner: [github/docs](https://github.com/github/docs/blob/e0b0c90/content/actions/reference/workflows-and-actions/variables.md).
-
-Read 2026-11-01:
-- **Vitest** — vitest-dev/vitest on `main` 2debb4e, the latest release v5.0.5:
-  - `docs/guide/coverage.md`: "By default Vitest will show only files that were imported during test run. To include uncovered files in the report, you'll need to configure `coverage.include` with a pattern that will pick your source files";
-  - `docs/config/coverage.md`: `coverage.reportsDirectory` has "Default: `'./coverage'`", and "Vitest will delete this directory before running tests if `coverage.clean` is enabled (default value)";
-  - the file's name — istanbuljs/istanbuljs on `main` 28ffdbc, `packages/istanbul-reports`: `lcovonly` writes `opts.file || 'lcov.info'`, and `lcov` the same `lcov.info` and HTML in `lcov-report`.
-
-Read 2026-11-16:
-- **the V8 coverage** — vitest-dev/vitest at the tag v5.1.0, commit 7a38449, `docs/guide/coverage.md`, V8 Provider: "This provider requires Javascript runtime that's implemented on top of V8 engine, such as NodeJS, Deno or any Chromium based browsers such as Google Chrome";
-- **the engines at the callers** — `ci-test` of `app`, `main` 9e55f30, runs `vitest run --coverage --project node --project '*(chromium)'`, then `vitest run --project '*(webkit)' --project '*(firefox)'`, "without it: Vitest's v8 coverage works in Chromium alone", citing a decision and a record of sources of its own; `ci-test` of `canvas`, `main` 9c75901, the same with `'* chromium'`, `'* webkit'` and `'* firefox'`. `skill-map`, `main` of 2026-11-16, runs `vitest run --coverage` alone.
+The documentation and code of Node, Playwright, Vitest, istanbul, OSV-Scanner, Docker and BuildKit are links at the tag or commit where the claim stands, the files of `app` and `canvas` git at a commit, the configuration of an image a link to its blob at its digest, and a behaviour a trial saw is in measurements.md. What stays here is the license and the release of OSV-Scanner, which no run of ours checks.
 
 ### 9.4. OSV-Scanner
 
-Read 2026-10-21:
-- **OSV-Scanner** — v2.7.0, 2026-10-12 (the GitHub API, `repos/google/osv-scanner/releases/latest`), Apache-2.0, the release holds `osv-scanner_SHA256SUMS`. [Offline Mode](https://google.github.io/osv-scanner/usage/offline-mode/): "Offline scanning checks your project against a local database instead of calling the OSV.dev API" and "When a local database is not present, you will get an error message".
-
-### 9.5. Docker: the build cache
-
-Read 2026-10-21:
-- **the build cache** — [Docker Docs, GitHub Actions cache](https://github.com/docker/docs/blob/773efbb/content/manuals/build/cache/backends/gha.md) at commit 773efbb: "This cache storage backend works with the default `docker` driver only when the containerd image store is enabled" and "If you invoke the `docker buildx` command manually from an inline step, then the variables must be manually exposed. Consider using the `crazy-max/ghaction-github-runtime`, GitHub Action as a helper for exposing the variables". Docker and Buildx on the runner — [runner-images](https://github.com/actions/runner-images/blob/06f4a91/images/ubuntu/Ubuntu2404-Readme.md).
-
-### 9.6. Ubuntu Snapshot Service
-
-Read 2026-10-21:
-- **the Ubuntu archive at a date** — [Ubuntu Snapshot Service](https://snapshot.ubuntu.com/): "The Ubuntu snapshot service makes it possible to see and use the Ubuntu archive as it was at any specified date and time", "Snapshots of the Ubuntu archive are available for any date and time after 1 March 2023", "We intend to ensure snapshots are available for dates up to at least 2 years in the past" and "The apt included in Ubuntu 24.04 and later automatically detects when snapshots are supported for a repository". An example from there — `apt install hello --update --snapshot 20240301T030400Z`. The Playwright image creates a user of its own, `pwuser` (`adduser pwuser` in `Dockerfile.noble` v1.64.1), while the `devcontainer` stage of spec's repository template runs as `vscode` (`USER vscode`).
-
-### 9.7. Docker: the Dockerfile and the base image of the template
-
-Read 2026-11-16:
-- **the Dockerfile** — the Dockerfile reference, [moby/buildkit](https://github.com/moby/buildkit/blob/38b0e2ab2e9bc5fd3f622759ac92ad4b649f3bf4/frontend/dockerfile/docs/reference.md) at commit 38b0e2a, `frontend/dockerfile/docs/reference.md`, the source of Docker Docs' page: "The instruction is not case-sensitive"; "Comment lines are removed before the Dockerfile instructions are executed", with the example `RUN echo hello \` over `# comment`; "If not specified, the default escape character is `\`" — "The escape character is used both to escape characters in a line, and to escape a newline. This allows a Dockerfile instruction to span multiple lines"; `FROM [--platform=<platform>] <image> [AS <name>]` — "The name can be used in subsequent `FROM <name>`"; "An `ARG` declared before a `FROM` is outside of a build stage, so it can't be used in any instruction after a `FROM`. To use the default value of an `ARG` declared before the first `FROM` use an `ARG` instruction without a value inside of a build stage"; "A stage inherits any environment variables that were set using `ENV` by its parent stage or any ancestor"; and "The `ENV` instruction also allows an alternative syntax `ENV <key> <value>`, omitting the `=`".
-- **the parser** — the same commit, `frontend/dockerfile/parser/parser.go`: the line continuation is ``regexp.MustCompile(`([^\` + s + `])\` + s + `[ \t]*$|^\` + s + `[ \t]*$`)`` — the escape character, then blanks, at the end of a line; `trimNewline` is `bytes.TrimRight(src, "\r\n")`; inside a continued instruction a comment line is skipped (`if isComment(scanner.Bytes())`), and so is an empty one, with "[WARNING]: Empty continuation lines will become errors in a future release."; `isComment` — the line, its leading blanks dropped, starts with `#`. `directives.go`: a directive is `^([a-zA-Z][a-zA-Z0-9]*)\s*=\s*(.+?)\s*$` after the `#`, and `keyEscape = "escape"`.
-- **the base image** — the configuration of `mcr.microsoft.com/devcontainers/base:3.0.13-noble` at the digest `sha256:48be4ade…7eae` that the template's Dockerfile pins, for linux/amd64 the manifest `sha256:957c4e15…b910` and its configuration `sha256:be453845…7b15`, by the registry's API without a token: `"Env":["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin","LANG=C.UTF-8"]`.
+Read 2026-11-24, the GitHub API:
+- **the release** — `repos/google/osv-scanner/releases/tags/v2.7.0`: v2.7.0, 2026-10-12, holds `osv-scanner_SHA256SUMS`;
+- **the license** — `repos/google/osv-scanner/license`: Apache-2.0.
 
 ## 10. Go, go-licenses and Codecov
 
-### 10.1. Go
-
-Read 2026-11-01:
-- **Go** — [Go 1.22 Release Notes](https://go.dev/doc/go1.22): "`go test -cover` now prints coverage summaries for covered packages that do not have their own test files" — "functions in the package are treated as uncovered". And also: "if a package contains no executable code at all, we can't report a meaningful coverage percentage; for such packages the `go` tool will continue to report that there are no test files". The trial — measurements 4.1.
-
-Read 2026-11-13, Go 1.27.3 of the devcontainer, in its `GOROOT`; the four files named below are byte for byte the same at the tag `go1.27.4` of golang/go, the Go of the `toolchain` stage, and so is the line of `AppendPWD`:
-- **the executors of wasm** — `lib/wasm/go_wasip1_wasm_exec` chooses by `GOWASIRUNTIME` among `wasmedge`, `wasmer`, `wazero` and `wasmtime`, the default, and any other value ends with "Unknown Go WASI runtime specified"; wasmtime runs with `--dir=/ --env PWD="$PWD" --env PATH="$PATH" -W max-wasm-stack=8388608`, and wazero with `-mount /:/ -env-inherit`. `lib/wasm/go_js_wasm_exec` ends with `exec node --stack-size=8192 "$DIR/wasm_exec_node.js" "$@"`;
-- **`go test -exec`** — `go help testflag`: "-exec xprog — Run the test binary using xprog. The behavior is the same as in 'go run'", and `go help run`: "If the -exec flag is given, 'go run' invokes the binary using xprog: 'xprog a.out arguments...'". In the source, `src/cmd/go/internal/test/testflag.go` reads the flag as `base.StringsFlag`, a command split into words, and `src/cmd/go/internal/test/test.go` runs the test with `cmd.Dir = a.Package.Dir` and `env = base.AppendPWD(env, cmd.Dir)`: the folder of the package, and `PWD` set to it. The trial — measurements 2.6.
-
-Read 2026-11-16, Go 1.27.4 of the devcontainer, the Go of the `toolchain` stage, in its `GOROOT`:
-- **a module taken from the cache** — `src/cmd/go/internal/modfetch/fetch.go`: `Download` returns the module's folder after `f.checkMod(ctx, mod)`, which reads the module's `ziphash` from the cache and hands it to `checkModSum`: "Check whether mod+h is listed in go.sum already. If so, we're done", and else "Consult checksum database if appropriate" — `if useSumDB(mod)`, `checkSumDB(mod, h)`, which "Calls base.Fatalf if mismatch detected";
-- **`go mod verify`** — `go help mod verify`: "Verify checks that the dependencies of the current module, which are stored in a local downloaded source cache, have not been modified since being downloaded. If all the modules are unmodified, verify prints "all modules verified." Otherwise it reports which modules have been changed and causes 'go mod' to exit with a non-zero status." In `src/cmd/go/internal/modcmd/verify.go` it takes `mg.BuildList()` of the module graph and, for each module, hashes the archive, `dirhash.HashZip`, and the folder, `dirhash.HashDir`, against the `ziphash` — "zip has been modified", "dir has been modified" —, and a module with neither on disk it skips: "Nothing downloaded yet. Nothing to verify.";
-- **the trim of the build cache** — `src/cmd/go/internal/cache/cache.go`: "We set the mtime on a cache file on each use, but at most one per mtimeInterval (1 hour)", "We scan the cache for entries to delete at most once per trimInterval (1 day)"; `mtimeInterval = 1 * time.Hour`, `trimInterval = 24 * time.Hour`, `trimLimit = 5 * 24 * time.Hour`; `Trim` keeps "in dir/trim.txt the time of the last completed cache trim" and, when it is a day old, deletes in `trimSubdir` the files older than `cutoff := now.Add(-trimLimit - mtimeInterval)`;
-- **the cache of tests** — `go help test`: "The rule for a match in the cache is that the run involves the same test binary and the flags on the command line come entirely from a restricted set of 'cacheable' test flags, defined as -benchtime, -coverprofile, -cpu, -failfast, -fullpath, -list, -outputdir, -parallel, -run, -short, -skip, -timeout and -v. If a run of go test has any test or non-test flags outside this set, the result is not cached." And: "The idiomatic way to disable test caching explicitly is to use -count=1. Tests that open files within the package's module or that consult environment variables only match future runs in which the files and environment variables are unchanged."
-
-Read 2026-11-16, Go 1.27.4 of the devcontainer:
-- **the build cache at once** — `go help cache`: "The cache is safe for concurrent invocations of the go command."
-
-Read 2026-11-18:
-- **what finds a build** — `src/cmd/go/internal/cache/cache.go` of Go 1.27.4, the Go of the `toolchain` stage, in the devcontainer's `GOROOT`: "An ActionID is a cache action key, the hash of a complete description of a repeatable computation (command line, environment variables, input file contents, executable contents)";
-- **golangci-lint's cache** — golangci-lint v2.15.0, its latest release (the GitHub API, `repos/golangci/golangci-lint/releases/latest`), the commit 25c5369: `internal/go/cache/cache.go` has the comment and the constants of Go's above — `mtimeInterval = 1 * time.Hour`, `trimInterval  = 24 * time.Hour`, `trimLimit     = 5 * 24 * time.Hour` —, `func (c *DiskCache) Close() error { return c.Trim() }` and the same `cutoff := now.Add(-trimLimit - mtimeInterval)`. Where `pkg/commands/run.go` makes its cache, `cache.NewCache`, no call of its `Close` was found. The version a caller's `toolchain` stage installs is the caller's own.
-
-### 10.2. go-licenses
-
-Read 2026-10-21:
-- **`--allowed_licenses`** — [README go-licenses v2.0.1](https://github.com/google/go-licenses/blob/v2.0.1/README.md), section Usages, Check: "Allow only specific license names" — `go-licenses check <package> [package...] --allowed_licenses=<comma separated license names>`. The trial — measurements 2.1.
+The documentation and code of Go, golangci-lint and go-licenses are links at the tag or commit where the claim stands, and a behaviour a trial saw is in measurements.md; the sum of the Codecov CLI is held by the steps that check it. What stays here are the Codecov app of the organization, the license of the CLI, the key its sums are signed with, and Codecov's pages, which change in place and which no run of ours checks.
 
 ### 10.3. Codecov
 
-Read 2026-11-01:
-- **the Codecov app** — `gh api orgs/altnovatrail/installations`: `codecov`, `repository_selection: all`. The Codecov API, `api.codecov.io/api/v2/github/altnovatrail/repos/`, names all 13 repositories. Before the trial only `spec` was active, and after it `.github` too;
-- **the Codecov CLI** — the releases of codecov/codecov-cli, the license Apache-2.0. v11.3.2 is Latest, came out 2026-10-28: "Clear Dependabot high alert (urllib3)" and "Rebuilt from main so the Linux and Alpine binaries publish".
-  - `https://cli.codecov.io/v11.3.2/linux/codecov.SHA256SUM` — `8e1bfb71661378530f6ea21e82b414095899e565cbb4cf555c613064be17b973  codecov`. For v11.3.1 the same file holds `ca1d6419…`, the same sum as in the `ci.yml` of `spec`.
-  - gpg 2.4.4 accepted the signature `codecov.SHA256SUM.sig`: "Good signature from "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>"", "Primary key fingerprint: 2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869".
-  - The same fingerprint is named by the page [Codecov Uploader](https://docs.codecov.com/docs/codecov-uploader), updated 2026-06-07: "Key Fingerprint: `2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869`". It says to take the key from `https://keybase.io/codecovsecops/pgp_keys.asc`.
-  - The binary calls itself `codecovcli, version 11.3.2`, and its `sha256sum` agrees with the file of sums;
-- **actions** — `git ls-remote`: `codecov/codecov-action` v7.1.1 — 303a32d, `actions/upload-artifact` v7.0.2 — cf430e0, `actions/download-artifact` v8.0.2 — 9000827. All three are the latest releases. The license of codecov-action is MIT. Its `action.yml` at 303a32d:
-  - `core.getIDToken` takes the OIDC token, with the audience `https://codecov.io`, if `use_oidc` and this is not a fork;
-  - a fork is `github.event.pull_request.head.repo.full_name` not equal to `github.repository`, and then the report goes without a token, from the branch `owner:branch`, as for `spec`;
-- **the paths in Codecov** — the default rule for Go's import paths, Codecov, Fixing paths, as the decision log of `spec` quotes it. The trial — measurements 4.1;
+Read 2026-11-24:
+- **the Codecov app** — the GitHub API, `gh api orgs/altnovatrail/installations`: `codecov`, `repository_selection: all`;
+- **the Codecov CLI** — the license Apache-2.0 (the GitHub API, `repos/codecov/codecov-cli/license`); v11.3.2 came out 2026-10-28;
+  - gpg accepted the signature `codecov.SHA256SUM.sig` of `https://cli.codecov.io/v11.3.2/linux/codecov.SHA256SUM`, with the key `https://keybase.io/codecovsecops/pgp_keys.asc`: "Good signature from "Codecov Uploader (Codecov Uploader Verification Key) <security@codecov.io>"", "Primary key fingerprint: 2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869"; the file holds `8e1bfb71661378530f6ea21e82b414095899e565cbb4cf555c613064be17b973  codecov`;
+  - the same fingerprint is named by the page [Codecov Uploader](https://docs.codecov.com/docs/codecov-uploader), updated 2026-06-07: "Key Fingerprint: `2703 4E7F DB85 0E0B BC2C 62FF 806B B28A ED77 9869`". It says to take the key from `https://keybase.io/codecovsecops/pgp_keys.asc`;
 - **several uploads per commit** — [Codecov, codecov.yml reference](https://docs.codecov.com/docs/codecovyml-reference), updated 2026-07-23. `codecov.notify.wait_for_ci` has "Should Codecov wait for all CI statuses to complete before sending ours", `true` by default. `codecov.notify.after_n_builds` has "How many uploaded reports Codecov should wait to receive before sending statuses", `1` by default.
 
 ## 11. The tools of the checks
 
+The documentation and code of gitleaks, just and git are links at the tag where the claim stands, a behaviour a trial saw is in measurements.md, and the sum of an archive is held by the step that checks it. What stays here are the licenses of the tools and the files of their releases, which no run of ours checks.
+
 ### 11.1. gitleaks
 
-Read 2026-10-19:
-- **the release and the license** — the GitHub API — `repos/gitleaks/gitleaks/releases/latest`: v8.30.1, 2026-03-21, the files are archives for the platforms and `gitleaks_8.30.1_checksums.txt`, with no signature and no attestation; `repos/gitleaks/gitleaks/license`: MIT.
+Read 2026-11-24, the GitHub API:
+- **the release** — `repos/gitleaks/gitleaks/releases/tags/v8.30.1`: v8.30.1, 2026-03-21, the files are archives for the platforms and `gitleaks_8.30.1_checksums.txt`, with no signature; `repos/gitleaks/gitleaks/attestations/sha256:<sum of the linux_x64 archive>` answers 404;
+- **the license** — `repos/gitleaks/gitleaks/license`: MIT.
 
-Read 2026-10-20:
-- **gitleaks** — [README v8.30.1](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md), section Load Configuration: "The order of precedence is:", and the fourth — "A `.gitleaks.toml` file within the target path". The sum of the archive `gitleaks_8.30.1_linux_x64.tar.gz` is from `gitleaks_8.30.1_checksums.txt` of the same release: `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb`.
+### 11.2. ShellCheck
 
-### 11.2. actionlint and ShellCheck
-
-Read 2026-10-20:
-- **actionlint** 1.7.12 — the latest release (the GitHub API, `repos/rhysd/actionlint/releases/latest`, 2026-03-30); the sum of the archive `actionlint_1.7.12_linux_amd64.tar.gz` is from `actionlint_1.7.12_checksums.txt`: `8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8`;
-- **shellcheck** 0.11.0 — the latest release (the GitHub API, `repos/koalaman/shellcheck/releases/latest`, 2025-08-04), the license is GPL-3.0 (`repos/koalaman/shellcheck/license`); it has no files of sums, so the sum of `shellcheck-v0.11.0.linux.x86_64.tar.xz` was computed from the downloaded archive: `8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198`.
+Read 2026-11-24, the GitHub API:
+- **the release** — `repos/koalaman/shellcheck/releases/tags/v0.11.0`: v0.11.0, 2025-08-04, the files are archives for the platforms and a zip, with no file of sums;
+- **the license** — `repos/koalaman/shellcheck/license`: GPL-3.0.
 
 ### 11.3. yq and bats-core
 
-Read 2026-11-01:
-- **yq** — v4.54.1, the latest release, 2026-09-29 (the GitHub API, `repos/mikefarah/yq/releases/latest`). The license is MIT: "The MIT License (MIT)", `LICENSE` at the tag v4.54.1.
-  - Among the release's files are `yq_linux_amd64`, `checksums` and `checksums_hashes_order`. SHA-256 is the eighteenth line of `checksums_hashes_order`, and in the line `yq_linux_amd64` of the file `checksums` the sums follow the name in the same order. The SHA-256 sum is `8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f`.
-  - The downloaded file, 14,168,224 bytes, agreed with it, and `--version` gives "yq (https://github.com/mikefarah/yq/) version v4.54.1".
-- **bats-core** — v1.14.0, the latest release, 2026-07-21, the release has no files (the GitHub API, `repos/bats-core/bats-core/releases/latest`); the license is MIT.
-
-### 11.4. just
-
-Read 2026-10-20:
-- **`just --dry-run`** — the help of just 1.58.0, `just --help`: "Print what just would do without doing it". The trial — measurements 5.1.
-
-### 11.5. git
-
-Read 2026-10-22:
-- **git** v2.55.0, commit e9019fc. `Documentation/git-clone.adoc`, `--local`: "The files under `.git/objects/` directory are hardlinked to save space when possible", and "If the repository is specified as a local path (e.g., `/path/to/repo`), this is the default". `Documentation/git-worktree.adoc`, `add`: "The new worktree is linked to the current repository, sharing everything except per-worktree files such as `HEAD`, `index`, etc.".
+Read 2026-11-24:
+- **yq** — the license MIT: "The MIT License (MIT)", `LICENSE` at the tag v4.54.1, and the GitHub API, `repos/mikefarah/yq/license`;
+- **bats-core** — the GitHub API: `repos/bats-core/bats-core/releases/tags/v1.14.0` — v1.14.0, 2026-07-21, with no files; `repos/bats-core/bats-core/license` — MIT.
 
 ## 12. `spec`: tags, recipes and scripts
 

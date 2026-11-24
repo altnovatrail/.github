@@ -45,31 +45,8 @@ A task starts with «Выполни задачу T01 из RUN.md» in a new sess
 - **Table 1** is the current epic: its tasks in detail, run one at a time.
 - **Next epic.** Once table 1 is all checked, the author picks the next epic from [run/EPICS.md](run/EPICS.md) and splits it with Claude in plan mode into tasks of one review each, into table 1 and this file.
 - **A done epic** goes to `docs/plan/<epic>.md` (R59 canvas-api): bodies and gist sentences are there already (rule 9); move its description and table of tasks verbatim; questions and debt stay in `run/`; until the next epic, table 1 reads «Current epic — none» and names the last done epic; measure the epic's sessions — `just -f spec/justfile tokens-report --since <first day of the epic> --row` — as a row of measurements 11.2; past the threshold of R145 spec, an epic of analysis into [run/EPICS.md](run/EPICS.md). Never read an archive whole: take the task cited.
-- **Done epics:** E1–E15 and E17–E30, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (R34). Task numbers are taken through T99: next — T100.
+- **Done epics:** E1–E15 and E17–E31, each archived in `docs/plan/E<number>.md`, but for E15, which has none. E16 is taken by the move to v0.9.9, whose epic was deleted (R34). Task numbers are taken through T99: next — T100.
 
-## Table 1. Current epic — E31. Тег `spec` v0.19.20 и записи `sources` по его правилу
+## Table 1. Current epic — none
 
-**Результат:** `.github` на теге `spec` v0.19.20, и `docs/sources.md` — по правилу записей его `spec/RULES.md`: запись — только у того, что прогон не проверит или у чего нет версии; остальное — ссылка на месте с версией или коммитом, тест или `measurements`; теги `spec` и файлы репозиториев NovaTrail и MathTrail — git (строка 7.62 COORDINATION.md spec).
-
-| Статус | ID | Задача | Кто | План | Зависит от |
-|---|---|---|---|---|---|
-| [x] | T96 | Тег `spec` v0.19.20; `sources`: вводная, теги `spec`, файлы репозиториев, ссылки на записи `spec` | Claude | — | — |
-| [x] | T97 | `sources` по правилу записей, часть 2: GitHub Actions | Claude | — | T96 |
-| [x] | T98 | `sources` по правилу записей, часть 3: GitHub, Dependabot, CodeQL, Scorecard, Sigstore | Claude | — | T97 |
-| [ ] | T99 | `sources` по правилу записей, часть 4: npm, Node и браузеры, Go и Codecov, инструменты проверок | Claude | — | T98 |
-
-**Почему эпик такой.** Задача живёт только в эпике (R40), а текущего эпика не было: E30 в архиве. Текст задачи дал оркестратор по строке 7.62 COORDINATION.md spec, по тексту T291 `spec`; пересмотр `docs/sources.md` (1000 строк, 162 КБ, около 300 ссылок на записи вне `docs/plan/`) больше одного ревью, и по правилу 11 его остаток разбит по темам на T97–T99. Строка 7.62 ждёт всех четырёх. T97–T99 — одного репозитория подряд и не ждут другого: могут идти пачкой на одной ветке с одним pull request, как их даст оркестратор.
-
-**Общее для T97–T99** — правило записей `spec/RULES.md` («The bar», «Citations») и раздел 1 `docs/sources.md`; R171 `spec`:
-- свернуть повторные чтения записей своих тем до текущего: текст тот же — одна дата; другой — утверждения и решения переписать в той же правке, а где решение ждёт автора — строка `run/QUESTIONS.md`, и оба чтения стоят;
-- запись остаётся у условий, политик, лицензий, у страницы без версии и ответа API или реестра, которых прогон не проверит, у открытого issue и чужой практики;
-- документация GitHub — ссылка на месте на `github/docs` на коммите (файл `content/…`, проверить, что текст держит утверждение); документация и код действий и инструментов — ссылка на тег или коммит, который запись уже называет; поведение под тестом `tests/` или записью `measurements` — ссылка на них; запись удалить;
-- перед удалением записи — `git grep -nE "sources N\.M\b" -- . ':!docs/plan' ':!spec'` пусто; номера не переиспользовать, у темы — строка, где теперь её факты; архивы `docs/plan/` не трогать; смысл утверждений не менять;
-- бюджет записи журнала, которую ссылки удлинили, — `docs-budgets.json`, с причиной в коммите.
-
-#### T99. `sources` по правилу записей, часть 4: npm, Node и браузеры, Go и Codecov, инструменты проверок
-
-- **Цель:** записи тем 8–11 `docs/sources.md` (8.1–11.5, около 70 ссылок вне `docs/plan/`) — по правилу записей `spec/RULES.md` тега v0.19.20; на ней строка 7.62 «Порядка» сделана.
-- **Сделать:** по «Общему для T97–T99» выше, для тем 8–11: документация и код npm, ответы реестра npm, открытые баги `npm/cli`; Node, Playwright, Vitest и istanbul, OSV-Scanner, Docker, Ubuntu Snapshot; Go, go-licenses, Codecov; gitleaks, actionlint и ShellCheck, yq и bats-core, just, git. Лицензии и условия — записи; ответы реестра, которых прогон не проверит, — запись; sha256 архивов держит `ARG` Dockerfile, который их проверяет.
-- **Как проверить:** `just -f spec/justfile docs-check-repo` и проверки частей, чьи файлы задеты, — зелёные; размер `docs/sources.md` до и после — в отчёт, и от начала эпика — 162 318 байт до T96.
-- **Разделы:** `spec/RULES.md`, «The bar» и «Citations»; R171 `spec`; раздел 1 и темы 8–11 `docs/sources.md`; строка 7.62 «Порядка» COORDINATION.md spec.
+The last done epic is E31, its archive [docs/plan/E31.md](docs/plan/E31.md).
