@@ -1,12 +1,13 @@
 {
   "citations": true,
   "entries": {
-    "R16": 18,
-    "R18": 33,
-    "R19": 21,
-    "R41": 13
+    "R16": 19,
+    "R18": 34,
+    "R19": 23,
+    "R41": 15,
+    "R42": 13
   },
   "sections": {
-    "architecture 3.3": 26
+    "architecture 3.3": 27
   }
 }
